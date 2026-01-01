@@ -1,0 +1,710 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use \App\Models\User;
+use App\Models\UserRole;
+use App\Models\Designation;
+use Illuminate\Support\Str;
+use \App\Traits\ImageUpload;
+use Illuminate\Http\Request;
+use App\Notifications\UserCreated;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
+use Facade\FlareClient\Http\Response;
+use Intervention\Image\Facades\Image;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Notification;
+
+class UserController extends Controller
+{
+    // Initialize Image Upload Trait
+    use ImageUpload;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
+     * Display a listing of users.
+     *
+     * @return \Illuminate\Contracts\Support\Renderable
+     */
+    public function index()
+    {
+        // Eager load all users with their roles
+        $users = User::with('role:id,role_abbreviation,role_name')
+            ->select(
+                [
+                    'id',
+                    'name',
+                    'user_no',
+                    'first_name',
+                    'middle_name',
+                    'last_name',
+                    'email',
+                    'is_active',
+                    'user_role_id'
+                ]
+            )
+            ->where('user_role_id', '!=', 4)
+            ->latest()
+            ->paginate(10);
+
+        //TODO : Find a better way to associate the id with the role
+        // Get super admin users count
+        $super_admin_count = User::where('user_role_id', 1)
+            ->count();
+        // Get admin users count
+        $admin_count = User::where('user_role_id', 2)
+            ->count();
+
+        // Get clerk users count
+        $clerk_count = User::where('user_role_id', 5)
+            ->count();
+        // Get legal aid provider users count
+        $lap_count = User::where('user_role_id', 3)
+            ->count();
+
+        return view('users.list', compact(
+            [
+                'users',
+                'super_admin_count',
+                'admin_count',
+                'clerk_count',
+                'lap_count'
+            ]
+        ));
+    }
+
+    /**
+     * Show the form for creating a new user.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        // Get all the designations and bind them to the create  view
+        $designations = Designation::get(['id', 'designation']);
+
+        // Get all the designations and bind them to the create  view
+        $user_roles = UserRole::get(['id', 'role_abbreviation']);
+
+        return view('users.create', compact('designations', 'user_roles'));
+    }
+
+    /**
+     * Store a newly created user in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+
+        /**
+         * Get a validator for an incoming store request.
+         *
+         * @param  array  $request
+         * @return \Illuminate\Contracts\Validation\Validator
+         */
+        $this->validate($request, [
+            'user_no' => ['required', 'string', 'max:255', 'unique:users'],
+            'name' => ['required', 'string', 'min:3', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'designation' => ['required'],
+            'first_name' => ['required', 'min:3', 'string', 'max:50'],
+            'middle_name' => ['nullable', 'min:3', 'max:50'],
+            'last_name' => ['required', 'min:3', 'string', 'max:50'],
+            'tel_no' => ['required', 'string', 'max:15'],
+            'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
+            'user_role' => ['required'],
+        ]);
+
+        /**
+         * Create a new user instance for a valid registration.
+         *
+         * @param  array  $user
+         * @return \App\Models\User
+         */
+
+        $user = new User;
+
+        $user->user_no = $request->user_no;
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = Hash::make($request->password);
+        $user->designation_id = $request->designation;
+        $user->first_name = Str::ucfirst($request->first_name);
+        $user->middle_name = Str::ucfirst($request->middle_name);
+        $user->last_name = Str::ucfirst($request->last_name);
+        $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
+        $user->user_role_id = $request->user_role;
+
+        /**
+         *  Preparing Image for Upload
+         */
+        if ($request->hasFile('image')) {
+
+            try {
+
+                // Initialize image path
+                $image_path = 'storage/app/public/uploads/images/profiles/';
+
+                $image = $request->file('image');
+
+                //Handle file name and url tweaking
+                $file_name_to_store = $this->UserImageUpload($image, $user->name);
+
+                $img = Image::make($image->path());
+
+                // backup status
+                $img->backup();
+
+                // Image resize to given aspect dimensions
+
+                // Save this image to /uploads/profiles folder
+                $img->resize(480, 640)->save($image_path . $file_name_to_store, 100);
+
+                // reset image (return to backup state)
+                $img->reset();
+
+                // Save this thumbnail image to /uploads/profiles/thumbnails folder
+                $img->resize(100, 100, function ($const) {
+                    $const->aspectRatio();
+                })->save($image_path . 'thumbnails/' . $file_name_to_store, 100);
+
+                $user->image = $file_name_to_store;
+            } catch (\Throwable $th) {
+                //throw $th;
+                redirect()->back()
+                    ->withErrors('errors', 'Image could not be uploaded, please try again.');
+            }
+        }
+        // Else add a dummy image
+        else {
+            $user->image = 'avatar.png';
+        }
+
+        /**
+         * Save the user to the database
+         */
+
+        $user->save();
+
+        /**
+         *  Redirect user to dashboard
+         */
+        if ($user) {
+
+            // Log user activity
+            activity()->log('Created user account');
+
+            /**
+             * Send email & database notification
+             */
+
+            try {
+                if (env('SEND_NOTIFICATIONS') == TRUE) {
+                    // Database & email
+                    Notification::send($user, new UserCreated($user));
+                }
+            } catch (\Throwable $th) {
+                throw $th;
+            }
+
+            return redirect()->route('users.list', app()->getLocale())
+                ->with('status', 'User information added, successfully.');
+        } else {
+            return redirect()->back()
+                ->withErrors('errors', 'Adding user information failed, please try again.');
+        }
+    }
+
+    /**
+     * Update the specified users in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updatePassword(Request $request, $locale, $id)
+    {
+        //create a policy who update the password should be the current user
+
+        /**
+         * Get a validator for an incoming store request.
+         *
+         * @param  array  $request
+         * @return \Illuminate\Contracts\Validation\Validator
+         */
+        $request->validate(
+            [
+                'current_password' => ['required', 'string', 'min:8'],
+                'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->letters()->numbers()],
+            ]
+        );
+
+        /**
+         * Create a new user instance for a valid registration.
+         *
+         * @param  array  $user
+         * @return \App\Models\User
+         */
+
+        $user = User::findOrFail($id);
+
+        // Check that new password doesn't match the old password
+        if ($request->current_password == $request->password) {
+            return redirect()->back()
+                ->withErrors('errors', 'Can’t be the same as a previous password, please try again., please try again.');
+        }
+
+        // Check if current password matches password in Database
+        if (!Hash::check($request->current_password, $user->password)) {
+
+            return redirect()->back()
+                ->withErrors('errors', 'Current password is not a match, please try again.');
+        } else {
+
+            $user->password = Hash::make($request->password);
+        }
+
+        //Saving changes to the database
+
+        $user->update();
+
+        if ($user) {
+
+            return redirect()->back()
+                ->with('status', 'Your password was changed successfully, use your new password on your next login.');
+        } else {
+
+            return redirect()->back()
+                ->withErrors('errors', 'Updating user password failed, please try again.');
+        }
+    }
+
+    /**
+     * Display the specified users.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($locale, $id)
+    {
+        //Find user information by Id and return a profile view
+        $user = User::where('name', $id)->firstOrFail();
+
+        return view('users.show', compact('user'));
+    }
+
+    /**
+     * Show the form for editing the specified users.
+     *
+     * @param  String  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($locale, $id)
+    {
+
+        //Find user information by Id and return  edit view
+        $user = User::where('name', $id)->firstOrFail();
+
+        // Get all the designations and bind them to the create  view
+        $designations = Designation::get(['id', 'designation']);
+
+        // Get all the designations and bind them to the create  view
+        $user_roles = UserRole::get(['id', 'role_abbreviation']);
+
+        return view('users.edit', compact('user', 'designations', 'user_roles'));
+    }
+
+    /**
+     * Update the specified users in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateProfile(Request $request, $locale, $id)
+    {
+
+        /**
+         * Get a validator for an incoming store request.
+         *
+         * @param  array  $request
+         * @return \Illuminate\Contracts\Validation\Validator
+         */
+        $this->validate($request, [
+            'name' => ['required', 'string', 'min:3', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'first_name' => ['required', 'min:3', 'string', 'max:50'],
+            'middle_name' => ['nullable', 'min:3', 'max:50'],
+            'last_name' => ['required', 'min:3', 'string', 'max:50'],
+            'tel_no' => ['required', 'string', 'max:15'],
+        ]);
+
+        /**
+         * Create a new user instance for a valid registration.
+         *
+         * @param  array  $user
+         * @return \App\Models\User
+         */
+
+        $user = User::findOrFail($id);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->first_name = Str::ucfirst($request->first_name);
+        $user->middle_name = Str::ucfirst($request->middle_name);
+        $user->last_name = Str::ucfirst($request->last_name);
+
+        if (Str::startsWith($request->tel_no, '0')) {
+            $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
+        } else {
+            $user->tel_no = $request->tel_no;
+        }
+
+        //Saving changes to the database
+
+        $user->update();
+
+        if ($user) {
+
+            // Log user activity
+            activity()->log('Updated user profile');
+
+            return redirect()->back()
+                ->with('status', 'Profile information updated, successfully.');
+        } else {
+
+            return redirect()->back()
+                ->withErrors('errors', 'Updating profile information failed, please try again.');
+        }
+    }
+
+    /**
+     * Update the image of specified users in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updatePhoto(Request $request, $locale, $id)
+    {
+        /**
+         * Get a validator for an incoming store request.
+         *
+         * @param  array  $request
+         * @return \Illuminate\Contracts\Validation\Validator
+         */
+        $this->validate($request, [
+            'image' => ['image', 'required', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
+        ]);
+
+        /**
+         * Create a new user instance for a valid registration.
+         *
+         * @param  array  $user
+         * @return \App\Models\User
+         */
+
+        $user = User::findOrFail($id);
+
+        /**
+         *  Preparing Image for Upload
+         */
+        if ($request->hasFile('image')) {
+
+            try {
+
+                // Initialize image path
+                $image_path = 'storage/app/public/uploads/images/profiles/';
+
+                //Check if image already exists and delete it.
+                $destination = $image_path . $user->image;
+                $destinationThumb = $image_path . 'thumbnails/' . $user->image;
+
+                if (File::exists($destination)) {
+
+                    File::delete($destination);
+                } elseif (File::exists($destinationThumb)) {
+
+                    File::delete($destinationThumb);
+                }
+
+                $image = $request->file('image');
+
+                //Handle file name and url tweaking
+                $file_name_to_store = $this->UserImageUpload($image, $user->name);
+
+                $img = Image::make($image->path());
+
+                // backup status
+                $img->backup();
+
+                // Image resize to given aspect dimensions
+
+                // Save this image to /uploads/profiles folder
+                $img->resize(480, 640)->save($image_path . $file_name_to_store, 100);
+
+                // reset image (return to backup state)
+                $img->reset();
+
+                // Save this thumbnail image to /uploads/profiles/thumbnails folder
+                $img->resize(100, 100, function ($const) {
+                    $const->aspectRatio();
+                })->save($image_path . 'thumbnails/' . $file_name_to_store, 100);
+
+                $user->image = $file_name_to_store;
+            } catch (\Throwable $th) {
+                //throw $th;
+                redirect()->back()->withErrors('errors', 'Image could not be uploaded, please try again.');
+            }
+        } else {
+            $user->image = "avatar.png";
+        }
+
+        //Saving changes to the database
+
+        $user->update();
+
+
+        if ($user) {
+
+            // Log user activity
+            activity()->log('Changed profile photo');
+
+            return redirect()->back()
+                ->with('status', 'User information updated, successfully.');
+        } else {
+
+            return redirect()->back()
+                ->withErrors('errors', 'Updating user information failed, please try again.');
+        }
+    }
+
+    /**
+     * Update the specified users in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $locale, $id)
+    {
+        /**
+         * Get a validator for an incoming store request.
+         *
+         * @param  array  $request
+         * @return \Illuminate\Contracts\Validation\Validator
+         */
+        $this->validate($request, [
+            'name' => ['required', 'string', 'min:3', 'max:255'],
+            'email' => ['nullable', 'string', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'designation' => ['required'],
+            'first_name' => ['required', 'min:3', 'string', 'max:50'],
+            'middle_name' => ['nullable', 'min:1', 'max:50'],
+            'last_name' => ['required', 'min:3', 'string', 'max:50'],
+            'tel_no' => ['required', 'string', 'max:15'],
+            'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
+            'user_role' => ['required'],
+            'status' => ['required'],
+        ]);
+
+        /**
+         * Create a new user instance for a valid registration.
+         *
+         * @param  array  $user
+         * @return \App\Models\User
+         */
+
+        $user = User::findOrFail($id);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = Hash::make($request->password);
+        $user->designation_id = $request->designation;
+        $user->first_name = Str::ucfirst($request->first_name);
+        $user->middle_name = Str::ucfirst($request->middle_name);
+        $user->last_name = Str::ucfirst($request->last_name);
+
+        if (Str::startsWith($request->tel_no, '0')) {
+            $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
+        } else {
+            $user->tel_no = $request->tel_no;
+        }
+        $user->user_role_id = $request->user_role;
+        $user->is_active = $request->status;
+
+
+        /**
+         *  Preparing Image for Upload
+         */
+        if ($request->hasFile('image')) {
+
+            try {
+
+                // Initialize image path
+                $image_path = 'storage/app/public/uploads/images/profiles/';
+
+                //Check if image already exists and delete it.
+                $destination = $image_path . $user->image;
+                $destinationThumb = $image_path . 'thumbnails/' . $user->image;
+
+                if (File::exists($destination)) {
+
+                    File::delete($destination);
+                } elseif (File::exists($destinationThumb)) {
+
+                    File::delete($destinationThumb);
+                }
+
+                $image = $request->file('image');
+
+                //Handle file name and url tweaking
+                $file_name_to_store = $this->UserImageUpload($image, $user->name);
+
+                $img = Image::make($image->path());
+
+                // backup status
+                $img->backup();
+
+                // Image resize to given aspect dimensions
+
+                // Save this image to /uploads/profiles folder
+                $img->resize(480, 640)->save($image_path . $file_name_to_store, 100);
+
+                // reset image (return to backup state)
+                $img->reset();
+
+                // Save this thumbnail image to /uploads/profiles/thumbnails folder
+                $img->resize(100, 100, function ($const) {
+                    $const->aspectRatio();
+                })->save($image_path . 'thumbnails/' . $file_name_to_store, 100);
+
+                $user->image = $file_name_to_store;
+            } catch (\Throwable $th) {
+                //throw $th;
+                redirect()->back()->withErrors('errors', 'Image could not be uploaded, please try again.');
+            }
+        } else {
+            $user->image = "avatar.png";
+        }
+
+        //Saving changes to the database
+        $user->update();
+
+        if ($user) {
+
+            // Log user activity
+            activity()->log('Updated user account');
+
+            return redirect()->route('users.list', app()->getLocale())
+                ->with('status', 'User information updated, successfully.');
+        } else {
+
+            return redirect()->back()
+                ->withErrors('errors', 'Updating user information failed, please try again.');
+        }
+    }
+
+    /**
+     * Remove the specified users from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function trash($locate, $id)
+    {
+        //Deleting user information from the database
+
+        $user = User::findOrFail($id);
+
+        $user->delete();
+
+        if ($user) {
+
+            // Log user activity
+            activity()->log('Trashed user account');
+
+            return redirect()->back()->with('status', 'User information trashed, successfully.');
+        } else {
+            return redirect()->back()->withErrors('errors', 'Trashing user information failed, please try again.');
+        }
+    }
+
+    /**
+     * Restoring the specified users from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function restore($locate, $id)
+    {
+        //Restoring user information from the database
+
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        $user->restore();
+
+        if ($user) {
+
+            // Log user activity
+            activity()->log('Restored user account');
+
+            return redirect()->back()->with('status', 'User information restored, successfully.');
+        } else {
+            return redirect()->back()->withErrors('errors', 'Restoring user information failed, please try again.');
+        }
+    }
+
+    /**
+     * Remove the specified users from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($locate, $id)
+    {
+        //Deleting user information from the database
+
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        // Initialize image path
+        $image_path = 'storage/app/public/uploads/images/profiles/';
+
+        //Check if image already exists and delete it.
+        $destination = $image_path . $user->image;
+        $destinationThumb = $image_path . 'thumbnails/' . $user->image;
+
+        if (File::exists($destination)) {
+
+            File::delete($destination);
+        } elseif (File::exists($destinationThumb)) {
+
+            File::delete($destinationThumb);
+        }
+
+        $user->forceDelete();
+
+        if ($user) {
+
+            // Log user activity
+            activity()->log('Deleted user account');
+
+            return redirect()->back()->with('status', 'User information deleted, successfully.');
+        } else {
+            return redirect()->back()->withErrors('errors', 'Deleting user information failed, please try again.');
+        }
+    }
+}

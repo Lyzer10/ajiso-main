@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use App\Providers\RouteServiceProvider;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
+
+class LoginController extends Controller
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Login Controller
+    |--------------------------------------------------------------------------
+    |
+    | This controller handles authenticating users for the application and
+    | redirecting them to your home screen. The controller uses a trait
+    | to conveniently provide its functionality to your applications.
+    |
+    */
+
+    use AuthenticatesUsers;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('guest')->except('logout');
+    }
+
+
+    protected function credentials(Request $request)
+    {
+        return [
+            'email'     => $request->email,
+            'password'  => $request->password,
+            'is_active' => 1,
+        ];
+    }
+
+    /**
+     * Where to redirect users after login.
+     *
+     * @var string
+     */
+    protected $redirectTo = RouteServiceProvider::HOME;
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        return view('auth.login');
+    }
+
+    /**
+     * Sign in an authenticated user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+
+        /**
+         * Get a validator for an incoming login request.
+         *
+         * @param  array  $data
+         * @return \Illuminate\Contracts\Validation\Validator
+         */
+        $this->validate($request, [
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        /**
+         * Make an attempt to sign in a user
+         */
+
+
+        if (!auth()->attempt($this->credentials($request), $request->remember)) {
+            return back()->with('status', 'The provided credentials do not match our records.');
+        }
+
+        /**
+         *  Redirect user to respective dashboard
+         */
+
+        switch (Auth::user()->role->role_abbreviation) {
+            case 'superadmin':
+                return redirect()->route('admin.super.home');
+                break;
+
+            case 'admin':
+                return redirect()->route('admin.home');
+                break;
+
+            case 'staff':
+                return redirect()->route('staff.home');
+                break;
+
+            case 'clerk':
+                return redirect()->route('clerk.home');
+                break;
+
+            case 'beneficiary':
+                return redirect()->route('beneficiary.home');
+                break;
+
+            default:
+                return redirect('login')->withErrors('error', "You don't have access.");
+                break;
+        }
+    }
+}
