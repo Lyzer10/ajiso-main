@@ -54,8 +54,8 @@
                                 <div class="col-md-4 mb-3">
                                     <label for="designationTitle" class="font-weight-bold">{{ __('Designation / Title') }}<sup class="text-danger">*</sup></label>
                                     <input type="text" id="designationTitle" placeholder="{{ __('designation / title') }}"
-                                        class="form-control  border-input-primary @error('designation') is-invalid @enderror"
-                                        name="designation" value="{{ old('designation') }}" required autocomplete="designation">
+                                        class="form-control  border-input-primary @error('name') is-invalid @enderror"
+                                        name="name" value="{{ old('name') }}" required autocomplete="designation">
                                     @error('designation')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -107,9 +107,9 @@
                                             <td>{{ '#'.$designation->id }}</td>
                                             <td>
                                                 <input type="text" id="designation" placeholder="designation"
-                                                    class="form-control-sm border-0 @error('designation') is-invalid @enderror"
-                                                    name="designation" value="{{ $designation->designation}}" required autocomplete="designation">
-                                                @error('designation')
+                                                    class="form-control-sm border-0 @error('name') is-invalid @enderror"
+                                                    name="name" value="{{ $designation->name}}" required autocomplete="designation">
+                                                @error('name')
                                                         <span class="invalid-feedback" role="alert">
                                                             <strong>{{ $message }}</strong>
                                                         </span>

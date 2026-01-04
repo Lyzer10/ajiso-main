@@ -89,7 +89,7 @@
                                     @if ($designations->count())
                                         @foreach ($designations as $designation)
                                             <option value="{{ $designation->id }}" {{ old('designation') == $designation->id ? ' selected="selected"' : '' }}>
-                                                {{ __($designation->designation) }}
+                                                {{ __($designation->name) }}
                                             </option>
                                         @endforeach
                                     @else
@@ -130,6 +130,53 @@
                                     class="form-control border-input-primary @error('last_name') is-invalid @enderror"
                                     name="last_name" value="{{ old('last_name') }}" required autocomplete="last_name">
                                 @error('last_name')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="col-md-3 mb-3">
+                                <label class="selectTribe font-weight-bold">{{ __('Tribe') }}<sup class="text-danger">*</sup></label>
+                                <select id="tribe" aria-describedby="selectTribe"
+                                    class="select2 select2-container--default border-input-primary @error('tribe') is-invalid @enderror"
+                                    name="tribe" required autocomplete="tribe" style="width: 100%;">
+                                    <option hidden disabled selected value>{{ __('Choose tribe') }}</option>
+                                    @if ($tribes->count())
+                                        @foreach ($tribes as $tribe)
+                                            <option value="{{ $tribe->id }}" {{ old('tribe') == $tribe->id ? ' selected="selected"' : '' }}>
+                                                {{ __($tribe->tribe) }}
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option>{{ __('No tribes found') }}</option>
+                                    @endif
+                                </select>
+                                @error('tribe')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="selectReligion font-weight-bold">{{ __('Religion') }}<sup class="text-danger">*</sup></label>
+                                <select id="religion" aria-describedby="selectReligion"
+                                    class="select2 select2-container--default border-input-primary @error('religion') is-invalid @enderror"
+                                    name="religion" required autocomplete="religion" style="width: 100%;">
+                                    <option hidden disabled selected value>{{ __('Choose religion') }}</option>
+                                    @if ($religions->count())
+                                        @foreach ($religions as $religion)
+                                            <option value="{{ $religion->id }}" {{ old('religion') == $religion->id ? ' selected="selected"' : '' }}>
+                                                {{ __($religion->religion) }}
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option>{{ __('No religions found') }}</option>
+                                    @endif
+                                </select>
+                                @error('religion')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
@@ -399,7 +446,7 @@
                                 @enderror
                             </div>
 
-                            {{-- <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label class="selectFormMarriage font-weight-bold">{{ __('Form of Marriage') }}<sup class="text-danger">*</sup></label>
                                 <select id="form_of_marriage" aria-describedby="selectFormMarriage"
                                     class="select2 select2-container--default   border-input-primary @error('form_of_marriage') is-invalid @enderror"
@@ -449,7 +496,7 @@
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
-                            </div> --}}
+                            </div>
                             
                             <div class="col-md-3 mb-3">
                                 <label for="no_of_children" class="font-weight-bold">{{ __('Number of Children') }}</label>
@@ -586,6 +633,16 @@
                         select.append('<option value=' + value.id + '>' + value.district + '</option>');
                     });
                 });
+            });
+        });
+    </script>
+
+    {{-- datetimepicker initializer --}}
+    <script type="text/javascript">
+        $(function() {
+            $('#marriage_date').datetimepicker({
+                format: 'L',
+                viewMode: 'years'
             });
         });
     </script>

@@ -83,7 +83,7 @@
                                         @if (is_null($dispute->beneficiary_id))
                                             {{ __('Unassigned') }}
                                         @else
-                                            {{ $dispute->ReportedBy->designation->designation.' '.
+                                            {{ $dispute->ReportedBy->designation->name.' '.
                                                 $dispute->ReportedBy->first_name.' '
                                                 .$dispute->ReportedBy->middle_name.' '
                                                 .$dispute->ReportedBy->last_name

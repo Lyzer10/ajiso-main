@@ -75,7 +75,8 @@ class TrashController extends Controller
     {
         // Get all trashed staff and paginate them
         $staff = Staff::onlyTrashed()
-                        ->select(['id','user_id','office','created_at','deleted_at'])
+                        ->with('center')
+                        ->select(['id','user_id','center_id','created_at','deleted_at'])
                         ->paginate(10);
 
         // Bind the users to the view

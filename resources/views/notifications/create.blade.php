@@ -137,7 +137,7 @@
                                                             {{ $staf->user->first_name.' '
                                                                 .$staf->user->middle_name.' '
                                                                 .$staf->user->last_name.' | '
-                                                                .$staf->office
+                                                                .$staf->center->location
                                                             }}
                                                         </option>
                                                     @endforeach

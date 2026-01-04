@@ -59,7 +59,7 @@ class ReportController extends Controller
         $staff = Staff::has('user')
                         ->with('user')
                         ->latest()
-                        ->get(['id','user_id','office']);
+                        ->get(['id','user_id','center_id']);
 
         // Get all the dispute_statuses and bind them to the create  view
         $dispute_statuses =DisputeStatus::latest()

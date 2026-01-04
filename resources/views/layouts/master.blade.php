@@ -34,14 +34,14 @@
                                    AJISO
                                 </a>
                             </h1>
-                            <p>Legal Aid Digital System</p>
+                            <p>{{ __('Legal Aid Digital System') }}</p>
                         @elsecanany(['isStaff'])
                             <h1>
                                 <a href="{{ route('staff.home', app()->getLocale()) }}">
                                    AJISO
                                 </a>
                             </h1>
-                            <p>Legal Aid Digital System</p>
+                            <p>{{ __('Legal Aid Digital System') }}</p>
                         @endcanany
                     </div>
                 </div>

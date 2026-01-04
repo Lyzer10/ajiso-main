@@ -91,7 +91,7 @@ class UserController extends Controller
     public function create()
     {
         // Get all the designations and bind them to the create  view
-        $designations = Designation::get(['id', 'designation']);
+        $designations = Designation::get(['id', 'name']);
 
         // Get all the designations and bind them to the create  view
         $user_roles = UserRole::get(['id', 'role_abbreviation']);
@@ -141,7 +141,7 @@ class UserController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
-        $user->designation_id = $request->designation;
+        $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
@@ -319,7 +319,7 @@ class UserController extends Controller
         $user = User::where('name', $id)->firstOrFail();
 
         // Get all the designations and bind them to the create  view
-        $designations = Designation::get(['id', 'designation']);
+        $designations = Designation::get(['id', 'name']);
 
         // Get all the designations and bind them to the create  view
         $user_roles = UserRole::get(['id', 'role_abbreviation']);
@@ -533,7 +533,7 @@ class UserController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
-        $user->designation_id = $request->designation;
+        $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);

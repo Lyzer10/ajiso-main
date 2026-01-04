@@ -17,7 +17,8 @@ class Staff extends Model
      * @var array
      */
     protected $fillable = [
-        'office',
+        'designation_id',
+        'center_id',
         'is_assigned',
         'user_id',
     ];
@@ -46,6 +47,12 @@ class Staff extends Model
     public function disputes(){
 
         return $this->hasMany(Dispute::class);
+    }
+
+    //Get the center associated with staff
+    public function center(){
+
+        return $this->belongsTo(Center::class);
     }
 
     //Get the disputes associated with staff

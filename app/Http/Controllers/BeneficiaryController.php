@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Income;
 use App\Models\Region;
+use App\Models\Tribe;
+use App\Models\Religion;
 use App\Models\District;
 use App\Models\Beneficiary;
 use App\Models\Designation;
@@ -79,7 +81,7 @@ class BeneficiaryController extends Controller
     public function create()
     {
         // Get all the designations and bind them to the create view
-        $designations = Designation::get(['id', 'designation']);
+        $designations = Designation::get(['id', 'name']);
 
         // Get all the marital_statuses and bind them to the create view
         $marital_statuses = MaritalStatus::get(['id', 'marital_status']);
@@ -92,6 +94,12 @@ class BeneficiaryController extends Controller
 
         // Get all the education_levels and bind them to the create view
         $education_levels = EducationLevel::get(['id', 'education_level']);
+
+        // Get all the tribes and bind them to the create view
+        $tribes = Tribe::get(['id', 'tribe']);
+
+        // Get all the religions and bind them to the create view
+        $religions = Religion::get(['id', 'religion']);
 
         // Get all the marriage_forms and bind them to the create view
         $marriage_forms = MarriageForm::get(['id', 'marriage_form']);
@@ -135,6 +143,8 @@ class BeneficiaryController extends Controller
             'education_levels',
             'survey_choices',
             'incomes',
+            'tribes',
+            'religions',
             'marriage_forms',
             'employment_statuses',
             'fileNo' // ✅ make sure to pass this to the view
@@ -169,6 +179,8 @@ class BeneficiaryController extends Controller
             'gender' => ['required'],
             'age' => ['required', 'max:3'],
             'disabled' => ['nullable'],
+            'tribe' => ['required', 'integer', 'exists:tribes,id'],
+            'religion' => ['required', 'integer', 'exists:religions,id'],
             'education_level' => ['required'],
             'address' => ['nullable', 'string', 'max:255'],
             'region' => ['required'],
@@ -177,7 +189,7 @@ class BeneficiaryController extends Controller
             'street' => ['nullable', 'max:255'],
             'survey_choice' => ['required'],
             'marital_status' => ['required'],
-            'form_of_marriage' => ['nullable'],
+            'form_of_marriage' => ['required', 'integer', 'exists:marriage_forms,id'],
             'marriage_date' => ['max:25', 'date_format:m/d/Y', 'nullable'],
             'no_of_children' => ['max:5'],
             'financial_capability' => ['required'],
@@ -200,7 +212,7 @@ class BeneficiaryController extends Controller
         $user->name = Str::lower(Str::substr($request->first_name, 0, 8) . '.' . Str::substr(Str::uuid(), 0, 3));
         $user->email = $request->email;
         $user->password = Hash::make('Alas%2021');
-        $user->designation_id = $request->designation;
+        $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
@@ -290,6 +302,8 @@ class BeneficiaryController extends Controller
             $beneficiary->ward = $request->ward;
             $beneficiary->street = $request->street;
             $beneficiary->survey_choice_id = $request->survey_choice;
+            $beneficiary->tribe_id = $request->tribe;
+            $beneficiary->religion_id = $request->religion;
             $beneficiary->marital_status_id = $request->marital_status;
             $beneficiary->marriage_form_id = $request->form_of_marriage;
             if (!is_null($request->marriage_date)) {
@@ -316,7 +330,7 @@ class BeneficiaryController extends Controller
                 $dest_addr = Str::remove('+', $user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
-                $title = $user->designation->designation;
+                $title = $user->designation->name;
 
                 $full_name = $beneficiary->user->first_name . ' ' . $beneficiary->user->middle_name . ' ' . $beneficiary->user->last_name;
                 $beneficiary_no = $beneficiary->user->user_no;
@@ -402,7 +416,7 @@ class BeneficiaryController extends Controller
             ->findOrFail($id);
 
         // Get all the designations and bind them to the edit  view
-        $designations = Designation::get(['id', 'designation']);
+        $designations = Designation::get(['id', 'name']);
 
         // Get all the marital_statuses and bind them to the edit  view
         $marital_statuses = MaritalStatus::get(['id', 'marital_status']);
@@ -415,6 +429,12 @@ class BeneficiaryController extends Controller
 
         // Get all the education_levels and bind them to the create  view
         $education_levels = EducationLevel::get(['id', 'education_level']);
+
+        // Get all the tribes and bind them to the edit view
+        $tribes = Tribe::get(['id', 'tribe']);
+
+        // Get all the religions and bind them to the edit view
+        $religions = Religion::get(['id', 'religion']);
 
         // Get all the marriage_forms and bind them to the create  view
         $marriage_forms = MarriageForm::get(['id', 'marriage_form']);
@@ -434,6 +454,8 @@ class BeneficiaryController extends Controller
                 'districts',
                 'incomes',
                 'education_levels',
+                'tribes',
+                'religions',
                 'marriage_forms',
                 'employment_statuses'
             )
@@ -467,6 +489,8 @@ class BeneficiaryController extends Controller
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
             'gender' => ['required'],
             'age' => ['required', 'max:3'],
+            'tribe' => ['required', 'integer', 'exists:tribes,id'],
+            'religion' => ['required', 'integer', 'exists:religions,id'],
             'education_level' => ['required'],
             'address' => ['required', 'max:255'],
             'region' => ['required'],
@@ -474,7 +498,7 @@ class BeneficiaryController extends Controller
             'ward' => ['nullable', 'string', 'max:255'],
             'street' => ['nullable', 'string', 'max:255'],
             'marital_status' => ['required'],
-            'form_of_marriage' => ['required'],
+            'form_of_marriage' => ['required', 'integer', 'exists:marriage_forms,id'],
             'marriage_date' => ['max:25', 'date_format:m/d/Y', 'nullable'],
             'no_of_children' => ['max:5'],
             'financial_capability' => ['required'],
@@ -497,7 +521,7 @@ class BeneficiaryController extends Controller
 
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->designation_id = $request->designation;
+        $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
@@ -601,6 +625,8 @@ class BeneficiaryController extends Controller
             $beneficiary->district_id = $request->district;
             $beneficiary->ward = $request->ward;
             $beneficiary->street = $request->street;
+            $beneficiary->tribe_id = $request->tribe;
+            $beneficiary->religion_id = $request->religion;
             $beneficiary->marital_status_id = $request->marital_status;
             $beneficiary->marriage_form_id = $request->form_of_marriage;
             if (!is_null($request->marriage_date)) {

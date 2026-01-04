@@ -83,12 +83,7 @@ class DisputeActivityController extends Controller
          */
 
         // Get the authenticated staff
-        $curr_staff = User::has('staff')
-                            ->with('staff')
-                            ->findOrFail(
-                                auth()->user()->id
-                            )
-                            ->staff->id ?? NULL;
+        $curr_staff = optional(auth()->user()->staff)->id;
 
         $activity = new DisputeActivity();
 
@@ -111,8 +106,8 @@ class DisputeActivityController extends Controller
         if ($activity) {
             
             // Get user information
-            $user = User::with('designation:id,designation')
-                            ->select(['id','email', 'first_name','middle_name','last_name','tel_no','designation_id'])
+            $user = User::with('designation:id,name')
+                            ->select(['id','email', 'first_name','middle_name','last_name','tel_no','salutation_id'])
                             ->findOrFail($request->beneficiary);
 
             /**
@@ -124,7 +119,7 @@ class DisputeActivityController extends Controller
             $recipients = ['recipient_id' => 1, 'dest_addr'=> $dest_addr];
 
             // Get title of the beneficiary
-            $title = $user->designation->designation;
+            $title = $user->designation->name;
 
             // Get full name of the beneficiary
             $full_name = $user->first_name.' '.$user->middle_name.' '.$user->last_name;
@@ -187,7 +182,7 @@ class DisputeActivityController extends Controller
             'beneficiary' => ['required'],
             'dispute_status' => ['required', 'string'],
             'activity_type' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
+            'description' => ['nullable', 'string'],
         ]);
 
         /**
@@ -249,12 +244,7 @@ class DisputeActivityController extends Controller
         $dispute->update();
 
         // Get the authenticated staff
-        $curr_staff = User::has('staff')
-                            ->with('staff')
-                            ->findOrFail(
-                                auth()->user()->id
-                            )
-                            ->staff->id ?? NULL;
+        $curr_staff = optional(auth()->user()->staff)->id;
 
         $activity->activity_type = $request->activity_type;
         $activity->description = $request->description ?? '';
@@ -280,7 +270,7 @@ class DisputeActivityController extends Controller
             // Get current beneficiary model
             $beneficiary = Beneficiary::has('user')
                                     ->with(
-                                        'user:id,tel_no,first_name,middle_name,last_name,designation_id'
+                                        'user:id,tel_no,first_name,middle_name,last_name,salutation_id'
                                         )
                                     ->select(['id', 'user_id'])
                                     ->findOrFail($dispute->beneficiary_id);
@@ -294,7 +284,7 @@ class DisputeActivityController extends Controller
             $recipients = ['recipient_id' => 1, 'dest_addr'=> $dest_addr];
 
             // Get title of the beneficiary
-            $beneficiary_title = $beneficiary->user->designation->designation;
+            $beneficiary_title = $beneficiary->user->designation->name;
 
             // Get full name of the beneficiary
             $beneficiary_name = $beneficiary->user->first_name.' '.$beneficiary->user->middle_name.' '.$beneficiary->user->last_name;
@@ -410,12 +400,7 @@ class DisputeActivityController extends Controller
          */
 
         // Get the authenticated staff
-        $curr_staff = User::has('staff')
-                            ->with('staff')
-                            ->findOrFail(
-                                auth()->user()->id
-                            )
-                            ->staff->id ?? NULL;
+        $curr_staff = optional(auth()->user()->staff)->id;
 
         // Create new DisputeActivity instance
         $activity = new DisputeActivity();
@@ -461,43 +446,44 @@ class DisputeActivityController extends Controller
 
             $sheet->save();
 
-            if($sheet){
+            if ($sheet && $request->hasFile('files')) {
+                try {
+                    // Initialize image path
+                    $image_path = 'public/uploads/documents/dispute_files';
+                    $dispute_files = [];
 
-                try{
+                    foreach ($request->file('files') as $key => $file) {
+                        if (!$file) {
+                            continue;
+                        }
 
-                    if($request->hasFile('files')){
+                        $file_name = $request->files_names[$key] ?? '';
+                        $file_name = trim($file_name);
+                        if ($file_name === '') {
+                            $file_name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) ?: 'Document';
+                        }
 
-                        // Initialize image path
-                        $image_path = 'public/uploads/documents/dispute_files';
-            
-                        foreach($request->file('files') as $key => $file){
-            
-                            $file_name =  $request->files_names[$key]; 
-            
-                            $ext = $file->getClientOriginalExtension();
-                            $db_name = 'file-'.time().'.'.rand(1,100).'.'.$ext;
-                            $path = $file->storeAs($image_path, $db_name);
-            
-                            $dispute_files[$key]['name'] = $file_name; 
-                            $dispute_files[$key]['path'] = $path;  
-                            $dispute_files[$key]['file_type'] = $ext;  
-                            $dispute_files[$key]['counseling_sheet_id'] = 1;          
-            
-                        }        
-            
-                    } 
-            
-                    $file = new DisputeFile();
-            
-                    $file->create($dispute_files);
+                        $ext = $file->getClientOriginalExtension();
+                        $db_name = 'file-' . time() . '-' . rand(1, 100) . '.' . $ext;
+                        $path = $file->storeAs($image_path, $db_name);
 
-                    $file->save();
+                        $dispute_files[] = [
+                            'name' => $file_name,
+                            'path' => $path,
+                            'file_type' => $ext,
+                            'counseling_sheet_id' => $sheet->id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
 
+                    if ($dispute_files) {
+                        DisputeFile::insert($dispute_files);
+                    }
                 } catch (\Throwable $th) {
-                    //throw $th;
-                    redirect()->back()->withErrors('errors', 'Files could not be uploaded, please try again.');
+                    return redirect()->back()
+                        ->withErrors('errors', 'Files could not be uploaded, please try again.');
                 }
-
             }
             return redirect()->back()
                             ->with('status', 'LAAC clinic information recorded, successfully.');
@@ -535,12 +521,7 @@ class DisputeActivityController extends Controller
          */
 
          // Get the authenticated staff
-        $curr_staff = User::has('staff')
-                            ->with('staff')
-                            ->findOrFail(
-                                auth()->user()->id
-                            )
-                            ->staff->id ?? NULL;
+        $curr_staff = optional(auth()->user()->staff)->id;
 
         // Create new DisputeActivity instance
         $activity = new DisputeActivity();

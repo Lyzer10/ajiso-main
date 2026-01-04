@@ -42,10 +42,6 @@
         <div class="container d-flex align-items-center justify-content-between">
             <ul>
                 <li class="d-flex align-items-center justify-content-center gap-2">
-                    <img src="/assets/images/icon/phone.png" alt="phone">
-                    <p class="m-0 p-0">+255 000 000 000</p>
-                </li>
-                <li class="d-flex align-items-center justify-content-center gap-2">
                     <img src="/assets/images/icon/email.png" alt="phone">
                     <p class="m-0 p-0">info@ajiso.org</p>
                 </li>
@@ -80,7 +76,7 @@
         <div class="container d-flex align-items-center justify-content-between">
 
         <div class="logo">
-            <a href="https://ajiso.org">
+            <a href="{{ route('home', app()->getLocale()) }}">
                 <img src="/assets/images/logo-ajiso.svg" alt="AJISO logo"/>
             </a>
         </div>

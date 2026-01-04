@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Designation extends Model
+class Center extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -18,16 +17,17 @@ class Designation extends Model
      */
     protected $fillable = [
         'name',
-        'abbr',
+        'code',
+        'location',
     ];
 
     /**
-     * Defining relationships
+     * Defining Relationships
      */
 
-    //Getting the user that has the designation
-    // public function user(){
-
-    //     return $this->belongsTo(User::class, 'designation_id', 'id');
-    // }
+    // Get the staff associated with this center
+    public function staff()
+    {
+        return $this->hasMany(Staff::class);
+    }
 }

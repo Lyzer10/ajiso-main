@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'user_no'       => 'USR001',
             'name'          => 'Super Admin',
             'email'         => 'superadmin@gmail.com',
-            'designation_id' => 1,
+            'salutation_id' => 1,
             'password'      => Hash::make('12345678'),
             'first_name'    => 'Super',
             'last_name'     => 'Admin',

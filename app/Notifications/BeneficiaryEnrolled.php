@@ -12,6 +12,10 @@ class BeneficiaryEnrolled extends Notification
 {
     use Queueable;
 
+    public $full_name;
+    public $notification_email;
+    public $notification_message;
+
     /**
      * Create a new notification instance.
      *
@@ -19,7 +23,7 @@ class BeneficiaryEnrolled extends Notification
      */
     public function __construct(Beneficiary $beneficiary, $message)
     {
-        $this->full_name = $beneficiary->user->designation->designation.' '
+        $this->full_name = $beneficiary->user->designation->name.' '
                             .$beneficiary->user->first_name.' '
                             .$beneficiary->user->middle_name.' '
                             .$beneficiary->user->last_name;

@@ -97,7 +97,7 @@
                                                 <label for="beneficiary" class="font-weight-bold">{{ __('Beneficiary') }}</label>
                                                 <input type="text" readonly class="form-control  border-input-primary" id="beneficiary"
                                                     value="{{ $dispute->reportedBy->user_no.' | '
-                                                    .$dispute->ReportedBy->designation->designation.' '
+                                                    .$dispute->ReportedBy->designation->name.' '
                                                     .$dispute->reportedBy->first_name.' '
                                                     .$dispute->reportedBy->middle_name.' '
                                                     .$dispute->reportedBy->last_name
@@ -111,11 +111,11 @@
                                                     class="form-control  border-input-primary" id="staff"
                                                     value="@if (is_null($dispute->staff_id)){{ __('Unassigned') }}
                                                             @else{{
-                                                                $dispute->assignedTo->designation->designation.' '
+                                                                $dispute->assignedTo->designation->name.' '
                                                                 .$dispute->assignedTo->first_name.' '
                                                                 .$dispute->assignedTo->middle_name.' '
                                                                 .$dispute->assignedTo->last_name.' | '
-                                                                .$dispute->staff->office
+                                                                .$dispute->staff->center->location
                                                             }}@endif">
                                             </div>
                                         </div>

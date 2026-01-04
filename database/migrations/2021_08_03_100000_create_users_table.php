@@ -18,7 +18,7 @@ class CreateUsersTable extends Migration
             $table->string('user_no')->unique();
             $table->string('name')->unique();
             $table->string('email')->unique()->nullable();
-            $table->BigInteger('designation_id')->unsigned();
+            $table->BigInteger('salutation_id')->unsigned();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('first_name');
@@ -34,7 +34,7 @@ class CreateUsersTable extends Migration
             $table->softDeletes();
 
             // Foreign Keys
-            $table->foreign('designation_id')->references('id')->on('designations');
+            $table->foreign('salutation_id')->references('id')->on('designations');
             $table->foreign('user_role_id')->references('id')->on('user_roles');
         });
     }

@@ -76,7 +76,7 @@
                                             style="height: 100%; width: 100px; " alt="beneficiary image">
                                         <div class="media-body">
                                             <h4 class="text-capitalize font-weight-bold text-primary mb-3">
-                                                {{ $beneficiary->user->designation->designation.' '
+                                                {{ $beneficiary->user->designation->name.' '
                                                     .$beneficiary->user->first_name.' '
                                                     .$beneficiary->user->middle_name.' '
                                                     .$beneficiary->user->last_name

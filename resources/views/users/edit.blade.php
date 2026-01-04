@@ -123,10 +123,10 @@
                                                 @if ($designations->count())
                                                     @foreach ($designations as $designation)
                                                         <option value="{{ $designation->id }}"
-                                                        @if ($designation->id === $user->designation_id)
+                                                        @if ($designation->id === $user->salutation_id)
                                                             selected="selected"
                                                         @endif
-                                                        >{{ __($designation->designation) }}
+                                                        >{{ __($designation->name) }}
                                                         </option>
                                                     @endforeach
                                                 @else

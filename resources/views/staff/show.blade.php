@@ -69,7 +69,7 @@
                                             style="height: 100%; width: 100px;" alt="staff image">
                                         <div class="media-body">
                                             <h4 class="text-capitalize font-weight-bold text-primary mb-3">
-                                                {{ $staff->user->designation->designation.' '
+                                                {{ $staff->user->designation->name.' '
                                                     .$staff->user->first_name.' '
                                                     .$staff->user->middle_name.' '
                                                     .$staff->user->last_name
@@ -150,7 +150,7 @@
                                         </div>
                                         <div class="col-md-3 mb-3">
                                             <label for="office" class="font-weight-bold">{{ __('Office') }}</label>
-                                            <input type="text" readonly class="form-control  border-input-primary" value="{{ $staff->office }}">
+                                            <input type="text" readonly class="form-control  border-input-primary" value="{{ $staff->center->location }}">
                                         </div>
                                         <div class="col-md-3 mb-3">
                                             <label for="assignment" class="font-weight-bold">{{ __('Assignment') }}</label>

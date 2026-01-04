@@ -38,7 +38,7 @@ class StaffController extends Controller
     {
         // Start the query
         $query = Staff::has('user')
-            ->with('user')
+            ->with(['user', 'center'])
             ->latest();
 
         // Apply search if any
@@ -65,9 +65,10 @@ class StaffController extends Controller
     public function create()
     {
         // Get all the designations and bind them to the create  view
-        $designations = Designation::get(['id', 'designation']);
+        $designations = Designation::get(['id', 'name']);
+        $centers = \App\Models\Center::get(['id', 'name', 'location']);
 
-        return view('staff.create', compact('designations'));
+        return view('staff.create', compact('designations', 'centers'));
     }
 
     /**
@@ -94,7 +95,7 @@ class StaffController extends Controller
             'last_name' => ['required', 'min:3', 'string', 'max:50'],
             'tel_no' => ['required', 'string', 'max:15'],
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
-            'office' => ['required', 'string', 'max:50'],
+            'office' => ['required', 'integer', 'exists:centers,id'],
         ]);
 
         /**
@@ -111,7 +112,7 @@ class StaffController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make('Alas%2021');
-        $user->designation_id = $request->designation;
+        $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
@@ -177,7 +178,8 @@ class StaffController extends Controller
             $staff = new Staff();
 
             $staff->user_id = $user->id;
-            $staff->office = $request->office;
+            $staff->center_id = $request->office;
+            $staff->designation_id = $request->designation;
 
             /**
              * Save the user to the database
@@ -205,7 +207,7 @@ class StaffController extends Controller
     public function show($locale, $id)
     {
         //Find staff information by Id and return a profile view
-        $staff = Staff::with('user')->findOrFail($id);
+        $staff = Staff::with(['user', 'center'])->findOrFail($id);
 
         $disputes = Dispute::with(
             'assignedTo:first_name,middle_name,last_name,user_no',
@@ -265,12 +267,13 @@ class StaffController extends Controller
     public function edit($locale, $id)
     {
         // Find staff information by Id and return a edit view
-        $staff = Staff::with('user')->findOrFail($id);
+        $staff = Staff::with(['user', 'center'])->findOrFail($id);
 
         // Get all the designations and bind them to the create  view
-        $designations = Designation::get(['id', 'designation']);
+        $designations = Designation::get(['id', 'name']);
+        $centers = \App\Models\Center::get(['id', 'name', 'location']);
 
-        return view('staff.edit', compact('staff', 'designations'));
+        return view('staff.edit', compact('staff', 'designations', 'centers'));
     }
 
     /**
@@ -298,7 +301,7 @@ class StaffController extends Controller
             'last_name' => ['required', 'min:3', 'string', 'max:50'],
             'tel_no' => ['required', 'string', 'max:15'],
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
-            'office' => ['required', 'string', 'max:50'],
+            'office' => ['required', 'integer', 'exists:centers,id'],
         ]);
 
         /**
@@ -315,7 +318,7 @@ class StaffController extends Controller
 
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->designation_id = $request->designation;
+        $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
@@ -394,7 +397,8 @@ class StaffController extends Controller
 
         if ($user) {
 
-            $staff->office = $request->office;
+            $staff->center_id = $request->office;
+            $staff->designation_id = $request->designation;
 
             /**
              * Save the user to the database

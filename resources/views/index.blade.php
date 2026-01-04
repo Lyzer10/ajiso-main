@@ -20,30 +20,22 @@
 @endsection
 
 @section('hero')
-    <div class="row w-100 mx-0">
-      <div class="col-12 px-0">
-        <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
-        <div class="carousel-inner">
-          <div class="carousel-item active">
-            <div class="d-flex align-items-center justify-content-center text-center" style="background: url('/assets/images/hero-image.jpg') center/cover no-repeat; height:80vh;">
-
-                <!-- Overlay -->
-                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);"></div>
-
-                <div data-aos="zoom-out">
-                      <div class="d-flex flex-column align-items-center justify-content-center">
-                          <h1>{{ __('AJISO Legal Aid Digital System') }}</h1>
-                          <h2>{{ __('Action for Justice in Society') }}</h2>
-                          <div class="text-center text-lg-start">
-                              <a href="#about" class="btn-get-started scrollto">{{ __('Get Started') }}</a>
-                          </div>
-                      </div>
-                  </div>
+    <div class="container">
+        <div class="row align-items-center justify-content-between" style="min-height: 70vh;">
+            <div class="col-lg-6 pt-5 pt-lg-0" data-aos="zoom-out">
+                <h1 class="text-dark">{{ __('AJISO Legal Aid Digital System') }}</h1>
+                <h2 class="text-muted">{{ __('Action for Justice in Society') }}</h2>
+                <p class="text-muted mb-4">
+                    {{ __('We connect people with legal support, streamline case management, and provide real-time visibility for both beneficiaries and legal aid providers across Tanzania.') }}
+                </p>
+                <div class="text-center text-lg-start">
+                    <a href="#about" class="btn-get-started scrollto">{{ __('Get Started') }}</a>
+                </div>
             </div>
-          </div>
+            <div class="col-lg-5 hero-img text-center" data-aos="zoom-out" data-aos-delay="200">
+                <img src="{{ asset('assets/images/hero-img.png') }}" class="img-fluid animated" alt="AJISO on devices">
+            </div>
         </div>
-      </div>
-      </div>
     </div>
 @endsection
 
@@ -282,7 +274,7 @@
                     </a>
                     <div id="faq-list-6" class="collapse" data-bs-parent=".faq-list">
                         <p>
-                            {{ __('When facing any problem with the system do not hesitate to contact us for real-time support through: Phone: +255 000 000 000 info@ajiso.org') }}
+                            {{ __('When facing any problem with the system do not hesitate to contact us for real-time support through: info@ajiso.org') }}
                         </p>
                     </div>
                 </li>

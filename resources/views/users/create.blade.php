@@ -93,7 +93,7 @@
                                     @if ($designations->count())
                                         @foreach ($designations as $designation)
                                             <option value="{{ $designation->id }}">
-                                                {{ __($designation->designation) }}
+                                                {{ __($designation->name) }}
                                             </option>
                                         @endforeach
                                     @else

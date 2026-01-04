@@ -24,7 +24,7 @@ class StaffDisputeAssigned extends Notification
      */
     public function __construct(Staff $staff, Dispute $dispute, $message)
     {
-        $this->full_name = $staff->user->designation->designation . ' '
+        $this->full_name = $staff->user->designation->name . ' '
             . $staff->user->first_name . ' '
             . $staff->user->middle_name . ' '
             . $staff->user->last_name;

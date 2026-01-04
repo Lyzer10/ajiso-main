@@ -90,8 +90,8 @@
     height: 100vh;
     width: 280px;
     overflow: hidden;
-    background: #fbfbfb;
-    box-shadow: 2px 0 32px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(180deg, #0f6aa0 0%, #0b4a78 100%);
+    box-shadow: 2px 0 24px rgba(8, 52, 86, 0.35);
     -webkit-transition: all 0.3s ease 0s;
     transition: all 0.3s ease 0s;
 }
@@ -120,27 +120,27 @@
 
 .sidebar-header {
     padding: 19px 32px 20px;
-    background: #fbfbfb;
-    border-bottom: 1px solid #0498c0;
+    background: rgba(6, 48, 78, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .sidebar-menu .logo {
     text-align: center;
-    color: #036f8b;
+    color: #e8f6ff;
 }
 
 .logo h1 {
-    color: #036f8b;
+    color: #e8f6ff;
 }
 
 .logo p {
-    color: #036f8b;
+    color: #e8f6ff;
 }
 
 .logo a {
     display: inline-block;
     max-width: 120px;
-    color: #036f8b;
+    color: #e8f6ff;
 }
 
 .metismenu > li > a {
@@ -150,7 +150,7 @@
 .metismenu li a {
     position: relative;
     display: block;
-    color: #036f8b;
+    color: #d6efff;
     font-size: 15px;
     text-transform: capitalize;
     padding: 15px 15px;
@@ -159,7 +159,7 @@
 }
 
 .metismenu li a i {
-    color: #036f8b;
+    color: #cfe7ff;
     -webkit-transition: all 0.3s ease 0s;
     transition: all 0.3s ease 0s;
 }
@@ -170,7 +170,7 @@
     font-family: fontawesome;
     right: 15px;
     top: 12px;
-    color: #036f8b;
+    color: #cfe7ff;
     font-size: 20px;
 }
 
@@ -201,23 +201,23 @@
 
 .metismenu > li:hover > a {
     color: #fff;
-    background: #0498c0;
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .metismenu > li.active > a {
     color: #fff;
-    background: #0498c0;
-    border-radius: 2px !important;
+    background: linear-gradient(90deg, #16a3d7 0%, #0f7cc0 100%);
+    border-radius: 6px !important;
 }
 
 .metismenu li:hover > a,
 .metismenu li.active > a {
-    color: #036f8b;
+    color: #fff;
 }
 
 .metismenu li:hover > a i,
 .metismenu li.active > a i {
-    color: #036f8b;
+    color: #fff;
 }
 
 .metismenu li li a:after {

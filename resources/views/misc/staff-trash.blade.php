@@ -63,7 +63,7 @@
                                 <tr>
                                     <td>{{ $staf->id }}</td>
                                     <td>{{ $staf->user_id }}</td>
-                                    <td>{{ $staf->office }}</td>
+                                    <td>{{ $staf->center->location ?? 'N/A' }}</td>
                                     <td>{{ Carbon\Carbon::parse($staf->created_at)->format('d-m-Y H:I:s') }}</td>
                                     <td>{{ __('Legal Aid Providers') }}</td>
                                     <td>{{ Carbon\Carbon::parse($staf->deleted_at)->format('d-m-Y H:I:s') }}</td>

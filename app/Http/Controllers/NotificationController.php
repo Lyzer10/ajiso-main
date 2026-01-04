@@ -64,7 +64,7 @@ class NotificationController extends Controller
         $staff = Staff::has('user')
                         ->with('user')
                         ->latest()
-                        ->get(['id','user_id','office']);
+                        ->get(['id','user_id','center_id']);
                         
         return view('notifications.create', compact('users', 'staff', 'beneficiaries'));
     }
@@ -131,7 +131,7 @@ class NotificationController extends Controller
                 $staff = Staff::has('user')
                                 ->with('user')
                                 ->latest()
-                                ->get(['id','user_id','office']);
+                                ->get(['id','user_id','center_id']);
                 
                 // Prepare the recipients
                 $recipients = $staff;
@@ -160,7 +160,7 @@ class NotificationController extends Controller
                                 ->with('user')
                                 ->where('id', $search)
                                 ->latest()
-                                ->get(['id','user_id','office']);
+                                ->get(['id','user_id','center_id']);
                 
                 // Prepare the recipients                
                 $recipients = $staff;

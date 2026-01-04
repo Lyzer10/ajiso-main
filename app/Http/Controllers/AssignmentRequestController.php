@@ -218,7 +218,7 @@ class AssignmentRequestController extends Controller
             $staff = Staff::with('user.designation')
                 ->findOrFail($assignment_request->staff_id);
 
-            $staff_title = $staff->user->designation->designation;
+            $staff_title = $staff->user->designation->name;
             $staff_name  = $staff->user->first_name . ' '
                 . $staff->user->middle_name . ' '
                 . $staff->user->last_name;
@@ -337,7 +337,7 @@ class AssignmentRequestController extends Controller
             $dispute = Dispute::findOrFail((int) $assignment_request->dispute) ?? NULL;
 
             // Staff infos
-            $staff_title = $staff->user->designation->designation;
+            $staff_title = $staff->user->designation->name;
             $staff_name = $staff->user->first_name . ' '
                 . $staff->user->middle_name . ' '
                 . $staff->user->last_name;
@@ -433,7 +433,7 @@ class AssignmentRequestController extends Controller
             $dispute = Dispute::findOrFail((int) $assignment_request->dispute) ?? NULL;
 
             // Staff infos
-            $staff_title = $staff->user->designation->designation;
+            $staff_title = $staff->user->designation->name;
             $staff_name = $staff->user->first_name . ' '
                 . $staff->user->middle_name . ' '
                 . $staff->user->last_name;

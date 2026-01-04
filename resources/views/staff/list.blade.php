@@ -80,7 +80,7 @@
                                         <td>{{ __('@'.$staf->user->name) }}</td>
                                         <td>{{ __($staf->user->first_name.' '.$staf->user->middle_name.' '.$staf->user->last_name) }}</td>
                                         <td>{{ __($staf->user->email) }}</td>
-                                        <td>{{ __($staf->office) }}</td>
+                                        <td>{{ __($staf->center->location) }}</td>
                                         <td>
                                             <span class="@if ($staf->is_assigned === 1) text-success @else text-danger @endif">
                                                 {{ ($staf->is_assigned == 1) ? __('assigned') : __('unassigned') }}

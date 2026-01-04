@@ -24,7 +24,7 @@ class DesignationController extends Controller
      */
     public function index()
     {
-        $designations = Designation::get(['id', 'designation']);
+        $designations = Designation::get(['id', 'name']);
 
         return view('manager.designations', compact('designations'));
 
@@ -55,7 +55,7 @@ class DesignationController extends Controller
          * @return \Illuminate\Contracts\Validation\Validator
          */
         $this->validate($request, [
-            'designation' => ['required', 'string', 'min:3', 'max:255'],
+            'name' => ['required', 'string', 'min:3', 'max:255'],
         ]);
 
         /**
@@ -67,7 +67,7 @@ class DesignationController extends Controller
 
         $designation = new Designation();
 
-        $designation->designation = $request->designation;
+        $designation->name = $request->name;
 
         /**
          * Save the type to the database
@@ -125,7 +125,7 @@ class DesignationController extends Controller
          * @return \Illuminate\Contracts\Validation\Validator
          */
         $this->validate($request, [
-            'designation' => ['required', 'string', 'min:3', 'max:255'],
+            'name' => ['required', 'string', 'min:3', 'max:255'],
         ]);
 
         /**
@@ -137,7 +137,7 @@ class DesignationController extends Controller
 
         $designation = Designation::findOrFail($id);
 
-        $designation->designation = $request->designation;
+        $designation->name = $request->name;
 
         /**
          * Update the type to the database

@@ -108,7 +108,7 @@
                                                     @if ($designation->id === $user->designation->id)
                                                         selected="selected"
                                                     @endif
-                                                    >{{ __($designation->designation) }}
+                                                    >{{ __($designation->name) }}
                                                     </option>
                                                 @endforeach
                                             @else
@@ -318,9 +318,59 @@
                                                 <strong>{{ $message }}</strong>
                                             </span>
                                         @enderror
-                                    </div>
                                 </div>
-                            </fieldset>
+                            </div>
+                            <div class="form-row">
+                                <div class="col-md-3 mb-3">
+                                    <label class="selectTribe font-weight-bold">{{ __('Tribe') }}<sup class="text-danger">*</sup></label>
+                                    <select id="tribe" aria-describedby="selectTribe"
+                                        class="select2 select2-container--default border-input-primary @error('tribe') is-invalid @enderror"
+                                        name="tribe" required autocomplete="tribe" style="width: 100%;">
+                                        <option hidden disabled selected value>{{ __('Choose tribe') }}</option>
+                                        @if ($tribes->count())
+                                            @foreach ($tribes as $tribe)
+                                                <option value="{{ $tribe->id }}"
+                                                @if ($tribe->id === $beneficiary->tribe_id)
+                                                    selected="selected"
+                                                @endif
+                                                >{{ __($tribe->tribe) }}</option>
+                                            @endforeach
+                                        @else
+                                            <option>{{ __('No tribes found') }}</option>
+                                        @endif
+                                    </select>
+                                    @error('tribe')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="selectReligion font-weight-bold">{{ __('Religion') }}<sup class="text-danger">*</sup></label>
+                                    <select id="religion" aria-describedby="selectReligion"
+                                        class="select2 select2-container--default border-input-primary @error('religion') is-invalid @enderror"
+                                        name="religion" required autocomplete="religion" style="width: 100%;">
+                                        <option hidden disabled selected value>{{ __('Choose religion') }}</option>
+                                        @if ($religions->count())
+                                            @foreach ($religions as $religion)
+                                                <option value="{{ $religion->id }}"
+                                                @if ($religion->id === $beneficiary->religion_id)
+                                                    selected="selected"
+                                                @endif
+                                                >{{ __($religion->religion) }}</option>
+                                            @endforeach
+                                        @else
+                                            <option>{{ __('No religions found') }}</option>
+                                        @endif
+                                    </select>
+                                    @error('religion')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            </div>
+                        </fieldset>
                             <fieldset class="form-group border p-2">
                                 <legend class="w-auto pl-2 h6">{{ __('~ Marital Information') }}</legend>
                                 <div class="form-row">
@@ -350,7 +400,7 @@
                                         @enderror
                                     </div>
 
-                                    {{-- <div class="col-md-3 mb-3">
+                                    <div class="col-md-3 mb-3">
                                         <label class="selectFormMarriage font-weight-bold">{{ __('Form of Marriage') }}<sup class="text-danger">*</sup></label>
                                         <select id="form_of_marriage" aria-describedby="selectFormMarriage"
                                             class="select2 select2-container--default   border-input-primary @error('form_of_marriage') is-invalid @enderror"
@@ -410,7 +460,7 @@ value="{{ (!empty($beneficiary->marriage_date) && $beneficiary->marriage_date !=
                                                     <strong>{{ $message }}</strong>
                                                 </span>
                                         @enderror
-                                    </div> --}}
+                                    </div>
 
                                     <div class="col-md-3 mb-3">
                                         <label for="no_of_children" class="font-weight-bold">{{ __('Number of Children') }}<sup class="text-danger">*</sup></label>

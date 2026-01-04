@@ -13,6 +13,11 @@ class StaffDisputeUnassigned extends Notification
 {
     use Queueable;
 
+    public $full_name;
+    public $dispute_no;
+    public $notification_email;
+    public $notification_message;
+
     /**
      * Create a new notification instance.
      *
@@ -20,7 +25,7 @@ class StaffDisputeUnassigned extends Notification
      */
     public function __construct(Staff $staff, Dispute $dispute, $message)
     {
-        $this->full_name = $staff->user->designation->designation.' '
+        $this->full_name = $staff->user->designation->name.' '
                             .$staff->user->first_name.' '
                             .$staff->user->middle_name.' '
                             .$staff->user->last_name;

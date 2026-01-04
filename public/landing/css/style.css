@@ -287,7 +287,7 @@ h6 {
     font-weight: 500;
     text-transform: none;
     /* color: #01036f; */
-    color: #036f8b;
+    color: #fff;
 }
 .navbar .dropdown ul a i {
     font-size: 12px;
@@ -296,7 +296,8 @@ h6 {
 .navbar .dropdown ul .active:hover,
 .navbar .dropdown ul li:hover > a {
     /* color: #0498c0; */
-    color: #036f8b;
+    color: #fff;
+    background: #0498c0;
 }
 .navbar .dropdown:hover > ul {
     opacity: 1;

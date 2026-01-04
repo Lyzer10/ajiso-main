@@ -79,7 +79,7 @@
                                                 @if ($designation->id === $staff->user->designation->id)
                                                     selected="selected"
                                                 @endif>
-                                                {{ __($designation->designation) }}
+                                                {{ __($designation->name) }}
                                             </option>
                                         @endforeach
                                     @else
@@ -94,9 +94,19 @@
                             </div>
                             <div class="col-md-2 mb-3 ">
                                 <label for="office " class="font-weight-bold ">{{ __('Office Location') }}<sup class="text-danger ">*</sup></label>
-                                <input type="text "
-                                    class="form-control  border-input-primary" name="office" id="office"
-                                    placeholder="Eg. Moshi, Kilimanjaro" value="{{ $staff->office }}" required autocomplete="office">
+                                <select name="office" id="office"
+                                    class="form-control border-input-primary @error('office') is-invalid @enderror" required>
+                                    <option hidden disabled value>{{ __('Choose office location') }}</option>
+                                    @if ($centers->count())
+                                        @foreach ($centers as $center)
+                                            <option value="{{ $center->id }}" {{ $staff->center_id == $center->id ? ' selected="selected"' : '' }}>
+                                                {{ __($center->location) }}
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option>{{ __('No centers found') }}</option>
+                                    @endif
+                                </select>
                                 @error('office')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

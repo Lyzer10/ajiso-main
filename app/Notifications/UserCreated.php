@@ -12,6 +12,10 @@ class UserCreated extends Notification
 {
     use Queueable;
 
+    public $full_name;
+    public $notification_email;
+    public $notification_message;
+
     /**
      * Create a new notification instance.
      *
@@ -19,7 +23,7 @@ class UserCreated extends Notification
      */
     public function __construct(User $user, $message = null)
     {
-        $this->full_name = $user->designation->designation.' '
+        $this->full_name = $user->designation->name.' '
                             .$user->first_name.' '
                             .$user->middle_name.' '
                             .$user->last_name;

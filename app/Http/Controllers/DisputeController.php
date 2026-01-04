@@ -339,7 +339,7 @@ class DisputeController extends Controller
         $staff = Staff::has('user')
             ->with('user')
             ->latest()
-            ->get(['id', 'user_id', 'office']);
+            ->get(['id', 'user_id', 'center_id']);
 
         // Get all the dispute_statuses and bind them to the create  view
         $dispute_statuses = DisputeStatus::latest()
@@ -445,7 +445,7 @@ class DisputeController extends Controller
 
                 $beneficiary = Beneficiary::has('user')
                     ->with(
-                        'user:id,email,tel_no,first_name,middle_name,last_name,designation_id'
+                        'user:id,email,tel_no,first_name,middle_name,last_name,salutation_id'
                     )
                     ->select(['id', 'user_id', 'created_at'])
                     ->findOrFail($request->beneficiary);
@@ -454,7 +454,7 @@ class DisputeController extends Controller
                 $dest_addr = Str::remove('+', $beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
-                $title = $beneficiary->user->designation->designation;
+                $title = $beneficiary->user->designation->name;
 
                 $full_name = $beneficiary->user->first_name . ' ' . $beneficiary->user->middle_name . ' ' . $beneficiary->user->last_name;
                 $beneficiary_no = $beneficiary->user->user_no;
@@ -584,7 +584,7 @@ class DisputeController extends Controller
                 // Query beneficiary
                 $beneficiary = Beneficiary::has('user')
                     ->with(
-                        'user:id,tel_no,first_name,middle_name,last_name,designation_id'
+                        'user:id,tel_no,first_name,middle_name,last_name,salutation_id'
                     )
                     ->select(['id', 'user_id', 'created_at'])
                     ->findOrFail($request->beneficiary);
@@ -593,7 +593,7 @@ class DisputeController extends Controller
                 $dest_addr = Str::remove('+', $beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
-                $title = $beneficiary->user->designation->designation;
+                $title = $beneficiary->user->designation->name;
 
                 $full_name = $beneficiary->user->first_name . ' ' . $beneficiary->user->middle_name . ' ' . $beneficiary->user->last_name;
                 $created_at = Carbon::parse($beneficiary->created_at)->format('d/m/Y');
@@ -656,7 +656,7 @@ class DisputeController extends Controller
             $dispute = collect();
 
             // Get all the staff and bind them to the create  view
-            $staff = Staff::has('user')->with('user')->get(['id', 'user_id', 'office']);
+            $staff = Staff::has('user')->with('user', 'center')->get(['id', 'user_id', 'center_id']);
 
             // return view compacted with dispute(s) and staff info
             return response(view('disputes.assignment', compact('disputes', 'dispute', 'staff')));
@@ -670,7 +670,7 @@ class DisputeController extends Controller
             $disputes = collect();
 
             // Get all the staff and bind them to the create  view
-            $staff = Staff::where('user')->with('user')->get(['id', 'user_id', 'office']);
+            $staff = Staff::has('user')->with('user', 'center')->get(['id', 'user_id', 'center_id']);
 
             // return view compacted with dispute(s) and staff info
             return response(view('disputes.assignment', compact('dispute', 'disputes', 'staff')));
@@ -749,7 +749,7 @@ class DisputeController extends Controller
                 // Get full name of the staff
                 $staff_assigned = Staff::has('user')
                     ->with(
-                        'user:id,email,tel_no,first_name,middle_name,last_name,designation_id'
+                        'user:id,email,tel_no,first_name,middle_name,last_name,salutation_id'
                     )
                     ->select(['id', 'user_id', 'is_assigned'])
                     ->findOrFail($dispute->staff_id);
@@ -761,7 +761,7 @@ class DisputeController extends Controller
 
                 // Prepare the dispute activity information
 
-                $staff_title = $staff_assigned->user->designation->designation;
+                $staff_title = $staff_assigned->user->designation->name;
                 $staff_name = $staff_assigned->user->first_name . ' '
                     . $staff_assigned->user->middle_name . ' '
                     . $staff_assigned->user->last_name;
@@ -786,13 +786,13 @@ class DisputeController extends Controller
                 // Get beneficiary information
                 $beneficiary = Beneficiary::has('user')
                     ->with(
-                        'user:id,email,tel_no,first_name,middle_name,last_name,designation_id'
+                        'user:id,email,tel_no,first_name,middle_name,last_name,salutation_id'
                     )
                     ->select(['id', 'user_id'])
                     ->findOrFail($dispute->beneficiary_id);
 
                 // Get title of the beneficiary
-                $beneficiary_title = $beneficiary->user->designation->designation;
+                $beneficiary_title = $beneficiary->user->designation->name;
 
                 // Get full name of the beneficiary
                 $beneficiary_name = $beneficiary->user->first_name . ' '
@@ -834,14 +834,14 @@ class DisputeController extends Controller
                     // Get full name of the staff
                     $last_assigned_staff = Staff::has('user')
                         ->with(
-                            'user:id,email,tel_no,first_name,middle_name,last_name,designation_id'
+                            'user:id,email,tel_no,first_name,middle_name,last_name,salutation_id'
                         )
                         ->select(['id', 'user_id', 'is_assigned'])
                         ->findOrFail($dispute_last_staff);
 
                     // Staff infos
 
-                    $last_staff_title = $last_assigned_staff->user->designation->designation;
+                    $last_staff_title = $last_assigned_staff->user->designation->name;
                     $last_staff_name = $last_assigned_staff->user->first_name . ' '
                         . $last_assigned_staff->user->middle_name . ' '
                         . $last_assigned_staff->user->last_name;

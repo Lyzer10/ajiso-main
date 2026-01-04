@@ -32,7 +32,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'designation_id',
+        'salutation_id',
         'first_name',
         'middle_name',
         'last_name',
@@ -69,7 +69,7 @@ class User extends Authenticatable
     public function designation()
     {
 
-        return $this->belongsTo(Designation::class);
+        return $this->belongsTo(Designation::class, 'salutation_id');
     }
 
     //Get the role associated with the user
