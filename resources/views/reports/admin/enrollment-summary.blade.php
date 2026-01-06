@@ -261,7 +261,9 @@
                 var chart = am4core.create(containerId, am4charts.XYChart);
                 chart.hiddenState.properties.opacity = 0;
                 chart.data = data;
-                chart.numberFormatter.numberFormat = "#'%'";
+                chart.numberFormatter.numberFormat = "#";
+                chart.fontFamily = "Arial, sans-serif";
+                chart.fontSize = 12;
 
                 var categoryAxis = chart.yAxes.push(new am4charts.CategoryAxis());
                 categoryAxis.dataFields.category = "category";
@@ -276,7 +278,10 @@
                 valueAxis.strictMinMax = true;
                 valueAxis.renderer.grid.template.strokeOpacity = 0.1;
                 valueAxis.renderer.labels.template.fontSize = 11;
-                valueAxis.numberFormatter.numberFormat = "#'%'";
+                valueAxis.numberFormatter.numberFormat = "#";
+                valueAxis.renderer.labels.template.adapter.add("text", function (text) {
+                    return text + "%";
+                });
                 valueAxis.title.text = "{{ __('Percent') }}";
 
                 var series = chart.series.push(new am4charts.ColumnSeries());
@@ -294,9 +299,19 @@
                 labelBullet.label.horizontalCenter = "left";
                 labelBullet.label.dx = 10;
                 labelBullet.label.fontSize = 11;
+                labelBullet.label.fill = am4core.color("#0f172a");
+                labelBullet.label.adapter.add("text", function (text, target) {
+                    if (!target.dataItem) {
+                        return "";
+                    }
+                    var value = target.dataItem.valueX;
+                    if (!value) {
+                        return "";
+                    }
+                    return text;
+                });
 
-                chart.exporting.menu = new am4core.ExportMenu();
-                chart.exporting.filePrefix = prefix;
+                chart.exporting.enabled = false;
 
                 return chart;
             }
