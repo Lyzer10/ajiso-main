@@ -33,6 +33,7 @@ return [
     'beem' => [
         'key' => env('BEEM_AUTH_KEY'),
         'secret' => env('BEEM_SECRET_AUTH_KEY'),
+        'sender' => env('BEEM_SENDER', 'AJISO'),
     ],
 
 ];

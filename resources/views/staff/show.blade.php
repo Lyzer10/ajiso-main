@@ -215,23 +215,12 @@
                                         <td>{{ $dispute->typeOfService->type_of_service }}</td>
                                         <td>{{ $dispute->typeOfCase->type_of_case }}</td>
                                         <td>
-                                            {{-- TODO:Add a column color scheme in status table and compare here--}}
-                                            <span class="
-                                                @if ( $dispute->disputeStatus->dispute_status  === 'resolved')
-                                                    text-success
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'pending')
-                                                    text-warning font-italic
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'proceeding')
-                                                    text-primary
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'continue')
-                                                    text-info
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'referred')
-                                                    text-secondary
-                                                @else
-                                                    text-danger
-                                                @endif
-                                            ">
-                                            {{ $dispute->disputeStatus->dispute_status }}</span>
+                                            @php
+                                                $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                            @endphp
+                                            <span class="badge-status status-{{ $statusSlug }}">
+                                                {{ $dispute->disputeStatus->dispute_status }}
+                                            </span>
                                         </td>
                                         <td>
                                             <a href="{{ route('dispute.edit', [app()->getLocale(), $dispute->id]) }}" title="{{ __('Edit Dispute') }}">

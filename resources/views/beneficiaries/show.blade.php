@@ -76,8 +76,7 @@
                                             style="height: 100%; width: 100px; " alt="beneficiary image">
                                         <div class="media-body">
                                             <h4 class="text-capitalize font-weight-bold text-primary mb-3">
-                                                {{ $beneficiary->user->designation->name.' '
-                                                    .$beneficiary->user->first_name.' '
+                                                {{ $beneficiary->user->first_name.' '
                                                     .$beneficiary->user->middle_name.' '
                                                     .$beneficiary->user->last_name
                                                 }}
@@ -270,16 +269,6 @@
                                                     <label for="occupation_business" class="font-weight-bold">{{ __('Occupation / Business') }}</label>
                                                     <input type="text" readonly class="form-control  border-input-primary" id="occupation" value="{{ $beneficiary->occupation_business }}">
                                                 </div>
-                                                <div class="col-md-3 mb-3">
-                                                    <label for="monthly_income" class="font-weight-bold">{{ __('Monthly Income') }}</label>
-                                                    <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text  border-prepend-primary bg-prepend-primary" id="monthly_incom">TZS</span>
-                                                        </div>
-                                                        <input type="text" readonly class="form-control border-append-primary" id="monthly_income" aria-describedby="monthly_income"
-                                                            aria-label="Income (to the nearest Tzs)" value="{{ __($beneficiary->income->income) }}">
-                                                    </div>
-                                                </div>
                                             </div>
                                         </fieldset>
                                 </div>
@@ -332,23 +321,12 @@
                                         <td>{{ $dispute->typeOfService->type_of_service }}</td>
                                         <td>{{ $dispute->typeOfCase->type_of_case }}</td>
                                         <td>
-                                            {{-- TODO:Add a column color scheme in status table and compare here--}}
-                                            <span class="
-                                                @if ( $dispute->disputeStatus->dispute_status  === 'resolved')
-                                                    text-success
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'pending')
-                                                    text-warning font-italic
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'proceeding')
-                                                    text-primary
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'continue')
-                                                    text-info
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'referred')
-                                                    text-secondary
-                                                @else
-                                                    text-danger
-                                                @endif
-                                            ">
-                                            {{ $dispute->disputeStatus->dispute_status }}</span>
+                                            @php
+                                                $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                            @endphp
+                                            <span class="badge-status status-{{ $statusSlug }}">
+                                                {{ $dispute->disputeStatus->dispute_status }}
+                                            </span>
                                         </td>
                                     <td>
                                         @if (is_null($dispute->assignedTo))
@@ -397,5 +375,3 @@
         <!-- dispute list area end -->
     </div>
 @endsection
-
-

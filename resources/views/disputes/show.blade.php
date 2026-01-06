@@ -214,22 +214,10 @@
                                                             </td>
                                                             <td>{{ Carbon\Carbon::parse($occurrence->reported_on)->format('d-m-Y') }}</td>
                                                             <td>
-                                                                {{-- TODO : Add a column color scheme in status table and compare here--}}
-                                                                <span class="
-                                                                    @if ( $occurrence->disputeStatus->dispute_status  === 'resolved')
-                                                                        text-success
-                                                                    @elseif ( $occurrence->disputeStatus->dispute_status  === 'pending')
-                                                                        text-warning font-italic
-                                                                    @elseif ( $occurrence->disputeStatus->dispute_status  === 'proceeding')
-                                                                        text-primary
-                                                                    @elseif ( $occurrence->disputeStatus->dispute_status  === 'continue')
-                                                                        text-info
-                                                                    @elseif ( $occurrence->disputeStatus->dispute_status  === 'referred')
-                                                                        text-secondary
-                                                                    @else
-                                                                        text-danger
-                                                                    @endif
-                                                                ">
+                                                                @php
+                                                                    $statusSlug = \Illuminate\Support\Str::slug($occurrence->disputeStatus->dispute_status);
+                                                                @endphp
+                                                                <span class="badge-status status-{{ $statusSlug }}">
                                                                     {{ __($occurrence->disputeStatus->dispute_status) }}
                                                                 </span>
                                                             </td>

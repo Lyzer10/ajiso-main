@@ -249,10 +249,10 @@
                     $('#targetBeneficiary').prop("hidden", true);
     
                 }if (filter === 'targetlLegalAidProvider') {
-    
+
                     $('#targetlLegalAidProvider').prop("hidden", false);
                     $('#target_legal_aid_provider').prop("disabled", false);
-                    $('#target_beneficiary').prop("disabled", false);
+                    $('#target_beneficiary').prop("disabled", true);
                     $('#allLegalAidProviders').prop("hidden", true);
                     $('#allBeneficiaries').prop("hidden", true);
                     $('#allUsers').prop("hidden", true);

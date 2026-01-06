@@ -215,5 +215,21 @@
             );
             }
         );
+
+        $("#daterange-btn").on("click", function () {
+            var picker = $("#daterange").data("daterangepicker");
+            if (!picker) {
+                return;
+            }
+            if (picker.isShowing) {
+                picker.hide();
+            } else {
+                picker.show();
+            }
+        });
+
+        $("#daterange").on("apply.daterangepicker cancel.daterangepicker", function (ev, picker) {
+            picker.hide();
+        });
     </script>
 @endpush

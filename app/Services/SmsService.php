@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * A service for utilizing the Beem SMS API
@@ -24,6 +25,7 @@ class SmsService
     private $secret;
 
     private $headers;
+    private $sender;
 
     /**
      * Declare class __constructor
@@ -32,10 +34,34 @@ class SmsService
     {
         $this->key = config('services.beem.key');
         $this->secret = config('services.beem.secret');
+        $this->sender = config('services.beem.sender', 'AJISO');
         $this->headers = [
             'cache-control' => 'no-cache',
             'content-type' => 'application/json'
         ];
+    }
+
+    /**
+     * Normalize a phone number into Beem's expected format (e.g. 2557XXXXXXXX).
+     *
+     * @param  string|null  $phone
+     * @return string|null
+     */
+    public static function normalizeRecipient($phone)
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        if (strpos($digits, '0') === 0) {
+            $digits = '255' . substr($digits, 1);
+        } elseif (strpos($digits, '255') !== 0 && strlen($digits) === 9) {
+            $digits = '255' . $digits;
+        }
+
+        return $digits;
     }
 
     /**
@@ -46,9 +72,14 @@ class SmsService
      */
     public function sendSMS($recipients, $message)
     {
+        if (empty($recipients['dest_addr'])) {
+            Log::warning('SMS send skipped: empty destination address.');
+            return null;
+        }
+
         // Setup the transaction
         $data = array(
-            'source_addr' => 'AJISO',
+            'source_addr' => $this->sender,
             'encoding' => "0",
             'schedule_time' => '',
             'message' =>  $message,
@@ -60,7 +91,15 @@ class SmsService
         // Instantiate the transaction
         $response = Http::acceptJson()->withHeaders($this->headers)->withBasicAuth($this->key, $this->secret)
             ->post($this->send_url, $data);
-        //return $response;
+
+        if (!$response->successful()) {
+            Log::warning('SMS send failed.', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'dest_addr' => $recipients['dest_addr'],
+            ]);
+        }
+
         return $response->getStatusCode();
     }
 }

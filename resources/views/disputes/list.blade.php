@@ -5,6 +5,10 @@
 @endphp
 @section('title', 'AJISO | '.$title)
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('plugins/select2/css/select2.min.css') }}" />
+@endpush
+
 @section('breadcrumb')
     <div class="breadcrumbs-area clearfix">
         <h4 class="page-title pull-left">{{ __('Disputes') }}</h4>
@@ -31,13 +35,13 @@
                     <div class="header-title clearfix">
                         @canany(['isStaff'])
                             {{ __('My Disputes list') }}
-                             <form method="GET" action="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}" class="d-flex align-items-center pull-right mb-2">
+                             <form method="GET" action="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}" class="d-flex align-items-center pull-right mb-2 dispute-filter">
                                 <div class="d-flex align-items-center mr-4">
                                      <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control form-control-sm me-2 border-prepend-black p-2">
                                 <button type="submit" class="btn btn-sm btn-primary">{{ __('Search') }}</button>
                                 </div>
 
-                                <select name="status" class="form-select form-select-sm me-2 border-prepend-black p-2" onchange="this.form.submit()">
+                                <select name="status" class="select2 select2-container--default border-input-primary" style="width: 180px;" onchange="this.form.submit()">
                                     <option value="">{{ __('All Cases') }}</option>
                                     <option value="proceeding" {{ request('status') == 'proceeding' ? 'selected' : '' }}>
                                         {{ __('Proceeding') }}
@@ -58,11 +62,23 @@
                                 <a class="dropdown-item btn-link" href="{{ route('dispute.select.archive', app()->getLocale()) }}">{{ __('Archived') }}</a>
                             </div>
 
-                             <form method="GET" action="{{ route('disputes.list', [app()->getLocale()]) }}" class="d-flex align-items-center pull-right mb-2">
+                             <form method="GET" action="{{ route('disputes.list', [app()->getLocale()]) }}" class="d-flex align-items-center pull-right mb-2 dispute-filter">
                                 <div class="d-flex align-items-center mr-4">
                                      <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control form-control-sm me-2 border-prepend-black p-2">
                                 <button type="submit" class="btn btn-sm btn-primary">{{ __('Search') }}</button>
                                 </div>
+                                <select name="status" class="select2 select2-container--default border-input-primary" style="width: 200px;" onchange="this.form.submit()">
+                                    <option value="">{{ __('All Statuses') }}</option>
+                                    @if (!empty($dispute_statuses) && $dispute_statuses->count())
+                                        @foreach ($dispute_statuses as $dispute_status)
+                                            <option value="{{ $dispute_status->id }}" {{ (string) request('status') === (string) $dispute_status->id ? 'selected' : '' }}>
+                                                {{ __($dispute_status->dispute_status) }}
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option value="">{{ __('No statuses found') }}</option>
+                                    @endif
+                                </select>
                             </form>
                         @endcanany
                     </div>
@@ -129,23 +145,11 @@
                                     </td>
                                     <td>{{ Carbon\Carbon::parse($dispute->reported_on)->diffForHumans() }}</td>
                                     <td>
-                                        {{-- TODO:Add a column color scheme in status table and compare here--}}
-                                        <span class="
-                                            @if ( $dispute->disputeStatus->dispute_status  === 'resolved')
-                                                text-success
-                                            @elseif ( $dispute->disputeStatus->dispute_status  === 'pending')
-                                                text-warning font-italic
-                                            @elseif ( $dispute->disputeStatus->dispute_status  === 'proceeding')
-                                                text-primary
-                                            @elseif ( $dispute->disputeStatus->dispute_status  === 'continue')
-                                                text-info
-                                            @elseif ( $dispute->disputeStatus->dispute_status  === 'referred')
-                                                text-secondary
-                                            @else
-                                                text-danger
-                                            @endif
-                                        ">
-                                        {{ __($dispute->disputeStatus->dispute_status) }}
+                                        @php
+                                            $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                        @endphp
+                                        <span class="badge-status status-{{ $statusSlug }}">
+                                            {{ __($dispute->disputeStatus->dispute_status) }}
                                         </span>
                                     </td>
                                     <td class="d-flex justify-content-between">
@@ -186,6 +190,16 @@
 @push('scripts')
     {{-- Include the sweetalert --}}
     @include('modals.confirm-trash')
+
+    <script src="{{ asset('plugins/select2/js/select2.min.js') }}"></script>
+
+    <script type="text/javascript">
+        $(function() {
+            $('.select2').select2({
+                minimumResultsForSearch: Infinity
+            });
+        });
+    </script>
 
      <script>
     const searchInput = document.querySelector('input[name="search"]');

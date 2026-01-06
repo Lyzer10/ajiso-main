@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Models\AssignmentRequest;
 use App\Models\Staff;
 use Illuminate\Support\Facades\Gate;
+use App\Notifications\AssignmentRequest as AssignmentRequestNotice;
 use App\Notifications\RequestAccepted;
 use App\Notifications\RequestRejected;
 use Illuminate\Support\Facades\Notification;
@@ -222,7 +223,7 @@ class AssignmentRequestController extends Controller
             $staff_name  = $staff->user->first_name . ' '
                 . $staff->user->middle_name . ' '
                 . $staff->user->last_name;
-            $staff_dest_addr = Str::remove('+', $staff->user->tel_no);
+            $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
 
             $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
@@ -250,7 +251,7 @@ class AssignmentRequestController extends Controller
                     // Database & email 
 
                     # Notify new assigned assigned via email & DB
-                    Notification::send($staff, new AssignmentRequest($staff, $dispute, $staff_message));
+                    Notification::send($staff->user, new AssignmentRequestNotice($staff, $dispute, $staff_message));
                 }
             } catch (\Throwable $th) {
                 throw $th;
@@ -328,13 +329,11 @@ class AssignmentRequestController extends Controller
             activity()->log('Accepted re(un)assignment request');
 
             // Get the authenticated staff
-            $staff = User::has('staff')
-                ->with('staff')
-                ->findOrFail((int) $assignment_request->staff_id)
-                ->staff->id ?? NULL;
+            $staff = Staff::with('user.designation')
+                ->findOrFail((int) $assignment_request->staff_id);
 
             // Get the dispute
-            $dispute = Dispute::findOrFail((int) $assignment_request->dispute) ?? NULL;
+            $dispute = Dispute::findOrFail((int) $assignment_request->dispute_id) ?? NULL;
 
             // Staff infos
             $staff_title = $staff->user->designation->name;
@@ -342,7 +341,7 @@ class AssignmentRequestController extends Controller
                 . $staff->user->middle_name . ' '
                 . $staff->user->last_name;
 
-            $staff_dest_addr = Str::remove('+', $staff->user->tel_no);
+            $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
             $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
             $staff_message = 'Habari, ' . $staff_title . ' ' . $staff_name .
@@ -368,7 +367,7 @@ class AssignmentRequestController extends Controller
                     // Database & email 
 
                     # Notify new assigned assigned via email & DB
-                    Notification::send($staff, new RequestAccepted($staff, $dispute, $staff_message));
+                    Notification::send($staff->user, new RequestAccepted($staff, $dispute, $staff_message));
                 }
             } catch (\Throwable $th) {
                 throw $th;
@@ -424,13 +423,11 @@ class AssignmentRequestController extends Controller
 
 
             // Get the authenticated staff
-            $staff = User::has('staff')
-                ->with('staff')
-                ->findOrFail((int) $assignment_request->staff_id)
-                ->staff->id ?? NULL;
+            $staff = Staff::with('user.designation')
+                ->findOrFail((int) $assignment_request->staff_id);
 
             // Get the dispute
-            $dispute = Dispute::findOrFail((int) $assignment_request->dispute) ?? NULL;
+            $dispute = Dispute::findOrFail((int) $assignment_request->dispute_id) ?? NULL;
 
             // Staff infos
             $staff_title = $staff->user->designation->name;
@@ -438,7 +435,7 @@ class AssignmentRequestController extends Controller
                 . $staff->user->middle_name . ' '
                 . $staff->user->last_name;
 
-            $staff_dest_addr = Str::remove('+', $staff->user->tel_no);
+            $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
             $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
             $staff_message = 'Habari, ' . $staff_title . ' ' . $staff_name .
@@ -464,7 +461,7 @@ class AssignmentRequestController extends Controller
                     // Database & email 
 
                     # Notify new assigned assigned via email & DB
-                    Notification::send($staff, new RequestRejected($staff, $dispute, $staff_message));
+                    Notification::send($staff->user, new RequestRejected($staff, $dispute, $staff_message));
                 }
             } catch (\Throwable $th) {
                 throw $th;

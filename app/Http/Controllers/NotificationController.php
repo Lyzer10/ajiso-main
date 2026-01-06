@@ -112,76 +112,73 @@ class NotificationController extends Controller
             if ($publish_to === 'allUsers') {
 
                 // Load all the active user
-                $users = User::where('is_active', 1)
-                                ->latest()
-                                ->get(
-                                        [
-                                            'id','name','user_no','first_name',
-                                            'middle_name','last_name','email',
-                                            'tel_no', 'mobile_no'
-                                        ]
-                                );
-
-                // Prepare recipients
-                $recipients = $users;
+                $recipients = User::where('is_active', 1)
+                    ->latest()
+                    ->get(
+                        [
+                            'id', 'name', 'user_no', 'first_name',
+                            'middle_name', 'last_name', 'email',
+                            'tel_no', 'mobile_no'
+                        ]
+                    );
 
             }elseif ($publish_to === 'allLegalAidProviders') {
 
                 // Get all the staff
                 $staff = Staff::has('user')
-                                ->with('user')
-                                ->latest()
-                                ->get(['id','user_id','center_id']);
+                    ->with('user')
+                    ->latest()
+                    ->get(['id', 'user_id', 'center_id']);
                 
                 // Prepare the recipients
-                $recipients = $staff;
+                $recipients = $staff->map->user->filter()->values();
 
             }elseif ($publish_to === 'allBeneficiaries') {
 
                 // Get all the beneficiaries
                 $beneficiaries = Beneficiary::has('user')
-                                            ->with('user')
-                                            ->latest()
-                                            ->get(['id','user_id']);
+                    ->with('user')
+                    ->latest()
+                    ->get(['id', 'user_id']);
                 
                 // Prepare the recipients
-                $recipients = $beneficiaries;
+                $recipients = $beneficiaries->map->user->filter()->values();
 
             }elseif ($publish_to === 'targetlLegalAidProvider') {
 
                 $this->validate($request, [
-                    'legal_aid_provider' => ['required', 'numeric', 'max:255'],
+                    'legal_aid_provider' => ['required', 'integer', 'exists:staff,id'],
                 ]);
 
                 $search = $request->legal_aid_provider;
 
                 // Get all the target staff
                 $staff = Staff::has('user')
-                                ->with('user')
-                                ->where('id', $search)
-                                ->latest()
-                                ->get(['id','user_id','center_id']);
+                    ->with('user')
+                    ->where('id', $search)
+                    ->latest()
+                    ->first();
                 
                 // Prepare the recipients                
-                $recipients = $staff;
+                $recipients = $staff && $staff->user ? collect([$staff->user]) : collect();
 
             }elseif ($publish_to === 'targetBeneficiary') {
 
                 // validate individual publish_to value
                 $this->validate($request, [
-                    'beneficiary' => ['required', 'numeric', 'max:255'],
+                    'beneficiary' => ['required', 'integer', 'exists:beneficiaries,id'],
                 ]);
 
                 $search = $request->beneficiary;
 
                 // Get all the beneficiaries
                 $beneficiary = Beneficiary::has('user')
-                                            ->with('user')
-                                            ->where('id', $search)
-                                            ->latest()
-                                            ->get(['id','user_id']);
+                    ->with('user')
+                    ->where('id', $search)
+                    ->latest()
+                    ->first();
                 // Prepare the recipients
-                $recipients = $beneficiary;
+                $recipients = $beneficiary && $beneficiary->user ? collect([$beneficiary->user]) : collect();
 
             }else {
                 //return $disputes with error;

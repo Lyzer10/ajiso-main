@@ -115,7 +115,7 @@ class DisputeActivityController extends Controller
              */
 
             // Get tel no and add it to the recipient lits
-            $dest_addr = Str::remove('+', $user->tel_no);
+            $dest_addr = SmsService::normalizeRecipient($user->tel_no);
             $recipients = ['recipient_id' => 1, 'dest_addr'=> $dest_addr];
 
             // Get title of the beneficiary
@@ -280,7 +280,7 @@ class DisputeActivityController extends Controller
              */
 
             // Get tel no and add it to the recipient lits
-            $dest_addr = Str::remove('+', $beneficiary->user->tel_no);
+            $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
             $recipients = ['recipient_id' => 1, 'dest_addr'=> $dest_addr];
 
             // Get title of the beneficiary
@@ -345,7 +345,7 @@ class DisputeActivityController extends Controller
                         $sms->sendSMS($recipients, $message);
 
                         // Database & email
-                        Notification::send($beneficiary, new UpdateDisputeStatus($beneficiary, $message));
+                        Notification::send($beneficiary->user, new UpdateDisputeStatus($beneficiary, $message));
                     
                     }
 

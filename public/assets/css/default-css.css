@@ -411,7 +411,10 @@ Page section padding
 /* Colors */
 
 :root {
-    --primary-color: #4336FB;
+    --primary-color: rgb(0 153 255);
+    --primary-color-dark: rgb(0 122 204);
+    --primary-color-soft: rgba(0, 153, 255, 0.15);
+    --header-color: rgb(12 70 109);
 }
 
 #preloader {

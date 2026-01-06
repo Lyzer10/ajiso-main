@@ -62,6 +62,10 @@ class DisputeController extends Controller
                 )
                 ->latest();
 
+            // Filter by dispute status if provided
+            if ($statusId = request('status')) {
+                $query->where('dispute_status_id', (int) $statusId);
+            }
 
             // Search by beneficiary name
             if ($search = request('search')) {
@@ -73,12 +77,13 @@ class DisputeController extends Controller
             }
 
             $disputes = $query->paginate(10);
+            $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
         } else {
             return response('You are not authorized to perform this action!', 403);
         }
 
         //return $disputes;
-        return response(view('disputes.list', compact('disputes')));
+        return response(view('disputes.list', compact('disputes', 'dispute_statuses')));
     }
 
     /**
@@ -451,7 +456,7 @@ class DisputeController extends Controller
                     ->findOrFail($request->beneficiary);
 
                 // Send SMS both legal aid provider and beneficiary
-                $dest_addr = Str::remove('+', $beneficiary->user->tel_no);
+                $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
                 $title = $beneficiary->user->designation->name;
@@ -476,7 +481,7 @@ class DisputeController extends Controller
                         $sms->sendSMS($recipients, $message);
 
                         // Database & email
-                        Notification::send($beneficiary, new DisputeCreated($beneficiary, $dispute, $message));
+                        Notification::send($beneficiary->user, new DisputeCreated($beneficiary, $dispute, $message));
                     }
                 } catch (\Throwable $th) {
                     throw $th;
@@ -590,7 +595,7 @@ class DisputeController extends Controller
                     ->findOrFail($request->beneficiary);
 
                 // Send SMS both legal aid provider and beneficiary
-                $dest_addr = Str::remove('+', $beneficiary->user->tel_no);
+                $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
                 $title = $beneficiary->user->designation->name;
@@ -612,7 +617,7 @@ class DisputeController extends Controller
                         $sms->sendSMS($recipients, $message);
 
                         // Database & email
-                        Notification::send($beneficiary, new DisputeCreated($beneficiary, $dispute, $message));
+                        Notification::send($beneficiary->user, new DisputeCreated($beneficiary, $dispute, $message));
                     }
                 } catch (\Throwable $th) {
                     throw $th;
@@ -806,7 +811,7 @@ class DisputeController extends Controller
                 $assigned_at = Carbon::now()->format('d/m/Y');
 
                 // Beneficiary
-                $dest_addr = Str::remove('+', $beneficiary->user->tel_no);
+                $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
                 $message = 'Habari, ' . $beneficiary_title . ' ' . $beneficiary_name .
@@ -817,7 +822,7 @@ class DisputeController extends Controller
                     ' Ahsante.';
 
                 // Staff
-                $staff_dest_addr = Str::remove('+', $staff_assigned->user->tel_no);
+                $staff_dest_addr = SmsService::normalizeRecipient($staff_assigned->user->tel_no);
                 $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
                 $staff_message = 'Habari, ' . $staff_title . ' ' . $staff_name .
@@ -845,7 +850,7 @@ class DisputeController extends Controller
                     $last_staff_name = $last_assigned_staff->user->first_name . ' '
                         . $last_assigned_staff->user->middle_name . ' '
                         . $last_assigned_staff->user->last_name;
-                    $last_staff_dest_addr = Str::remove('+', $last_assigned_staff->user->tel_no);
+                    $last_staff_dest_addr = SmsService::normalizeRecipient($last_assigned_staff->user->tel_no);
                     $last_staff_recipients = ['recipient_id' => 1, 'dest_addr' => $last_staff_dest_addr];
 
                     $last_staff_message = 'Habari, ' . $last_staff_title . ' ' . $last_staff_name .
@@ -880,7 +885,7 @@ class DisputeController extends Controller
                             // Database & email 
 
                             # Notify beneficiary
-                            Notification::send($beneficiary, new ClientDisputeAssigned($beneficiary, $dispute, $message));
+                            Notification::send($beneficiary->user, new ClientDisputeAssigned($beneficiary, $dispute, $message));
 
                             # Notify new assigned assigned via email & DB
                             Notification::send($staff_assigned->user, new StaffDisputeAssigned($staff_assigned, $dispute, $staff_message));
@@ -914,7 +919,7 @@ class DisputeController extends Controller
                             // Database & email 
 
                             # Notify beneficiary
-                            Notification::send($beneficiary, new ClientDisputeAssigned($beneficiary, $dispute, $message));
+                            Notification::send($beneficiary->user, new ClientDisputeAssigned($beneficiary, $dispute, $message));
 
                             # Notify new assigned assigned via email & DB
                             Notification::send($staff_assigned->user, new StaffDisputeAssigned($staff_assigned, $dispute, $staff_message));

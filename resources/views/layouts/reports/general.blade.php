@@ -35,99 +35,91 @@
             </div>
             <div class="card">
                 @if ($disputes->count())
+                    @php
+                        $filter_by = $filter_by ?? 'N/A';
+                        $filter_val = $filter_val ?? 'All';
+                        $date_raw = $date_raw ?? __('All time');
+                        $summaryCollection = method_exists($disputes, 'getCollection') ? $disputes->getCollection() : $disputes;
+                        $statusCounts = $summaryCollection->groupBy('dispute_status_id')->map->count();
+                        $totalCases = $summaryCollection->count();
+                        $summaryPalette = [
+                            'summary-card--blue',
+                            'summary-card--green',
+                            'summary-card--amber',
+                            'summary-card--purple',
+                            'summary-card--teal',
+                            'summary-card--rose',
+                            'summary-card--indigo',
+                        ];
+                    @endphp
                     <div class="card-header">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <h4 class="header-title bg-info p-2 w-100 text-white">
-                                    {{ __('Results Summary')}}
-                                </h4>
-                                <div class="h6">
-                                    <span class="font-weight-bold">{{ __('Dates') }}</span> :
-                                </div>
-                                <div class="h6">
-                                    {{ $date_raw ?? 'N/A' }}
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="row px-3 mb-2">
-                                    <div class="h6">
-                                        <span class="font-weight-bold">{{ __('Filter') }}</span> :
-                                        {{ __($filter_by) ?? 'N/A' }}
-                                    </div>
-                                </div>
-                                <div class="row px-3 mb-2">
-                                    <div class="h6">
-                                        <span class="font-weight-bold">{{ __('Query') }}</span> :
-                                        {{ $filter_val ?? 'N/A' }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="row px-3 mb-2">
-                                    <div class="h6">
-                                        <span class="font-weight-bold">{{ __('Disputes Found') }}</span>
-                                        <span class="text-primary">{{ ': '.$disputes->count() ?? '0' }}</span>
-                                    </div>
-                                </div>
-                                <div class="row px-3 mb-2">
-                                    <div class="h6">
-                                        <span class="font-weight-bold">{{ __('Resolved Disputes') }}</span>
-                                        <span class="text-success">{{ ': '.$resolved_count ?? '0' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="dropdown">
-                                    <button class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown">
-                                        <i class="fas fa-download fa-fw"></i>
-                                        {{ __('Export') }}
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                        <form action="{{ route('reports.export.pdf', app()->getLocale()) }}" method="post">
-                                            @csrf
-                                            @foreach ($disputes as $dispute)
-                                                <input type="hidden" name="dispute[]" value="{{ $dispute->id }}">
-                                            @endforeach
-                                            <input type="hidden" name="filter_by" value="{{ $filter_by }}">
-                                            <input type="hidden" name="filter_val" value="{{ $filter_val }}">
-                                            <input type="hidden" name="date_raw" value="{{ $date_raw }}">
-                                            <input type="hidden" name="resolved_count" value="{{ $resolved_count }}">
-                                            <button class="dropdown-item" type="submit">
-                                                <i class="fas fa-file-pdf-o text-danger"></i>
-                                                {{ __('as pdf') }}
-                                            </button>
-                                        </form>
-                                        <form action="{{ route('reports.export.excel', app()->getLocale()) }}" method="post">
-                                            @csrf
-                                            @foreach ($disputes as $dispute)
-                                                <input type="hidden" name="dispute[]" value="{{ $dispute->id }}">
-                                            @endforeach
-                                            <input type="hidden" name="filter_by" value="{{ $filter_by }}">
-                                            <input type="hidden" name="filter_val" value="{{ $filter_val }}">
-                                            <input type="hidden" name="date_raw" value="{{ $date_raw }}">
-                                            <input type="hidden" name="resolved_count" value="{{ $resolved_count }}">
-                                            <button class="dropdown-item" role="button" type="submit">
-                                                <i class="fas fa-file-excel text-success"></i>
-                                                {{ __('as excel') }}
-                                            </button>
-                                        </form>
-                                        <form action="{{ route('reports.export.csv', app()->getLocale()) }}" method="post">
-                                            @csrf
-                                            @foreach ($disputes as $dispute)
-                                                <input type="hidden" name="dispute[]" value="{{ $dispute->id }}">
-                                            @endforeach
-                                            <input type="hidden" name="filter_by" value="{{ $filter_by }}">
-                                            <input type="hidden" name="filter_val" value="{{ $filter_val }}">
-                                            <input type="hidden" name="date_raw" value="{{ $date_raw }}">
-                                            <input type="hidden" name="resolved_count" value="{{ $resolved_count }}">
-                                            <button class="dropdown-item" role="button" type="submit">
-                                                <i class="fas fa-file-csv text-warning"></i>
-                                                {{ __('as csv') }}
-                                            </button>
-                                        </form>
-                                    </div>
+                        <div class="d-flex flex-wrap align-items-center justify-content-between">
+                            <h4 class="header-title mb-0">{{ __('General Summary') }}</h4>
+                            <div class="dropdown mt-2 mt-md-0">
+                                <button class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown">
+                                    <i class="fas fa-download fa-fw"></i>
+                                    {{ __('Export') }}
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <form action="{{ route('reports.export.pdf', app()->getLocale()) }}" method="post">
+                                        @csrf
+                                        @foreach ($disputes as $dispute)
+                                            <input type="hidden" name="dispute[]" value="{{ $dispute->id }}">
+                                        @endforeach
+                                        <input type="hidden" name="filter_by" value="{{ $filter_by }}">
+                                        <input type="hidden" name="filter_val" value="{{ $filter_val }}">
+                                        <input type="hidden" name="date_raw" value="{{ $date_raw }}">
+                                        <input type="hidden" name="resolved_count" value="{{ $resolved_count }}">
+                                        <button class="dropdown-item" type="submit">
+                                            <i class="fas fa-file-pdf-o text-danger"></i>
+                                            {{ __('as pdf') }}
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('reports.export.excel', app()->getLocale()) }}" method="post">
+                                        @csrf
+                                        @foreach ($disputes as $dispute)
+                                            <input type="hidden" name="dispute[]" value="{{ $dispute->id }}">
+                                        @endforeach
+                                        <input type="hidden" name="filter_by" value="{{ $filter_by }}">
+                                        <input type="hidden" name="filter_val" value="{{ $filter_val }}">
+                                        <input type="hidden" name="date_raw" value="{{ $date_raw }}">
+                                        <input type="hidden" name="resolved_count" value="{{ $resolved_count }}">
+                                        <button class="dropdown-item" role="button" type="submit">
+                                            <i class="fas fa-file-excel text-success"></i>
+                                            {{ __('as excel') }}
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('reports.export.csv', app()->getLocale()) }}" method="post">
+                                        @csrf
+                                        @foreach ($disputes as $dispute)
+                                            <input type="hidden" name="dispute[]" value="{{ $dispute->id }}">
+                                        @endforeach
+                                        <input type="hidden" name="filter_by" value="{{ $filter_by }}">
+                                        <input type="hidden" name="filter_val" value="{{ $filter_val }}">
+                                        <input type="hidden" name="date_raw" value="{{ $date_raw }}">
+                                        <input type="hidden" name="resolved_count" value="{{ $resolved_count }}">
+                                        <button class="dropdown-item" role="button" type="submit">
+                                            <i class="fas fa-file-csv text-warning"></i>
+                                            {{ __('as csv') }}
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
+                        </div>
+                        <div class="summary-grid mt-3">
+                            <div class="summary-card summary-card--brand summary-card--tone">
+                                <div class="summary-card__label">{{ __('Total Cases') }}</div>
+                                <div class="summary-card__value">{{ $totalCases }}</div>
+                            </div>
+                            @foreach ($dispute_statuses as $dispute_status)
+                                @php
+                                    $paletteClass = $summaryPalette[$loop->index % count($summaryPalette)];
+                                @endphp
+                                <div class="summary-card summary-card--tone {{ $paletteClass }}">
+                                    <div class="summary-card__label">{{ __($dispute_status->dispute_status) }}</div>
+                                    <div class="summary-card__value">{{ $statusCounts->get($dispute_status->id, 0) }}</div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                     <div class="card-body" style="width: 100%;">
@@ -178,23 +170,11 @@
                                         </td>
                                         <td>{{ Carbon\Carbon::parse($dispute->reported_on)->format('d-m-Y') }}</td>
                                         <td>
-                                            {{-- TODO:Add a column color scheme in status table and compare here--}}
-                                            <span class="
-                                                @if ( $dispute->disputeStatus->dispute_status  === 'resolved')
-                                                    text-success
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'pending')
-                                                    text-warning font-italic
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'proceeding')
-                                                    text-primary
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'continue')
-                                                    text-info
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'referred')
-                                                    text-secondary
-                                                @else
-                                                    text-danger
-                                                @endif
-                                            ">
-                                            {{ $dispute->disputeStatus->dispute_status }}
+                                            @php
+                                                $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                            @endphp
+                                            <span class="badge-status status-{{ $statusSlug }}">
+                                                {{ $dispute->disputeStatus->dispute_status }}
                                             </span>
                                         </td>
                                     </tr>

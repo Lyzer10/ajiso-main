@@ -27,6 +27,7 @@ use Intervention\Image\Facades\Image;
 use App\Notifications\BeneficiaryEnrolled;
 use App\Traits\FetchAdmins;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
 
 class BeneficiaryController extends Controller
 {
@@ -80,9 +81,6 @@ class BeneficiaryController extends Controller
      */
     public function create()
     {
-        // Get all the designations and bind them to the create view
-        $designations = Designation::get(['id', 'name']);
-
         // Get all the marital_statuses and bind them to the create view
         $marital_statuses = MaritalStatus::get(['id', 'marital_status']);
 
@@ -103,9 +101,6 @@ class BeneficiaryController extends Controller
 
         // Get all the marriage_forms and bind them to the create view
         $marriage_forms = MarriageForm::get(['id', 'marriage_form']);
-
-        // Get all the incomes and bind them to the create view
-        $incomes = Income::get(['id', 'income']);
 
         // Get all the employment_statuses and bind them to the create view
         $employment_statuses = EmploymentStatus::get(['id', 'employment_status']);
@@ -136,13 +131,11 @@ class BeneficiaryController extends Controller
 
         // Return all data to the view
         return view('beneficiaries.create', compact(
-            'designations',
             'marital_statuses',
             'regions',
             'districts',
             'education_levels',
             'survey_choices',
-            'incomes',
             'tribes',
             'religions',
             'marriage_forms',
@@ -160,6 +153,12 @@ class BeneficiaryController extends Controller
      */
     public function store(Request $request)
     {
+        $marriedStatusId = MaritalStatus::where('marital_status', 'Married')->value('id');
+        $isMarried = $marriedStatusId && (int) $request->marital_status === (int) $marriedStatusId;
+        $defaultMarriageFormId = MarriageForm::where('marriage_form', 'N/A')->value('id')
+            ?? MarriageForm::min('id')
+            ?? 1;
+
         /**
          * Get a validator for an incoming store request.
          *
@@ -169,7 +168,6 @@ class BeneficiaryController extends Controller
         $this->validate($request, [
             'user_no' => ['required', 'string', 'max:255', 'unique:users'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users'],
-            'designation' => ['required'],
             'first_name' => ['required', 'min:3', 'string', 'max:50'],
             'middle_name' => ['nullable', 'string', 'max:50'],
             'last_name' => ['required', 'min:3', 'string', 'max:50'],
@@ -178,7 +176,7 @@ class BeneficiaryController extends Controller
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
             'gender' => ['required'],
             'age' => ['required', 'max:3'],
-            'disabled' => ['nullable'],
+            'disabled' => ['required', 'in:yes,no'],
             'tribe' => ['required', 'integer', 'exists:tribes,id'],
             'religion' => ['required', 'integer', 'exists:religions,id'],
             'education_level' => ['required'],
@@ -189,13 +187,12 @@ class BeneficiaryController extends Controller
             'street' => ['nullable', 'max:255'],
             'survey_choice' => ['required'],
             'marital_status' => ['required'],
-            'form_of_marriage' => ['required', 'integer', 'exists:marriage_forms,id'],
+            'form_of_marriage' => [Rule::requiredIf($isMarried), 'nullable', 'integer', 'exists:marriage_forms,id'],
             'marriage_date' => ['max:25', 'date_format:m/d/Y', 'nullable'],
             'no_of_children' => ['max:5'],
             'financial_capability' => ['required'],
             'employment_status' => ['required'],
             'occupation_business' => ['required', 'max:255'],
-            'monthly_income' => ['required'],
         ]);
 
         /**
@@ -212,7 +209,11 @@ class BeneficiaryController extends Controller
         $user->name = Str::lower(Str::substr($request->first_name, 0, 8) . '.' . Str::substr(Str::uuid(), 0, 3));
         $user->email = $request->email;
         $user->password = Hash::make('Alas%2021');
-        $user->salutation_id = $request->designation;
+        $defaultDesignationId = Designation::where('name', 'Other')->value('id')
+            ?? Designation::where('abbr', 'OTHER')->value('id')
+            ?? Designation::min('id')
+            ?? 1;
+        $user->salutation_id = $request->input('designation', $defaultDesignationId);
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
@@ -281,6 +282,7 @@ class BeneficiaryController extends Controller
 
             $beneficiary->user_id = $user->id;
             $beneficiary->gender = $request->gender;
+            $beneficiary->disabled = $request->disabled;
             if (!is_null($request->age)) {
                 $beneficiary->age = $request->age;
                 $age = $beneficiary->age;
@@ -305,15 +307,18 @@ class BeneficiaryController extends Controller
             $beneficiary->tribe_id = $request->tribe;
             $beneficiary->religion_id = $request->religion;
             $beneficiary->marital_status_id = $request->marital_status;
-            $beneficiary->marriage_form_id = $request->form_of_marriage;
-            if (!is_null($request->marriage_date)) {
+            $beneficiary->marriage_form_id = $isMarried ? $request->form_of_marriage : $defaultMarriageFormId;
+            if ($isMarried && !is_null($request->marriage_date)) {
                 $beneficiary->marriage_date = Carbon::parse($request->marriage_date)->format('Y-m-d');
+            } else {
+                $beneficiary->marriage_date = null;
             }
             $beneficiary->no_of_children = $request->no_of_children ?? 0;
             $beneficiary->financial_capability = $request->financial_capability;
             $beneficiary->employment_status_id = $request->employment_status;
             $beneficiary->occupation_business = $request->occupation_business;
-            $beneficiary->income_id = $request->monthly_income;
+            $defaultIncomeId = Income::where('income', 'N/A')->value('id') ?? Income::min('id') ?? 1;
+            $beneficiary->income_id = $request->input('monthly_income', $defaultIncomeId);
 
             /**
              * Save the user to the database
@@ -327,7 +332,7 @@ class BeneficiaryController extends Controller
                 activity()->log('Created beneficiary account');
 
                 // Send SMS to beneficiary
-                $dest_addr = Str::remove('+', $user->tel_no);
+                $dest_addr = SmsService::normalizeRecipient($user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
                 $title = $user->designation->name;
@@ -354,7 +359,7 @@ class BeneficiaryController extends Controller
                         $sms->sendSMS($recipients, $message);
 
                         // Database & email
-                        Notification::send($beneficiary, new BeneficiaryEnrolled($beneficiary, $message));
+                        Notification::send($beneficiary->user, new BeneficiaryEnrolled($beneficiary, $message));
 
                         // Notify admins and superadmins
                         $admins = $this->getAdmins();
@@ -415,9 +420,6 @@ class BeneficiaryController extends Controller
             ->with('user')
             ->findOrFail($id);
 
-        // Get all the designations and bind them to the edit  view
-        $designations = Designation::get(['id', 'name']);
-
         // Get all the marital_statuses and bind them to the edit  view
         $marital_statuses = MaritalStatus::get(['id', 'marital_status']);
 
@@ -439,9 +441,6 @@ class BeneficiaryController extends Controller
         // Get all the marriage_forms and bind them to the create  view
         $marriage_forms = MarriageForm::get(['id', 'marriage_form']);
 
-        // Get all the incomes and bind them to the create  view
-        $incomes = Income::get(['id', 'income']);
-
         // Get all the employment_statuses and bind them to the create  view
         $employment_statuses = EmploymentStatus::get(['id', 'employment_status']);
 
@@ -449,10 +448,8 @@ class BeneficiaryController extends Controller
             'beneficiaries.edit',
             compact(
                 'beneficiary',
-                'designations',
                 'marital_statuses',
                 'districts',
-                'incomes',
                 'education_levels',
                 'tribes',
                 'religions',
@@ -471,6 +468,14 @@ class BeneficiaryController extends Controller
      */
     public function update(Request $request, $locale, $id)
     {
+        $beneficiary = Beneficiary::findOrFail($id);
+        $user = User::findOrFail($beneficiary->user_id);
+        $marriedStatusId = MaritalStatus::where('marital_status', 'Married')->value('id');
+        $isMarried = $marriedStatusId && (int) $request->marital_status === (int) $marriedStatusId;
+        $defaultMarriageFormId = MarriageForm::where('marriage_form', 'N/A')->value('id')
+            ?? MarriageForm::min('id')
+            ?? 1;
+
         /**
          * Get a validator for an incoming store request.
          *
@@ -478,9 +483,9 @@ class BeneficiaryController extends Controller
          * @return \Illuminate\Contracts\Validation\Validator
          */
         $this->validate($request, [
-            'name' => ['required', 'string', 'min:3', 'max:255', 'unique:users'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users'],
-            'designation' => ['required'],
+            'name' => ['nullable', 'string', 'min:3', 'max:255', Rule::unique('users', 'name')->ignore($user->id)],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'designation' => ['nullable', 'integer', 'exists:designations,id'],
             'first_name' => ['required', 'min:3', 'string', 'max:50'],
             'middle_name' => ['nullable', 'string', 'max:50'],
             'last_name' => ['required', 'min:3', 'string', 'max:50'],
@@ -489,22 +494,22 @@ class BeneficiaryController extends Controller
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
             'gender' => ['required'],
             'age' => ['required', 'max:3'],
+            'disabled' => ['required', 'in:yes,no'],
             'tribe' => ['required', 'integer', 'exists:tribes,id'],
             'religion' => ['required', 'integer', 'exists:religions,id'],
             'education_level' => ['required'],
-            'address' => ['required', 'max:255'],
+            'address' => ['nullable', 'max:255'],
             'region' => ['required'],
             'district' => ['required'],
             'ward' => ['nullable', 'string', 'max:255'],
             'street' => ['nullable', 'string', 'max:255'],
             'marital_status' => ['required'],
-            'form_of_marriage' => ['required', 'integer', 'exists:marriage_forms,id'],
+            'form_of_marriage' => [Rule::requiredIf($isMarried), 'nullable', 'integer', 'exists:marriage_forms,id'],
             'marriage_date' => ['max:25', 'date_format:m/d/Y', 'nullable'],
             'no_of_children' => ['max:5'],
             'financial_capability' => ['required'],
             'employment_status' => ['required'],
             'occupation_business' => ['required', 'string', 'max:255'],
-            'monthly_income' => ['required'],
         ]);
 
         /**
@@ -515,13 +520,13 @@ class BeneficiaryController extends Controller
          * @return \App\Models\Beneficiary
          */
 
-        $beneficiary = Beneficiary::findOrFail($id);
-
-        $user = User::findOrFail($beneficiary->user_id);
-
-        $user->name = $request->name;
+        if ($request->filled('name')) {
+            $user->name = $request->name;
+        }
         $user->email = $request->email;
-        $user->salutation_id = $request->designation;
+        if ($request->filled('designation')) {
+            $user->salutation_id = $request->designation;
+        }
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
@@ -605,8 +610,9 @@ class BeneficiaryController extends Controller
         if ($user) {
 
             $beneficiary->gender = $request->gender;
+            $beneficiary->disabled = $request->disabled;
             if (!is_null($request->age)) {
-                $beneficiary->age = Carbon::parse($request->age)->format('Y-m-d');
+                $beneficiary->age = (int) $request->age;
                 $age = $beneficiary->age;
 
                 if ($age < 18) {
@@ -628,15 +634,19 @@ class BeneficiaryController extends Controller
             $beneficiary->tribe_id = $request->tribe;
             $beneficiary->religion_id = $request->religion;
             $beneficiary->marital_status_id = $request->marital_status;
-            $beneficiary->marriage_form_id = $request->form_of_marriage;
-            if (!is_null($request->marriage_date)) {
+            $beneficiary->marriage_form_id = $isMarried ? $request->form_of_marriage : $defaultMarriageFormId;
+            if ($isMarried && !is_null($request->marriage_date)) {
                 $beneficiary->marriage_date = Carbon::parse($request->marriage_date)->format('Y-m-d');
+            } else {
+                $beneficiary->marriage_date = null;
             }
-            $beneficiary->no_of_children = $request->no_of_children;
+            $beneficiary->no_of_children = $isMarried ? ($request->no_of_children ?? 0) : 0;
             $beneficiary->financial_capability = $request->financial_capability;
             $beneficiary->employment_status_id = $request->employment_status;
             $beneficiary->occupation_business = $request->occupation_business;
-            $beneficiary->income_id = $request->monthly_income;
+            if ($request->filled('monthly_income')) {
+                $beneficiary->income_id = $request->monthly_income;
+            }
 
             /**
              * Save the user to the database

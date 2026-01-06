@@ -91,6 +91,22 @@
             </ul>
         </li>
     @endcanany
+    @canany(['isStaff'])
+        <li class="{{ request()->routeIs('beneficiaries.*') ? 'active' : '' }}">
+            <a href="javascript:void(0)" aria-expanded="true">
+                <i class="fas fa-user-friends"></i>
+                <span>{{ __('Users') }}</span>
+            </a>
+            <ul class="collapse">
+                <li class="{{ request()->routeIs('beneficiaries.*') ? 'active' : '' }}">
+                    <a href="{{ route('beneficiaries.list', app()->getLocale()) }}">
+                        <i class="fas fa-chevron-right"></i>
+                        {{ __('Beneficiaries') }}
+                    </a>
+                </li>
+            </ul>
+        </li>
+    @endcanany
 
     {{-- Cases --}}
     @canany(['isSuperAdmin','isAdmin','isClerk'])
@@ -122,6 +138,14 @@
                 </ul>
             </li>
         @endcannot
+    @endcanany
+    @canany(['isStaff'])
+        <li class="{{ request()->routeIs('dispute.create.new') ? 'active' : '' }}">
+            <a href="{{ route('dispute.create.new', app()->getLocale()) }}">
+                <i class="fas fa-balance-scale"></i>
+                <span>{{ __('New Dispute') }}</span>
+            </a>
+        </li>
     @endcanany
 
     {{-- My Cases (for staff only) --}}

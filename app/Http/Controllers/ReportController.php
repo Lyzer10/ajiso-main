@@ -278,9 +278,12 @@ class ReportController extends Controller
             $resolved_count = $disputes->where('dispute_status_id', '3')
                                         ->count();
 
+            $dispute_statuses = DisputeStatus::latest()
+                                            ->get(['id', 'dispute_status']);
+
             //return $disputes;
             return view('reports.admin.general-results', compact('disputes', 'filter_by', 'filter_val',
-                                                            'date_raw', 'resolved_count')
+                                                            'date_raw', 'resolved_count', 'dispute_statuses')
                                                         );
 
         }else {

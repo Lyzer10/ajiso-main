@@ -118,23 +118,11 @@
                                         </td>
                                         <td>{{ Carbon\Carbon::parse($dispute->reported_on)->diffForHumans() }}</td>
                                         <td>
-                                            {{-- TODO:Add a column color scheme in status table and compare here--}}
-                                            <span class="
-                                                @if ( $dispute->disputeStatus->dispute_status  === 'resolved')
-                                                    text-success
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'pending')
-                                                    text-warning font-italic
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'proceeding')
-                                                    text-primary
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'continue')
-                                                    text-info
-                                                @elseif ( $dispute->disputeStatus->dispute_status  === 'referred')
-                                                    text-secondary
-                                                @else
-                                                    text-danger
-                                                @endif
-                                            ">
-                                            {{ __($dispute->disputeStatus->dispute_status) }}
+                                            @php
+                                                $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                            @endphp
+                                            <span class="badge-status status-{{ $statusSlug }}">
+                                                {{ __($dispute->disputeStatus->dispute_status) }}
                                             </span>
                                         </td>
                                         <td>

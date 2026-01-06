@@ -81,45 +81,20 @@
                                     </div>
                                     <div class="col-md-3 mb-3">
                                     </span>
-                                        <label for="username" class="font-weight-bold">{{ __('Username') }}<sup class="text-danger">*</sup></label>
+                                        <label for="username" class="font-weight-bold">{{ __('Username') }}</label>
                                         <div class="input-group">
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text  border-prepend-primary bg-prepend-primary" id="inputGroupUserName">@</span>
                                             </div>
-                                            <input type="text" id="username" placeholder="Username" aria-describedby="inputGroupUserName"
+                                            <input type="text" id="username" placeholder="{{ __('Username (optional)') }}" aria-describedby="inputGroupUserName"
                                                 class="form-control border-append-primary @error('name') is-invalid @enderror" name="name"
-                                                value="{{ $user->name }}" required autocomplete="name" autofocus>
+                                                value="{{ old('name', $user->name) }}" autocomplete="name" autofocus>
                                             @error('name')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>
                                                 </span>
                                             @enderror
                                         </div>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label class="selectDesignation font-weight-bold">{{ __('Designation / Title') }}<sup class="text-danger">*</sup></label>
-                                        <select id="designation" aria-describedby="selectDesignation"
-                                            class="select2 select2-container--default   border-input-primary @error('designation') is-invalid @enderror"
-                                            name="designation" required autocomplete="designation" style="width: 100%;">
-                                            <option hidden disabled selected value>{{ __('Choose designation / title') }}</option>
-                                            @if ($designations->count())
-                                                @foreach ($designations as $designation)
-                                                    <option value="{{ $designation->id }}"
-                                                    @if ($designation->id === $user->designation->id)
-                                                        selected="selected"
-                                                    @endif
-                                                    >{{ __($designation->name) }}
-                                                    </option>
-                                                @endforeach
-                                            @else
-                                                <option>{{ __('No designations found') }}</option>
-                                            @endif
-                                        </select>
-                                        @error('designation')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                        @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label for="firstName" class="font-weight-bold">{{ __('First Name') }}<sup class="text-danger">*</sup></label>
@@ -197,25 +172,23 @@
                                         @enderror
                                     </div>
 
-                                     <div class="col-md-3 mb-3">
+                                    <div class="col-md-3 mb-3">
                                         <label class="selectGender font-weight-bold">{{ __('Disabled') }}</label>
                                         <select id="disabled" aria-describedby="selectDisabled"
-                                            class="select2 select2-container--default   border-input-primary @error('disabled') is-invalid @enderror"
+                                            class="select2 select2-container--default border-input-primary @error('disabled') is-invalid @enderror"
                                             name="disabled" required autocomplete="disabled" style="width: 100%;">
-                                            <option hidden disabled selected value>{{ __('Select') }}</option>
-                                            @if ($beneficiary->disabled === "yes")
-                                                <option value = "{{ $beneficiary->gender }}" selected="selected">{{ __('Yes') }}</option>
-                                                <option value="no">{{ __('No') }}</option>
-                                            @elseif ($beneficiary->disabled === "no")
-                                                <option value="no">{{ __('Yes') }}</option>
-                                                <option value="{{ $beneficiary->gender }}" selected="selected"> {{ __('No') }}</option>
-                                                
-                                            @endif
+                                            <option hidden disabled value>{{ __('Select') }}</option>
+                                            <option value="yes" {{ old('disabled', $beneficiary->disabled) === 'yes' ? 'selected' : '' }}>
+                                                {{ __('Yes') }}
+                                            </option>
+                                            <option value="no" {{ old('disabled', $beneficiary->disabled) === 'no' ? 'selected' : '' }}>
+                                                {{ __('No') }}
+                                            </option>
                                         </select>
-                                        @error('gender')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
+                                        @error('disabled')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
                                         @enderror
                                     </div>
 
@@ -383,6 +356,7 @@
                                             @if ($marital_statuses->count())
                                                 @foreach ($marital_statuses as $marital_status)
                                                     <option value="{{ $marital_status->id }}"
+                                                    data-status="{{ strtolower($marital_status->marital_status) }}"
                                                     @if ($marital_status->id === $beneficiary->marital_status_id)
                                                         selected="selected"
                                                     @endif
@@ -400,11 +374,11 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-md-3 mb-3" id="form_of_marriage_group">
                                         <label class="selectFormMarriage font-weight-bold">{{ __('Form of Marriage') }}<sup class="text-danger">*</sup></label>
                                         <select id="form_of_marriage" aria-describedby="selectFormMarriage"
                                             class="select2 select2-container--default   border-input-primary @error('form_of_marriage') is-invalid @enderror"
-                                            name="form_of_marriage" required autocomplete="form_of_marriage" style="width: 100%;">
+                                            name="form_of_marriage" autocomplete="form_of_marriage" style="width: 100%;">
                                             <option hidden disabled selected value>{{ __('Choose form of marriage') }}</option>
                                             @if ($marriage_forms->count())
                                             @foreach ($marriage_forms as $marriage_form)
@@ -429,7 +403,7 @@
                                             </span>
                                         @enderror
                                     </div>
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-md-3 mb-3" id="marriage_date_group">
                                         <label for="marriage_date" class="font-weight-bold">
                                             {{ __('Marriage Date') }}
                                         </label>
@@ -538,31 +512,6 @@ value="{{ (!empty($beneficiary->marriage_date) && $beneficiary->marriage_date !=
                                             </span>
                                         @enderror
                                     </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label for="monthly_income" class="font-weight-bold">{{ __('Monthly Income') }}<sup class="text-danger">*</sup></label>
-                                        <select id="monthly_income" aria-describedby="selectFormMarriage"
-                                            class="select2 select2-container--default   border-input-primary @error('monthly_income') is-invalid @enderror"
-                                            name="monthly_income" required autocomplete="monthly_income" style="width: 100%;">
-                                            <option hidden disabled selected value>{{ __('Choose income group') }}</option>
-                                            @if ($incomes->count())
-                                                @foreach ($incomes as $income)
-                                                    <option value = "{{ $income->id }}"
-                                                        @if ($income->id === $beneficiary->income_id)
-                                                        selected="selected"
-                                                    @endif
-                                                    >{{ __($income->income) }}
-                                                    </option>
-                                                @endforeach
-                                            @else
-                                                <option>{{ __('No income group found') }}</option>
-                                            @endif
-                                        </select>
-                                        @error('monthly_income')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                        @enderror
-                                    </div>
                                 </div>
                             </fieldset>
                             <div class="container">
@@ -601,6 +550,29 @@ value="{{ (!empty($beneficiary->marriage_date) && $beneficiary->marriage_date !=
                 viewMode: 'years'
             });
 
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(function() {
+            function toggleMarriageFields() {
+                var selected = $('#marital_status').find(':selected');
+                var status = (selected.data('status') || '').toString().toLowerCase();
+                var isMarried = status === 'married';
+
+                if (isMarried) {
+                    $('#form_of_marriage_group, #marriage_date_group').show();
+                    $('#form_of_marriage').prop('disabled', false);
+                    $('input[name="marriage_date"]').prop('disabled', false);
+                } else {
+                    $('#form_of_marriage_group, #marriage_date_group').hide();
+                    $('#form_of_marriage').prop('disabled', true).val(null).trigger('change');
+                    $('input[name="marriage_date"]').prop('disabled', true).val('');
+                }
+            }
+
+            toggleMarriageFields();
+            $('#marital_status').on('change', toggleMarriageFields);
         });
     </script>
 @endpush
