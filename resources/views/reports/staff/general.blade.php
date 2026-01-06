@@ -196,8 +196,10 @@
                     $filter_val = $filter_val ?? 'All';
                     $date_raw = $date_raw ?? __('All time');
                     $summaryCollection = method_exists($disputes, 'getCollection') ? $disputes->getCollection() : $disputes;
-                    $statusCounts = $summaryCollection->groupBy('dispute_status_id')->map->count();
-                    $totalCases = $summaryCollection->count();
+                    $statusCounts = isset($statusCounts)
+                        ? collect($statusCounts)
+                        : $summaryCollection->groupBy('dispute_status_id')->map->count();
+                    $totalCases = $totalCases ?? $summaryCollection->count();
                     $summaryPalette = [
                         'summary-card--blue',
                         'summary-card--green',
@@ -393,66 +395,48 @@
     {{-- Report filters --}}
     <script>
         $(function () {
-
-            $('#beneficiaryFilter').prop("hidden", true);$('#beneficiary').prop("disabled", true);
-            $('#tosFilter').prop("hidden", true);$('#type_of_service').prop("disabled", true);
-            $('#tocFilter').prop("hidden", true);$('#type_of_case').prop("disabled", true);
-            $('#statusFilter').prop("hidden", true);$('#dispute_status').prop("disabled", true);
-
-            $('select#filterBy').on('input', function (){
-
-            var filter = $(this).find(":selected").val();
-
-            if (filter === 'allFilter') {
-
-                $('#allFilter').prop("hidden", false);
-                $('#beneficiaryFilter').prop("hidden", true);
-                $('#tosFilter').prop("hidden", true);
-                $('#tocFilter').prop("hidden", true);
-                $('#statusFilter').prop("hidden", true);
-
-            }else if (filter === 'beneficiaryFilter'){
-
-                $('#beneficiaryFilter').prop("hidden", false);
-                $('#beneficiary').prop("disabled", false);
-                $('#allFilter').prop("hidden", true);
-                $('#tosFilter').prop("hidden", true);
-                $('#tocFilter').prop("hidden", true);
-                $('#statusFilter').prop("hidden", true);
-
-            }if (filter === 'tosFilter') {
-
-                $('#tosFilter').prop("hidden", false);
-                $('#type_of_service').prop("disabled", false);
-                $('#beneficiaryFilter').prop("hidden", true);
-                $('#allFilter').prop("hidden", true);
-                $('#tocFilter').prop("hidden", true);
-                $('#statusFilter').prop("hidden", true);
-
-            }else if (filter === 'tocFilter'){
-
-                $('#tocFilter').prop("hidden", false);
-                $('#type_of_case').prop("disabled", false);
-                $('#beneficiaryFilter').prop("hidden", true);
-                $('#tosFilter').prop("hidden", true);
-                $('#allFilter').prop("hidden", true);
-                $('#statusFilter').prop("hidden", true);
-
-            }else if (filter === 'statusFilter'){
-
-                $('#statusFilter').prop("hidden", false);
-                $('#dispute_status').prop("disabled", false);
-                $('#beneficiaryFilter').prop("hidden", true);
-                $('#tosFilter').prop("hidden", true);
-                $('#tocFilter').prop("hidden", true);
-                $('#allFilter').prop("hidden", true);
-
-            }else{
-                exit;
+            function resetFilters() {
+                $('#allFilter, #beneficiaryFilter, #tosFilter, #tocFilter, #statusFilter')
+                    .prop("hidden", true);
+                $('#all, #beneficiary, #type_of_service, #type_of_case, #dispute_status')
+                    .prop("disabled", true);
             }
 
+            resetFilters();
+
+            $('select#filterBy').on('change', function () {
+                var filter = $(this).val();
+
+                resetFilters();
+
+                if (filter === 'allFilter') {
+                    $('#allFilter').prop("hidden", false);
+                    return;
+                }
+
+                if (filter === 'beneficiaryFilter') {
+                    $('#beneficiaryFilter').prop("hidden", false);
+                    $('#beneficiary').prop("disabled", false);
+                    return;
+                }
+
+                if (filter === 'tosFilter') {
+                    $('#tosFilter').prop("hidden", false);
+                    $('#type_of_service').prop("disabled", false);
+                    return;
+                }
+
+                if (filter === 'tocFilter') {
+                    $('#tocFilter').prop("hidden", false);
+                    $('#type_of_case').prop("disabled", false);
+                    return;
+                }
+
+                if (filter === 'statusFilter') {
+                    $('#statusFilter').prop("hidden", false);
+                    $('#dispute_status').prop("disabled", false);
+                }
             });
         });
-
     </script>
 @endpush

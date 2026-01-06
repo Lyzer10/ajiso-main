@@ -72,109 +72,29 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="font-weight-light">{{ __('Case assignment is summarized as follows;') }}</h6>
-                    <div class="row">
-                        <div class="col-md-6 mt-3">
-                            <ul class="list-group">
-                                <li class="list-group-item font-weight-bold text-white dark-custom-color">
-                                    {{ __('Type of Case') }}
-                                </li>
-                                @if ($type_of_cases->count())
-                                    @foreach ($type_of_cases as $type_of_case)
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ __($type_of_case->type_of_case) }}
-                                        @php
-                                            $toc = '0%';
-                                        @endphp
-                                        @if ($group_by_case->count())
-                                            @foreach ($group_by_case as $case)
-                                                @if ($type_of_case->id === $case->type_of_case_id)
-                                                    @php
-                                                        $toc = floor($case->total*100/$total).'%' ?? '0%';
-                                                    @endphp
-                                                    @break
-                                                @endif
-                                            @endforeach
-                                        <span class="badge text-white light-custom-color badge-pill p-2 lead">
-                                            {{ $toc ?? '0%'}}
-                                        </span>
-                                        @else
-                                            <span class="badge text-white light-custom-color badge-pill p-2 lead">
-                                            {{ '0%' }}
-                                        </span>
-                                        @endif
-                                    </li>
-                                    @endforeach
-                                @endif
-                            </ul>
-                        </div>
-                        <div class="col-md-6 mt-3">
-                            <div class="">
-                                <ul class="list-group">
-                                    <li class="list-group-item font-weight-bold text-white dark-custom-color">
-                                        {{ __('Type of Service') }}
-                                    </li>
-                                    @if ($type_of_services->count())
-                                        @foreach ($type_of_services as $type_of_service)
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            {{ __($type_of_service->type_of_service) }}
-                                            @php
-                                                $tos = '0%';
-                                            @endphp
-                                            @if ($group_by_service->count())
-                                                @foreach ($group_by_service as $service)
-                                                    @if ($type_of_service->id === $service->type_of_service_id)
-                                                        @php
-                                                            $tos = floor($service->total*100/$total).'%' ?? '0%';
-                                                        @endphp
-                                                    @endif
-                                                @endforeach
-                                            <span class="badge text-white light-custom-color badge-pill p-2 lead">
-                                                {{ $tos ?? '0%'}}
-                                            </span>
-                                            @else
-                                                <span class="badge text-white light-custom-color badge-pill p-2 lead">
-                                            {{ '0%' }}
-                                        </span>
-                                            @endif
-                                        </li>
-                                        @endforeach
-                                    @endif
-                                    </li>
-                                </ul>
+                    <div class="row mt-3">
+                        <div class="col-lg-6 mt-3">
+                            <div class="viz-card">
+                                <div class="viz-card__header">{{ __('Type of Case') }}</div>
+                                <div class="viz-card__body">
+                                    <div id="caseTypeChart" class="viz-chart"></div>
+                                </div>
                             </div>
-                            <div class="mt-3">
-                                <ul class="list-group">
-                                    <li class="list-group-item font-weight-bold text-white dark-custom-color">
-                                        {{ __('Dispute Status') }}
-                                    </li>
-                                    @if ($dispute_statuses->count())
-                                    @foreach ($dispute_statuses as $dispute_status)
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ __($dispute_status->dispute_status) }}
-                                        @php
-                                            $ds = '0%';
-                                        @endphp
-                                        @if ($group_by_status->count())
-                                            @foreach ($group_by_status as $status)
-                                                @if ($dispute_status->id === $status->dispute_status_id)
-                                                    @php
-                                                        $ds = floor($status->total*100/$total).'%' ?? '0%';
-                                                    @endphp
-                                                    @break
-                                                @endif
-                                            @endforeach
-                                        <span class="badge text-white light-custom-color badge-pill p-2 lead">
-                                            {{ $ds ?? '0%'}}
-                                        </span>
-                                        @else
-                                            <span class="badge text-white light-custom-color badge-pill p-2 lead">
-                                                {{ '0%' }}
-                                            </span>
-                                        @endif
-                                    </li>
-                                    @endforeach
-                                @endif
-                                </ul>
+                        </div>
+                        <div class="col-lg-6 mt-3">
+                            <div class="viz-card">
+                                <div class="viz-card__header">{{ __('Type of Service') }}</div>
+                                <div class="viz-card__body">
+                                    <div id="serviceTypeChart" class="viz-chart"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-12 mt-3">
+                            <div class="viz-card">
+                                <div class="viz-card__header">{{ __('Dispute Status') }}</div>
+                                <div class="viz-card__body">
+                                    <div id="disputeStatusChart" class="viz-chart"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -230,6 +150,89 @@
 
         $("#daterange").on("apply.daterangepicker cancel.daterangepicker", function (ev, picker) {
             picker.hide();
+        });
+    </script>
+
+    <!-- AmCharts Resources -->
+    <script src="{{ asset('plugins/amcharts/4/core.js') }}"></script>
+    <script src="{{ asset('plugins/amcharts/4/charts.js') }}"></script>
+    <script src="{{ asset('plugins/amcharts/4/themes/animated.js') }}"></script>
+
+    @php
+        $caseTypeData = [];
+        foreach ($type_of_cases as $type_of_case) {
+            $count = 0;
+            foreach ($group_by_case as $case) {
+                if ($type_of_case->id === $case->type_of_case_id) {
+                    $count = (int) $case->total;
+                    break;
+                }
+            }
+            $caseTypeData[] = ['category' => __($type_of_case->type_of_case), 'value' => $count];
+        }
+
+        $serviceTypeData = [];
+        foreach ($type_of_services as $type_of_service) {
+            $count = 0;
+            foreach ($group_by_service as $service) {
+                if ($type_of_service->id === $service->type_of_service_id) {
+                    $count = (int) $service->total;
+                    break;
+                }
+            }
+            $serviceTypeData[] = ['category' => __($type_of_service->type_of_service), 'value' => $count];
+        }
+
+        $statusData = [];
+        foreach ($dispute_statuses as $dispute_status) {
+            $count = 0;
+            foreach ($group_by_status as $status) {
+                if ($dispute_status->id === $status->dispute_status_id) {
+                    $count = (int) $status->total;
+                    break;
+                }
+            }
+            $statusData[] = ['category' => __($dispute_status->dispute_status), 'value' => $count];
+        }
+    @endphp
+
+    <script>
+        am4core.ready(function() {
+            am4core.useTheme(am4themes_animated);
+
+            function buildDonutChart(containerId, data, prefix, unitLabel) {
+                var chart = am4core.create(containerId, am4charts.PieChart);
+                chart.hiddenState.properties.opacity = 0;
+                chart.data = data;
+                chart.innerRadius = am4core.percent(45);
+                chart.numberFormatter.numberFormat = "#,###";
+
+                var series = chart.series.push(new am4charts.PieSeries());
+                series.dataFields.value = "value";
+                series.dataFields.category = "category";
+                series.slices.template.stroke = am4core.color("#fff");
+                series.slices.template.strokeWidth = 2;
+                series.slices.template.tooltipText = "{category}: {value.value} " + unitLabel + " ({value.percent.formatNumber('#.0')}%)";
+                series.labels.template.fontSize = 12;
+                series.labels.template.text = "{category}: {value.value}";
+                series.labels.template.wrap = true;
+                series.labels.template.maxWidth = 140;
+                series.ticks.template.strokeOpacity = 0.2;
+
+                chart.legend = new am4charts.Legend();
+                chart.legend.fontSize = 12;
+                chart.legend.position = "right";
+                chart.legend.valueLabels.template.text = "{value.value}";
+
+                chart.exporting.menu = new am4core.ExportMenu();
+                chart.exporting.filePrefix = prefix;
+
+                return chart;
+            }
+
+            buildDonutChart("caseTypeChart", @json($caseTypeData), "staff-case-type-summary", @json(__('cases')));
+            buildDonutChart("serviceTypeChart", @json($serviceTypeData), "staff-service-type-summary", @json(__('services')));
+            buildDonutChart("disputeStatusChart", @json($statusData), "staff-dispute-status-summary", @json(__('cases')));
         });
     </script>
 @endpush

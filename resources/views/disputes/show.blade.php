@@ -50,20 +50,29 @@
         <!-- View Dispute area start -->
         <div class="col-12">
             <div class="card mt-5">
+                @php
+                    $currentStatus = optional($dispute->disputeStatus)->dispute_status ?? 'pending';
+                    $statusSlug = \Illuminate\Support\Str::slug($currentStatus);
+                @endphp
                 <div class="card-header">
-                    <h4 class="header-title">{{ __('Dispute Profile')}}
-                        <a href="{{ route('disputes.list', app()->getLocale()) }}"
-                            class="btn btn-sm btn-primary pull-right text-white">{{ __('Disputes list') }}
-                        </a>
-                    </h4>
+                    <div class="dispute-profile-header">
+                        <h4 class="header-title mb-0">{{ __('Dispute Profile') }}</h4>
+                        <div class="dispute-profile-actions">
+                            <a href="{{ route('disputes.list', app()->getLocale()) }}"
+                                class="btn btn-sm btn-primary text-white">{{ __('Disputes list') }}
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     @if ($dispute->count())
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="card card-bordered mb-3">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card dispute-card dispute-info-card mb-3">
+                                <div class="dispute-card-header">
+                                    <div class="dispute-card-title">{{ __('Dispute Info') }}</div>
+                                </div>
                                 <div class="card-body">
-                                    <h6 class="card-text mb-3 font-weight-bold">{{ __('Dispute Info') }}</h6>
                                     @php
                                         $date = Carbon\Carbon::parse($dispute->reported_on)->format('d-m-Y') ?? 'N/A'
                                     @endphp
@@ -133,12 +142,6 @@
                                         </div>
                                         <div class="form-row">
                                             <div class="col-md-12 mb-3">
-                                                <label for="dispute_status" class="font-weight-bold">{{ __('Dispute Status') }}</label>
-                                                <input type="text" readonly class="form-control  border-input-primary" id="dispute_status" value="{{ __($dispute->disputeStatus->dispute_status) }}">
-                                            </div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="col-md-12 mb-3">
                                                 <label for="where_reported" class="font-weight-bold">{{ __('Where did you report your problem?') }}</label>
                                                 <input type="text" readonly class="form-control  border-input-primary" id="where_reported" value="{{ $dispute->where_reported }}">
                                             </div>
@@ -183,15 +186,20 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card card-bordered mb-3">
+                        <div class="col-lg-6">
+                            <div class="card dispute-card mb-3">
+                                <div class="dispute-card-header">
+                                    <div>
+                                        <div class="dispute-card-title">{{ __('Dispute History') }}</div>
+                                        <div class="dispute-card-meta">
+                                            {{ __('Reported') }} {{ $occurrences->count().'x' }}
+                                        </div>
+                                    </div>
+                                    <span class="badge-status status-{{ $statusSlug }} dispute-status-pill">
+                                        {{ __($currentStatus) }}
+                                    </span>
+                                </div>
                                 <div class="card-body">
-                                    <h6 class="card-text  mb-3 font-weight-bold">{{ __('Dispute History') }} |
-                                        <code class="">{{ __('Reported') }} </code>
-                                        <span class="text-primary">
-                                            {{ $occurrences->count().'x' }}
-                                        </span>
-                                    </h6>
                                     <div class="single-table">
                                         <div class="table-responsive">
                                             <table class="table table-striped text-center">
@@ -215,9 +223,9 @@
                                                             <td>{{ Carbon\Carbon::parse($occurrence->reported_on)->format('d-m-Y') }}</td>
                                                             <td>
                                                                 @php
-                                                                    $statusSlug = \Illuminate\Support\Str::slug($occurrence->disputeStatus->dispute_status);
+                                                                    $historyStatusSlug = \Illuminate\Support\Str::slug($occurrence->disputeStatus->dispute_status);
                                                                 @endphp
-                                                                <span class="badge-status status-{{ $statusSlug }}">
+                                                                <span class="badge-status status-{{ $historyStatusSlug }}">
                                                                     {{ __($occurrence->disputeStatus->dispute_status) }}
                                                                 </span>
                                                             </td>
@@ -258,14 +266,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card card-bordered mb-3">
+                            <div class="card dispute-card mb-3">
+                                <div class="dispute-card-header">
+                                    <div class="dispute-card-title">{{ __('LAAC Clinic Visits') }}</div>
+                                    <span class="badge badge-success">
+                                        {{  ($dispute->counselingSheets->count()) ??  0 }}
+                                    </span>
+                                </div>
                                 <div class="card-body">
-                                    <h6 class="card-text mb-3 font-weight-bold">
-                                        {{ __('LAAC Clinic Visits') }} 
-                                        <span class="badge badge-success">
-                                            {{  ($dispute->counselingSheets->count()) ??  0 }}
-                                        </span>
-                                    </h6>
                                     <div class="alert-items">
                                         @if ( $dispute->counselingSheets->count())
                                             @foreach ($dispute->counselingSheets as $sheet)
@@ -296,9 +304,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card card-bordered mb-3">
+                            <div class="card dispute-card mb-3">
+                                <div class="dispute-card-header">
+                                    <div class="dispute-card-title">{{ __('Dispute Progress') }}</div>
+                                </div>
                                 <div class="card-body">
-                                    <h6 class="card-text mb-3 font-weight-bold">{{ __('Dispute Progress') }}</h6>
                                     <div class="recent-activity">
                                         @if ( $dispute->activities->count())
                                             @foreach ($dispute->activities as $activity)
@@ -352,69 +362,47 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card card-bordered">
+                            <div class="card dispute-card">
+                                <div class="dispute-card-header">
+                                    <div class="dispute-card-title">{{ __('Dispute Progress Center') }}</div>
+                                </div>
                                 <div class="card-body">
-                                    <h6 class="card-text mb-3 font-weight-bold">{{ __('Dispute Progress Center') }}</h6>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="grid-col">
-                                                <a href="javascript:void(0)" class="nav-link" data-toggle="modal" data-target="#sendNoticeModal">
-                                                    <i class="fas fa-paper-plane fa-fw text-info"></i>
-                                                    {{ __('Send Notification to Beneficiary') }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="grid-col">
-                                                <a href="javascript:void(0)" class="nav-link" data-toggle="modal" data-target="#clinicProgressModal">
-                                                    <i class="fas fa-comment-medical fa-fw text-primary"></i>
-                                                    {{ __('Legal Aid Advice Counseling Clinic') }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="grid-col">
-                                                <a href="javascript:void(0)" class="nav-link" data-toggle="modal" data-target="#disputeStatusModal">
-                                                    <i class="fas fa-edit fa-fw text-success"></i>
-                                                    {{ __('Update Dispute Statuses') }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="grid-col">
-                                                <a href="javascript:void(0)" class="nav-link" data-toggle="modal" data-target="#providerRemarksModal">
-                                                    <i class="fas fa-marker fa-fw text-secondary"></i>
-                                                    {{ __('Legal Aid Provider Remarks') }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="grid-col">
-                                                <a href="javascript:void(0)" class="nav-link" data-toggle="modal" data-target="#disputeAttachmentModal">
-                                                    <i class="fas fa-paperclip fa-fw text-info"></i>
-                                                    {{ __('Add Attachment') }}
-                                                </a>
-                                            </div>
-                                        </div>
+                                    <div class="dispute-action-list">
+                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#sendNoticeModal">
+                                            <i class="fas fa-paper-plane fa-fw text-info"></i>
+                                            {{ __('Send Notification to Beneficiary') }}
+                                        </a>
+                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#clinicProgressModal">
+                                            <i class="fas fa-comment-medical fa-fw text-primary"></i>
+                                            {{ __('Legal Aid Advice Counseling Clinic') }}
+                                        </a>
+                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#disputeStatusModal">
+                                            <i class="fas fa-edit fa-fw text-success"></i>
+                                            {{ __('Update Dispute Statuses') }}
+                                        </a>
+                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#providerRemarksModal">
+                                            <i class="fas fa-marker fa-fw text-secondary"></i>
+                                            {{ __('Legal Aid Provider Remarks') }}
+                                        </a>
+                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#disputeAttachmentModal">
+                                            <i class="fas fa-paperclip fa-fw text-info"></i>
+                                            {{ __('Add Attachment') }}
+                                        </a>
+                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#generateLetterModal">
+                                            <i class="fas fa-file-alt fa-fw text-primary"></i>
+                                            {{ __('Generate Letter (WITO / Referral / Feedback)') }}
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                            <div class="card card-bordered mb-3">
+                            <div class="card dispute-card mb-3">
+                                <div class="dispute-card-header">
+                                    <div class="dispute-card-title">{{ __('Dispute Attachments') }}</div>
+                                    <span class="badge badge-success">
+                                        {{ ($dispute->attachments->count()) ?? 0 }}
+                                    </span>
+                                </div>
                                 <div class="card-body">
-                                    <h6 class="card-text mb-3 font-weight-bold">
-                                        {{ __('Dispute Attachments') }}
-                                        <span class="badge badge-success">
-                                            {{ ($dispute->attachments->count()) ?? 0 }}
-                                        </span>
-                                    </h6>
                                     <div class="alert-items">
                                         @if ($dispute->attachments->count())
                                             @foreach ($dispute->attachments as $attachment)
@@ -473,6 +461,9 @@
 @push('scripts')
 
     @include('dates.js')
+    <script src="{{ asset('plugins/moment/locale/sw.js') }}"></script>
+
+    <script src="{{ asset('assets/js/letter-print.js') }}"></script>
 
     {{-- Select2 --}}
     <script type="text/javascript">
@@ -505,6 +496,25 @@
         });
     </script>
 
+    {{-- Letter date/time --}}
+    <script type="text/javascript">
+        $(function () {
+            $('#meeting_date').datetimepicker({
+                format: 'DD/MM/YYYY',
+                viewMode: 'years',
+                ignoreReadonly: true,
+                allowInputToggle: true
+            });
+
+            $('#meeting_time').datetimepicker({
+                format: 'HH:mm',
+                stepping: 1,
+                ignoreReadonly: true,
+                allowInputToggle: true
+            });
+        });
+    </script>
+
     <script type="text/javascript">
         $(function () {
             $(document).on('change', '.custom-file-input', function () {
@@ -520,6 +530,502 @@
             });
         });
     </script>
+
+    <script type="text/javascript">
+        $(function () {
+            var modal = $('#generateLetterModal');
+            if (!modal.length) {
+                return;
+            }
+
+            var disputeNo = modal.data('dispute-no') || '';
+            var beneficiaryName = modal.data('beneficiary') || '';
+            var caseType = modal.data('case-type') || '';
+            var letterDate = modal.data('letter-date') || '';
+
+            var logoUrl = @json(asset('assets/images/logo.png'));
+
+            function buildHeader(contactLine) {
+                var contactHtml = contactLine
+                    ? "<div class=\"letter-contact\">" + contactLine + "</div>"
+                    : "";
+                return ""
+                    + "<div class=\"letter-head\">"
+                    + "<div class=\"letter-logo\"><img src=\"{logoUrl}\" alt=\"AJISO\"></div>"
+                    + contactHtml
+                    + "</div>"
+                    + "<div class=\"letter-divider\"></div>";
+            }
+
+            function buildFeedbackSection() {
+                return ""
+                    + "<div class=\"letter-form\">"
+                    + "<div class=\"letter-center\">ACTION FOR JUSTICE IN SOCIETY (AJISO)</div>"
+                    + "<div class=\"letter-center\">FOMU YA MAONI YA MTEJA - 2018</div>"
+                    + "<div class=\"letter-line-row\">"
+                    + "<span class=\"letter-line-label\">JINA</span>"
+                    + "<span class=\"letter-dots letter-dots--lg\"></span>"
+                    + "<span class=\"letter-note\">(Usiandike Jina)</span>"
+                    + "</div>"
+                    + "<div class=\"letter-line-row\">"
+                    + "<span class=\"letter-line-label\">UMRI</span>"
+                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "</div>"
+                    + "<div class=\"letter-line-row\">"
+                    + "<span class=\"letter-line-label\">JINSIA</span>"
+                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "</div>"
+                    + "<div class=\"letter-line-row\">"
+                    + "<span class=\"letter-line-label\">UNAKOTOKEA</span>"
+                    + "<span class=\"letter-dots letter-dots--lg\"></span>"
+                    + "</div>"
+                    + "<div class=\"letter-line-row letter-line-row--wrap\">"
+                    + "<span class=\"letter-line-label\">TATIZO LAKO</span>"
+                    + "<span class=\"letter-dots letter-dots--md\"></span>"
+                    + "<span class=\"letter-line-label\">MUDA ULIOINGIA</span>"
+                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "<span class=\"letter-line-label\">MUDA ULIOTOKA</span>"
+                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "</div>"
+                    + "<div class=\"letter-line-row\">"
+                    + "<span class=\"letter-line-label\">UMEKUJA KWA HUDUMA GANI ?</span>"
+                    + "<span class=\"letter-dots letter-dots--lg\"></span>"
+                    + "</div>"
+                    + "<table class=\"letter-table\">"
+                    + "<tr>"
+                    + "<td class=\"letter-table-num\">1.</td>"
+                    + "<td class=\"letter-table-question\">Umepokelewaje / Mapokezi ?</td>"
+                    + "<td class=\"letter-table-option\">Vizuri</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "<td class=\"letter-table-option\">Vibaya</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "</tr>"
+                    + "<tr>"
+                    + "<td class=\"letter-table-num\">2.</td>"
+                    + "<td class=\"letter-table-question\">Umehudumiwaje na Mwanasheria ?</td>"
+                    + "<td class=\"letter-table-option\">Vizuri</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "<td class=\"letter-table-option\">Vibaya</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "</tr>"
+                    + "<tr>"
+                    + "<td class=\"letter-table-num\">3.</td>"
+                    + "<td class=\"letter-table-question\">Je umeridhika na huduma uliyopewa?</td>"
+                    + "<td class=\"letter-table-option\">Ndiyo</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "<td class=\"letter-table-option\">Hapana</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "</tr>"
+                    + "<tr>"
+                    + "<td class=\"letter-table-num\">4.</td>"
+                    + "<td class=\"letter-table-question\">Je umepata huduma kwa wakati ?</td>"
+                    + "<td class=\"letter-table-option\">Ndiyo</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "<td class=\"letter-table-option\">Hapana</td>"
+                    + "<td><span class=\"letter-box\"></span></td>"
+                    + "</tr>"
+                    + "</table>"
+                    + "</div>";
+            }
+
+            var templates = {
+                registration: {
+                    language: "sw",
+                    title: "FOMU YA USAJILI WA MTEJA.",
+                    html: buildHeader("P.O. BOX 272, MOSHI.  PHONE: 255-792 119 129 EMAIL:ajisotz@yahoo.com/info@ajiso.org Web:www.ajiso.")
+                        + "<pre class=\"letter-pre\">FOMU YA USAJILI WA MTEJA.\nLEGAL AID HUMAN RIGHTS INFORMATION UNIT CLIENT IN TAKE SHEET - AJISO\nIwapo nitagundulika kusema uongo sitapewa Msaada wa Kisheria\nKwa wafanyakazi wa ofisi.\nNamba ya Mteja {disputeNo}\nTarehe: {letterDate}\nUwezo wa mteja: Anao: .................... Hana: .................... Vinginevyo: ....................\n\nJina kamili la Mteja ............................................................\nJinsi: ME             KE              Mteja wa zamani              Mteja mpya\nMahali anapoishi Mteja\nAnuani\nNamba ya simu\nUmefahamuje AJISO ?\n\n\nUmri    Kabila    Dini: Mkiristo, Muislamu, Ingine.    Elimu: Msingi, Sekondari,\nDiploma, Chuo Kikuu\nNdoa:\nUmeoa:              Umeolewa\nMjane:                 Umeachika\nMzazi pekee                 Hujaoa/Hujaolewa\nNdoa ilifanyikia mahali gani\nTarehe/mwaka wa kufunga ndoa    Idadi ya watoto\nUmeajiriwa ?                   Hapana\n\nUmejiajiri ? Ndiyo                  Hapana    Hali ya Kipato:\nUnafanya biashara au kazi gani.................................\nKipato chako kwa mwezi ....................\n\nTatizo:\n\n\n\n\n\nWapi ulishapeleka tatizo lako ?\n\nWalikusaidiaje ?\n\nKuna usumbufu wowote  uliupata ?\n\nUlishawahi kupeleka suala hili Mahakamani ?\n\nUnataka usaidiwe nini ?\n\nMajina ya watu\nWatakaofutiliwa/kuchukuliwa hatua\n    Anuani zao\nKWA MATUMIZI YA MWANASHERIA TU\nJina la Mwanasheria    Aina ya kesi\nKifungu cha Sheria kilichotumika\nMaelezo ya Mwanasheria\n(a) Kuhusiana na tatizo: ....................................................\n............................................................\n............................................................\n(b) Hatua za ufuatiliaji, endapo kuna ukiukwaji wa Haki za Binadamu\nUelimishaji/Uhamasishaji    Mahakamani /Uwakilishi    Utafiti    Rufaa\n\n\nHatua za kuchukua\nUshauri/Usuluhishi uliotolewa\nTarehe ya kurudi: ....................................\nSaini ya Mwanasheria................................\n\nMaoni ya Mtendaji Mkuu ................................................\n\n\n\nWapi ulishapeleka tatizo lako ?\n\nWalikusaidiaje ?\n\nKuna usumbufu wowote  uliupata ?\n\nUlishawahi kupeleka suala hili Mahakamani ?\n\nUnataka usaidiwe nini ?\n\nMajina ya watu\nWatakaofutiliwa/kuchukuliwa hatua\n    Anuani zao\nKWA MATUMIZI YA MWANASHERIA TU\nJina la Mwanakisheria    Aina ya kesi\nKifungu cha Sheria kilichotumika\nMaelezo ya Msaidizi wa kisheria\n(a) Kuhusiana na tatizo: ....................................................\n............................................................\n............................................................\n(b) Hatua za ufuatiliaji, endapo kuna ukiukwaji wa Haki za Binadamu\nUelimishaji/Uhamasishaji    Mahakamani /Uwakilishi    Utafiti    Rufaa\n\n\nHatua za kuchukua\nUshauri/Usuluhishi uliotolewa\nTarehe ya kurudi: ....................................\nSaini ya Mwanasheria ................................\n\nMaoni ya Mtendaji Mkuu ................................................\n............................................................</pre>"
+                },
+                wito: {
+                    language: "sw",
+                    title: "BARUA YA WITO.",
+                    html: buildHeader("P.O. Box 272 MOSHI, KILIMANJARO,TANZANIA,Phone 255 792 119 129; Email: ajisotz@yahoo.com")
+                        + "<div class=\"letter-meta\">"
+                        + "<div>KUMB: Na: <span class=\"letter-line letter-line--long\">{disputeNo}</span></div>"
+                        + "<div>Tarehe <span class=\"letter-line letter-line--short\">{letterDate}</span></div>"
+                        + "</div>"
+                        + "<div class=\"letter-recipient\">"
+                        + "<div>KWA: <span class=\"letter-line letter-line--long\">{recipientName}</span></div>"
+                        + "<div class=\"letter-lines\">[[recipientAddressLines]]</div>"
+                        + "</div>"
+                        + "<div class=\"letter-body\">"
+                        + "<div>Ndugu,</div>"
+                        + "<div class=\"letter-subject\">YAH: <span class=\"letter-subject-underline\">BARUA YA WITO.</span></div>"
+                        + "<p>Tafadhali rejea kichwa cha habari hapo juu.</p>"
+                        + "<p>AJISO ni Kituo cha Msaada wa Sheria na Habari za Haki za Binadamu kinatoa msaada wa kisheria kwa jamii.</p>"
+                        + "<p>Hivyo basi kwa barua hii, tunakuomba ufike hapa ofisini kwetu tarehe <span class=\"letter-line letter-line--medium\">{meetingDate}</span>, saa <span class=\"letter-line letter-line--short\">{meetingTime}</span> asubuhi/mchana siku ya <span class=\"letter-line letter-line--medium\">{meetingDay}</span> kwa majadiliano ya pamoja.</p>"
+                        + "<p>Ofisi ipo KARIBU NA KANISA KATOLIKI KORONGONI AU KARIBU NA HOSPITALI YA MOSHI HEALTH CENTRE, KATA YA KIUSA, MTAA WA RAMOLE unaotazamana na shule ya msingi jamhuri, utaona kibao kinachoelekeza.</p>"
+                        + "<p>Tafadhali tunaomba ushirikiano wako.</p>"
+                        + "<p>Wako.</p>"
+                        + "<div class=\"letter-signature\">"
+                        + "<div><span class=\"letter-line letter-line--long\"></span></div>"
+                        + "<div>Virginia Silayo</div>"
+                        + "<div>MKURUGENZI MTENDAJI - AJISO.</div>"
+                        + "</div>"
+                        + "<div class=\"letter-receive\">"
+                        + "<div>Nimepokea leo tarehe <span class=\"letter-line letter-line--long\"></span></div>"
+                        + "<div>Sahihi <span class=\"letter-line letter-line--long\"></span></div>"
+                        + "</div>"
+                        + "</div>"
+                },
+                reminder: {
+                    language: "sw",
+                    title: "KUMBUSHO LA WITO.",
+                    html: buildHeader("P.O. Box 272 MOSHI, KILIMANJARO,TANZANIA.Phone (255 792 119 129: Email: ajisotz@yahoo.com")
+                        + "<div class=\"letter-meta\">"
+                        + "<div>KUMB: Na: <span class=\"letter-line letter-line--long\">{disputeNo}</span></div>"
+                        + "<div>Tarehe <span class=\"letter-line letter-line--short\">{letterDate}</span></div>"
+                        + "</div>"
+                        + "<div class=\"letter-recipient\">"
+                        + "<div>KWA: <span class=\"letter-line letter-line--long\">{recipientName}</span></div>"
+                        + "<div class=\"letter-lines\">[[recipientAddressLines]]</div>"
+                        + "</div>"
+                        + "<div class=\"letter-body\">"
+                        + "<div>Ndugu,</div>"
+                        + "<div class=\"letter-subject\">YAH: KUMBUSHO LA WITO.</div>"
+                        + "<p>Kichwa cha habari hapo juu cha husika.</p>"
+                        + "<p>Rejea barua yetu ya tarehe <span class=\"letter-line letter-line--long\">{letterDate}</span> yenye kichwa cha habari Wito.</p>"
+                        + "<p>Kwa barua hii, tunakuomba ufike hapa ofisini kwetu tarehe <span class=\"letter-line letter-line--short\">{meetingDate}</span> saa <span class=\"letter-line letter-line--short\">{meetingTime}</span> asubuhi/mchana kwa majadiliano ya pamoja.</p>"
+                        + "<p>Ofisi ipo KARIBU NA KANISA KATOLIKI KORONGONI AU KARIBU NA HOSPITALI YA MOSHI HEALTH CENTRE, KATA YA KIUSA, MTAA WA RAMOLE unaotazamana na shule ya Msingi Jamhuri, utaona kibao kinachoelekeza.</p>"
+                        + "<p>Endapo hutafika tutawajibika kuchukua hatua zaidi za kisheria ikiwa ni pamoja na kufungua kesi Mahakamani.</p>"
+                        + "<p>Kwa maelezo zaidi unaweza kuwasiliana na ofisi kupitia namba 0622450127</p>"
+                        + "<p>Tafadhali ufike bila kukosa.</p>"
+                        + "<p>Wako,</p>"
+                        + "<div class=\"letter-signature\">"
+                        + "<div><span class=\"letter-line letter-line--long\"></span></div>"
+                        + "<div>Virginia C. Silayo.</div>"
+                        + "<div>MKURUGENZI MTENDAJI - AJISO.</div>"
+                        + "</div>"
+                        + "</div>"
+                },
+                feedback: {
+                    language: "sw",
+                    title: "FOMU YA MAONI YA MTEJA - 2018",
+                    html: buildFeedbackSection() + buildFeedbackSection() + buildFeedbackSection()
+                },
+                referral: {
+                    language: "en",
+                    title: "REFFERAL FORM",
+                    html: buildHeader("P.O. Box 272 MOSHI, KILIMANJARO, TANZANIA. Tel: 255 - 272750941; Fax: (255) 22727522241; Email: ajisotz@yahoo.com")
+                        + "<div class=\"letter-ref-title\">REFFERAL FORM</div>"
+                        + "<div class=\"letter-line-row letter-line-row--wrap\">"
+                        + "<span class=\"letter-line-label\">Client Name</span>"
+                        + "<span class=\"letter-line letter-line--xl\">{clientName}</span>"
+                        + "<span class=\"letter-line-label\">Age</span>"
+                        + "<span class=\"letter-line letter-line--xs\">{clientAge}</span>"
+                        + "<span class=\"letter-line-label\">Sex:</span>"
+                        + "<span class=\"letter-box\">[[clientSexF]]</span><span class=\"letter-box-label\">F</span>"
+                        + "<span class=\"letter-box\">[[clientSexM]]</span><span class=\"letter-box-label\">M</span>"
+                        + "</div>"
+                        + "<div class=\"letter-line-row letter-line-row--wrap\">"
+                        + "<span class=\"letter-line-label\">Dispute No.</span>"
+                        + "<span class=\"letter-line letter-line--md\">{disputeNo}</span>"
+                        + "<span class=\"letter-line-label\">District:</span>"
+                        + "<span class=\"letter-line letter-line--md\">{district}</span>"
+                        + "<span class=\"letter-line-label\">Village/ward:</span>"
+                        + "<span class=\"letter-line letter-line--md\">{villageWard}</span>"
+                        + "</div>"
+                        + "<div class=\"letter-line-row letter-line-row--wrap\">"
+                        + "<span class=\"letter-line-label\">Date:</span>"
+                        + "<span class=\"letter-line letter-line--sm\">{referralDate}</span>"
+                        + "<span class=\"letter-line-label\">Dispute from</span>"
+                        + "<span class=\"letter-line letter-line--md\">{disputeFrom}</span>"
+                        + "<span class=\"letter-line-label\">To:</span>"
+                        + "<span class=\"letter-line letter-line--md\">{disputeTo}</span>"
+                        + "</div>"
+                        + "<table class=\"letter-ref-table\">"
+                        + "<tr>"
+                        + "<th>Type of Case</th>"
+                        + "<th class=\"letter-ref-center\">M</th>"
+                        + "<th>Type of Case</th>"
+                        + "<th class=\"letter-ref-center\">M</th>"
+                        + "</tr>"
+                        + "<tr>"
+                        + "<td>1. Land</td><td></td><td>5. Labour</td><td></td>"
+                        + "</tr>"
+                        + "<tr>"
+                        + "<td>2.</td><td></td><td>6. Civil</td><td></td>"
+                        + "</tr>"
+                        + "<tr>"
+                        + "<td class=\"letter-ref-center\">Marriage/Matrimonia<br>l</td><td></td><td></td><td></td>"
+                        + "</tr>"
+                        + "<tr>"
+                        + "<td>3. Child maintenance</td><td></td><td>7. Criminal</td><td></td>"
+                        + "</tr>"
+                        + "<tr>"
+                        + "<td>4. Probate/inheritance</td><td></td><td>8. GBV</td><td></td>"
+                        + "</tr>"
+                        + "</table>"
+                        + "<div class=\"letter-section-title\">Information on how the client was served up to this stage:</div>"
+                        + "<div class=\"letter-ref-box\"></div>"
+                        + "<div class=\"letter-line-row letter-line-row--wrap\">"
+                        + "<span class=\"letter-line-label\">Name of the referrer</span>"
+                        + "<span class=\"letter-line letter-line--lg\"></span>"
+                        + "<span class=\"letter-line-label\">Signature:</span>"
+                        + "<span class=\"letter-line letter-line--md\"></span>"
+                        + "<span class=\"letter-line-label\">Date</span>"
+                        + "<span class=\"letter-line letter-line--sm\"></span>"
+                        + "</div>"
+                        + "<div class=\"letter-ref-divider\">= = = = = = = = = = = = = = = === = = = = This part should be referred to the office = = = = = = = = = = = = = = = =</div>"
+                        + "<div class=\"letter-section-title letter-center\">INSTITUTION/WARD/ORGANIZATION/COURT TRANSFER/COURT RECEIVED DISPUTE</div>"
+                        + "<div class=\"letter-line-row letter-line-row--wrap\">"
+                        + "<span class=\"letter-line-label\">Name of the organization</span>"
+                        + "<span class=\"letter-line letter-line--lg\"></span>"
+                        + "<span class=\"letter-line-label\">Tel. No:</span>"
+                        + "<span class=\"letter-line letter-line--md\"></span>"
+                        + "<span class=\"letter-line-label\">Date:</span>"
+                        + "<span class=\"letter-line letter-line--sm\"></span>"
+                        + "</div>"
+                        + "<div class=\"letter-section-title letter-center\">INFORMATION ON HOW THE CLIENT WAS SERVED</div>"
+                        + "<div class=\"letter-ref-box\"></div>"
+                        + "<div class=\"letter-ref-code\">AJS-RF-4-B</div>"
+                        + "<div class=\"letter-center letter-footnote\">AJISO-Client Referral Form-AJS-RF 4-B</div>"
+                        + "<div class=\"letter-line-row letter-line-row--wrap\">"
+                        + "<span class=\"letter-line-label\">Name :</span>"
+                        + "<span class=\"letter-line letter-line--lg\"></span>"
+                        + "<span class=\"letter-line-label\">Signature</span>"
+                        + "<span class=\"letter-line letter-line--md\"></span>"
+                        + "<span class=\"letter-line-label\">Position:</span>"
+                        + "<span class=\"letter-line letter-line--md\"></span>"
+                        + "</div>"
+                }
+            };
+
+            function normalizeValue(value, fallback) {
+                if (value && value.toString().trim().length) {
+                    return value.toString().trim();
+                }
+                return fallback || "________";
+            }
+
+            function escapeHtml(value) {
+                return value
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/\"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function formatMultiline(value) {
+                return escapeHtml(value).replace(/\n/g, "<br>");
+            }
+
+            function normalizeLineValue(value) {
+                if (value && value.toString().trim().length) {
+                    return value.toString().trim();
+                }
+                return "";
+            }
+
+            function compileTemplate(template, data) {
+                var output = template.replace(/\[\[([a-zA-Z0-9_]+)\]\]/g, function (match, key) {
+                    if (Object.prototype.hasOwnProperty.call(data, key)) {
+                        return data[key];
+                    }
+                    return match;
+                });
+                return output.replace(/\{([a-zA-Z0-9_]+)\}/g, function (match, key) {
+                    if (Object.prototype.hasOwnProperty.call(data, key)) {
+                        return data[key];
+                    }
+                    return match;
+                });
+            }
+
+            function buildLineBlocks(value, minLines) {
+                var lines = [];
+                var rawLines = value ? value.toString().split(/\r?\n/) : [];
+                rawLines = rawLines.map(function (line) { return line.trim(); }).filter(Boolean);
+                var totalLines = Math.max(minLines || 1, rawLines.length);
+                for (var i = 0; i < totalLines; i += 1) {
+                    var lineValue = rawLines[i] ? escapeHtml(rawLines[i]) : "&nbsp;";
+                    lines.push("<span class=\"letter-line letter-line--block\">" + lineValue + "</span>");
+                }
+                return lines.join("");
+            }
+
+            function updateMeetingDayOptions(language) {
+                var selectLabel = language === 'en' ? "Select" : "Chagua";
+                var options = language === 'en'
+                    ? ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+                    : ["Jumatatu", "Jumanne", "Jumatano", "Alhamisi", "Ijumaa", "Jumamosi", "Jumapili"];
+                var mapToSw = {
+                    Monday: "Jumatatu",
+                    Tuesday: "Jumanne",
+                    Wednesday: "Jumatano",
+                    Thursday: "Alhamisi",
+                    Friday: "Ijumaa",
+                    Saturday: "Jumamosi",
+                    Sunday: "Jumapili"
+                };
+                var mapToEn = {
+                    Jumatatu: "Monday",
+                    Jumanne: "Tuesday",
+                    Jumatano: "Wednesday",
+                    Alhamisi: "Thursday",
+                    Ijumaa: "Friday",
+                    Jumamosi: "Saturday",
+                    Jumapili: "Sunday"
+                };
+                var current = $('#meeting_day').val();
+                if (current) {
+                    if (language === 'sw' && mapToSw[current]) {
+                        current = mapToSw[current];
+                    } else if (language === 'en' && mapToEn[current]) {
+                        current = mapToEn[current];
+                    }
+                }
+                $('#meeting_day').empty().append(new Option(selectLabel, ""));
+                options.forEach(function (label) {
+                    $('#meeting_day').append(new Option(label, label));
+                });
+                if (current && options.indexOf(current) !== -1) {
+                    $('#meeting_day').val(current);
+                } else {
+                    $('#meeting_day').val('');
+                }
+                $('#meeting_day').trigger('change.select2');
+            }
+
+            function updatePickerLocale(language) {
+                var locale = language === 'en' ? 'en' : 'sw';
+                var datePicker = $('#meeting_date');
+                var timePicker = $('#meeting_time');
+                if (datePicker.data('datetimepicker')) {
+                    datePicker.datetimepicker('locale', locale);
+                }
+                if (timePicker.data('datetimepicker')) {
+                    timePicker.datetimepicker('locale', locale);
+                }
+            }
+
+            function toggleLetterFields(letterType, language) {
+                var isReferral = letterType === 'referral';
+                $('#referralFields').toggleClass('d-none', !isReferral);
+                $('#recipientAddressGroup').toggleClass('d-none', isReferral);
+                $('#meetingTimeGroup').toggleClass('d-none', isReferral);
+                $('#meetingDayGroup').toggleClass('d-none', isReferral);
+                var nameLabel = isReferral ? 'Client Name' : 'Recipient Name';
+                $('#recipientNameLabel').text(nameLabel);
+                var namePlaceholder = isReferral ? 'Enter client name' : 'Enter recipient full name';
+                $('#recipientName').attr('placeholder', namePlaceholder);
+                var dateLabel = isReferral ? (language === 'sw' ? 'Tarehe' : 'Date') : (language === 'sw' ? 'Tarehe ya Mkutano' : 'Meeting Date');
+                $('#meetingDateLabel').text(dateLabel);
+                var timeLabel = language === 'sw' ? 'Muda' : 'Time';
+                $('#meetingTimeLabel').text(timeLabel);
+                var dayLabel = language === 'sw' ? 'Siku' : 'Day';
+                $('#meetingDayLabel').text(dayLabel);
+            }
+
+            var currentLanguage = $('#letterLanguage').val() || 'sw';
+            updateMeetingDayOptions(currentLanguage);
+            updatePickerLocale(currentLanguage);
+            toggleLetterFields($('#letterType').val() || 'wito', currentLanguage);
+
+            $('#letterLanguage').on('change', function () {
+                var selected = $(this).val() || 'sw';
+                if (selected !== currentLanguage) {
+                    currentLanguage = selected;
+                    updateMeetingDayOptions(currentLanguage);
+                    updatePickerLocale(currentLanguage);
+                    toggleLetterFields($('#letterType').val() || 'wito', currentLanguage);
+                }
+            });
+
+            $('#letterType').on('change', function () {
+                var selectedType = $(this).val() || 'wito';
+                var templateConfig = templates[selectedType] || templates.wito;
+                var language = templateConfig.language || currentLanguage;
+                if ($('#letterLanguage').val() !== language) {
+                    $('#letterLanguage').val(language).trigger('change.select2').trigger('change');
+                }
+                toggleLetterFields(selectedType, language);
+                updateLetterPreview();
+            });
+
+            function buildLetterHtml() {
+                var letterType = $('#letterType').val() || 'wito';
+                var templateConfig = templates[letterType] || templates.wito;
+                var language = templateConfig.language || 'sw';
+                if ($('#letterLanguage').val() !== language) {
+                    $('#letterLanguage').val(language).trigger('change.select2').trigger('change');
+                }
+                updateMeetingDayOptions(language);
+                updatePickerLocale(language);
+                toggleLetterFields(letterType, language);
+                var recipientName = $('#recipientName').val();
+                var recipientAddress = $('#recipientAddress').val();
+                var meetingDate = $('#meeting_date').val();
+                var meetingTime = $('#meeting_time').val();
+                var meetingDay = $('#meeting_day').val();
+                var notes = $('#letterNotes').val();
+                var clientAge = $('#referral_age').val();
+                var clientSex = $('#referral_sex').val();
+                var district = $('#referral_district').val();
+                var villageWard = $('#referral_village').val();
+                var disputeFrom = $('#referral_dispute_from').val();
+                var disputeTo = $('#referral_dispute_to').val();
+                var sexFMark = clientSex === 'F' ? 'X' : '';
+                var sexMMark = clientSex === 'M' ? 'X' : '';
+
+                var template = templateConfig.html || '';
+                var letterTitle = templateConfig.title || '';
+                var recipientNameOrSirMadam = normalizeValue(recipientName, language === 'sw' ? 'Mheshimiwa' : 'Sir/Madam');
+                var longDots = "................................................";
+                var shortDots = "....................";
+
+                var data = {
+                    logoUrl: logoUrl,
+                    disputeNo: escapeHtml(normalizeValue(disputeNo, longDots)),
+                    letterDate: escapeHtml(normalizeValue(letterDate, shortDots)),
+                    recipientName: escapeHtml(normalizeLineValue(recipientName)),
+                    recipientAddress: formatMultiline(normalizeLineValue(recipientAddress)),
+                    recipientAddressLines: buildLineBlocks(recipientAddress, 2),
+                    clientName: escapeHtml(normalizeLineValue(recipientName)),
+                    clientAge: escapeHtml(normalizeLineValue(clientAge)),
+                    district: escapeHtml(normalizeLineValue(district)),
+                    villageWard: escapeHtml(normalizeLineValue(villageWard)),
+                    disputeFrom: escapeHtml(normalizeLineValue(disputeFrom)),
+                    disputeTo: escapeHtml(normalizeLineValue(disputeTo)),
+                    referralDate: escapeHtml(normalizeLineValue(meetingDate)),
+                    clientSexF: sexFMark,
+                    clientSexM: sexMMark,
+                    letterTitle: escapeHtml(letterTitle),
+                    recipientNameOrSirMadam: escapeHtml(recipientNameOrSirMadam),
+                    caseType: escapeHtml(normalizeValue(caseType, longDots)),
+                    meetingDate: escapeHtml(normalizeLineValue(meetingDate)),
+                    meetingTime: escapeHtml(normalizeLineValue(meetingTime)),
+                    meetingDay: escapeHtml(normalizeLineValue(meetingDay)),
+                    notes: formatMultiline(normalizeValue(notes, "-"))
+                };
+
+                return compileTemplate(template, data);
+            }
+
+            function updateLetterPreview() {
+                $('#letterPreview').html(buildLetterHtml());
+            }
+
+            modal.on('shown.bs.modal', function () {
+                updateLetterPreview();
+            });
+
+            modal.find('input, textarea, select').on('input change', function () {
+                updateLetterPreview();
+            });
+
+            $('#previewLetter').on('click', function () {
+                updateLetterPreview();
+            });
+
+            $('#printLetter').on('click', function () {
+                var content = buildLetterHtml();
+                if (typeof window.ajisoPrintLetter === 'function') {
+                    window.ajisoPrintLetter(content);
+                }
+            });
+        });
+    </script>
 @endpush
 
 @push('modals')
@@ -528,4 +1034,5 @@
     @include('modals.change-dispute-status')
     @include('modals.provider-remarks')
     @include('modals.dispute-attachment')
+    @include('modals.generate-letter')
 @endpush

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Models\DisputeStatus;
 use App\Models\TypeOfService;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class StaffReportController extends Controller
 {
@@ -44,6 +45,8 @@ class StaffReportController extends Controller
     {
 
         $staff = $this->getCurrentUser();
+        $resolvedStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['resolved'])
+                                        ->value('id');
 
         // Get all disputes and bind them to the index view
         $disputes = Dispute::with('reportedBy:first_name,middle_name,last_name',
@@ -55,12 +58,16 @@ class StaffReportController extends Controller
                             ->latest()
                             ->paginate(10);
 
-        // TODO replace staff id of $staff with auth()->staff_id
+        $totalCases = Dispute::where('staff_id', $staff)->count();
 
-        // Get count of resolved disputes
-        $resolved_count = Dispute::where('dispute_status_id', $staff)
-                                    ->where('staff_id', $staff)
-                                    ->count();
+        $statusCounts = Dispute::select('dispute_status_id', DB::raw('count(*) as total'))
+                                ->where('staff_id', $staff)
+                                ->groupBy('dispute_status_id')
+                                ->pluck('total', 'dispute_status_id');
+
+        $resolved_count = $resolvedStatusId
+            ? $statusCounts->get($resolvedStatusId, 0)
+            : 0;
 
         // Get all the beneficiaries associated to staff and bind them to the create  view
         $beneficiaries = Dispute::with('reportedBy:first_name,middle_name,last_name,user_no')
@@ -86,7 +93,8 @@ class StaffReportController extends Controller
         //return $disputes;
         return view('reports.staff.general',compact('disputes', 'beneficiaries',
                                                 'type_of_services', 'type_of_cases',
-                                                'dispute_statuses', 'resolved_count'));
+                                                'dispute_statuses', 'resolved_count',
+                                                'statusCounts', 'totalCases'));
     }
 
     /**
@@ -112,7 +120,10 @@ class StaffReportController extends Controller
 
         $staff = $this->getCurrentUser();
 
-        $disputes = [];
+        $resolvedStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['resolved'])
+                                        ->value('id');
+
+        $baseQuery = null;
 
         // split dateRange into $date_start and $date_end
 
@@ -136,13 +147,9 @@ class StaffReportController extends Controller
 
                 $search = $request->all;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->where('staff_id', $staff)
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->latest()
-                                    ->paginate(10);
+                                    ->where('staff_id', $staff);
 
                 // Filter info to be displayed
                 $filter_by = 'N/A';
@@ -157,14 +164,10 @@ class StaffReportController extends Controller
 
                 $search = $request->beneficiary;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('beneficiary_id', '=', $search)
                                     ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->where('staff_id', $staff)
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                                'type_of_service_id', 'type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->where('staff_id', $staff);
 
                 // Get full name of the search term
                 $val = Beneficiary::with('User')
@@ -185,14 +188,10 @@ class StaffReportController extends Controller
 
                 $search = $request->type_of_service;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('type_of_service_id', '=', $search)
                                     ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->where('staff_id', $staff)
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->where('staff_id', $staff);
 
                 // Get full name of the search term
                 $val = TypeOfService::select(['id', 'type_of_service'])
@@ -211,14 +210,10 @@ class StaffReportController extends Controller
 
                 $search = $request->type_of_case;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('type_of_case_id', '=', $search)
                                     ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->where('staff_id', $staff)
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->where('staff_id', $staff);
 
                 // Get full name of the search term
                 $val = TypeOfCase::select(['id', 'type_of_case'])
@@ -237,14 +232,10 @@ class StaffReportController extends Controller
 
                 $search = $request->dispute_status;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('dispute_status_id', '=', $search)
                                     ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->where('staff_id', $staff)
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->where('staff_id', $staff);
 
                 // Get full name of the search term
                 $val = DisputeStatus::select(['id', 'dispute_status'])
@@ -261,18 +252,33 @@ class StaffReportController extends Controller
             }
         }
 
-        if ($disputes) {
+        if ($baseQuery) {
 
-            // Get count of resolved disputes
-            $resolved_count = $disputes->where('dispute_status_id', '$staff')
-                                        ->count();
+            $disputes = (clone $baseQuery)
+                        ->with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfService', 'typeOfCase')
+                        ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
+                                'type_of_service_id','type_of_case_id', 'dispute_status_id'])
+                        ->latest()
+                        ->paginate(10);
+
+            $totalCases = (clone $baseQuery)->count();
+
+            $statusCounts = (clone $baseQuery)
+                            ->select('dispute_status_id', DB::raw('count(*) as total'))
+                            ->groupBy('dispute_status_id')
+                            ->pluck('total', 'dispute_status_id');
+
+            $resolved_count = $resolvedStatusId
+                ? $statusCounts->get($resolvedStatusId, 0)
+                : 0;
 
             $dispute_statuses = DisputeStatus::latest()
                                             ->get(['id', 'dispute_status']);
 
             //return $disputes;
             return view('reports.staff.general-results', compact('disputes', 'filter_by', 'filter_val',
-                                                            'date_raw', 'resolved_count', 'dispute_statuses')
+                                                            'date_raw', 'resolved_count', 'dispute_statuses',
+                                                            'statusCounts', 'totalCases')
                                                         );
 
         }else {

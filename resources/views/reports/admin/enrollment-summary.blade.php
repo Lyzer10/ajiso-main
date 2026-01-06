@@ -77,28 +77,7 @@
                             <div class="viz-card">
                                 <div class="viz-card__header">{{ __('Gender') }}</div>
                                 <div class="viz-card__body">
-                                    @if ($group_by_gender->count())
-                                        @foreach ($group_by_gender as $gender)
-                                            @php
-                                                $percent = $total > 0 ? floor($gender->total * 100 / $total) : 0;
-                                            @endphp
-                                            <div class="viz-row">
-                                                <div class="viz-label">{{ $gender->gender }}</div>
-                                                <div class="viz-bar">
-                                                    <span style="width: {{ $percent }}%;"></span>
-                                                </div>
-                                                <div class="viz-value">{{ $percent }}%</div>
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div class="viz-row">
-                                            <div class="viz-label">{{ __('No data') }}</div>
-                                            <div class="viz-bar">
-                                                <span style="width: 0%;"></span>
-                                            </div>
-                                            <div class="viz-value">0%</div>
-                                        </div>
-                                    @endif
+                                    <div id="genderChart" class="viz-chart"></div>
                                 </div>
                             </div>
                         </div>
@@ -106,38 +85,7 @@
                             <div class="viz-card">
                                 <div class="viz-card__header">{{ __('Age Group') }}</div>
                                 <div class="viz-card__body">
-                                    @if ($age_groups->count())
-                                        @foreach ($age_groups as $age_group)
-                                            @php
-                                                $percent = 0;
-                                            @endphp
-                                            @if ($group_by_age->count())
-                                                @foreach ($group_by_age as $age)
-                                                    @if ($age_group->id === $age->age)
-                                                        @php
-                                                            $percent = $total > 0 ? floor($age->total * 100 / $total) : 0;
-                                                        @endphp
-                                                        @break
-                                                    @endif
-                                                @endforeach
-                                            @endif
-                                            <div class="viz-row">
-                                                <div class="viz-label">{{ $age_group->age_group }}</div>
-                                                <div class="viz-bar">
-                                                    <span style="width: {{ $percent }}%;"></span>
-                                                </div>
-                                                <div class="viz-value">{{ $percent }}%</div>
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div class="viz-row">
-                                            <div class="viz-label">{{ __('No data') }}</div>
-                                            <div class="viz-bar">
-                                                <span style="width: 0%;"></span>
-                                            </div>
-                                            <div class="viz-value">0%</div>
-                                        </div>
-                                    @endif
+                                    <div id="ageGroupChart" class="viz-chart"></div>
                                 </div>
                             </div>
                         </div>
@@ -145,38 +93,7 @@
                             <div class="viz-card">
                                 <div class="viz-card__header">{{ __('Monthly Income') }}</div>
                                 <div class="viz-card__body">
-                                    @if ($income_groups->count())
-                                        @foreach ($income_groups as $income_group)
-                                            @php
-                                                $percent = 0;
-                                            @endphp
-                                            @if ($group_by_income->count())
-                                                @foreach ($group_by_income as $income)
-                                                    @if ($income_group->id === $income->income_id)
-                                                        @php
-                                                            $percent = $total > 0 ? floor($income->total * 100 / $total) : 0;
-                                                        @endphp
-                                                        @break
-                                                    @endif
-                                                @endforeach
-                                            @endif
-                                            <div class="viz-row">
-                                                <div class="viz-label">{{ $income_group->income }}</div>
-                                                <div class="viz-bar">
-                                                    <span style="width: {{ $percent }}%;"></span>
-                                                </div>
-                                                <div class="viz-value">{{ $percent }}%</div>
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div class="viz-row">
-                                            <div class="viz-label">{{ __('No data') }}</div>
-                                            <div class="viz-bar">
-                                                <span style="width: 0%;"></span>
-                                            </div>
-                                            <div class="viz-value">0%</div>
-                                        </div>
-                                    @endif
+                                    <div id="incomeChart" class="viz-chart"></div>
                                 </div>
                             </div>
                         </div>
@@ -187,38 +104,7 @@
                                     <span class="viz-card__meta">{{ __('All time') }}</span>
                                 </div>
                                 <div class="viz-card__body">
-                                    @if ($employment_statuses->count())
-                                        @foreach ($employment_statuses as $employment_status)
-                                            @php
-                                                $percent = 0;
-                                            @endphp
-                                            @if ($group_by_occupation->count())
-                                                @foreach ($group_by_occupation as $occupation)
-                                                    @if ($employment_status->id === $occupation->employment_status_id)
-                                                        @php
-                                                            $percent = $total > 0 ? floor($occupation->total * 100 / $total) : 0;
-                                                        @endphp
-                                                        @break
-                                                    @endif
-                                                @endforeach
-                                            @endif
-                                            <div class="viz-row">
-                                                <div class="viz-label">{{ $employment_status->employment_status }}</div>
-                                                <div class="viz-bar">
-                                                    <span style="width: {{ $percent }}%;"></span>
-                                                </div>
-                                                <div class="viz-value">{{ $percent }}%</div>
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div class="viz-row">
-                                            <div class="viz-label">{{ __('No data') }}</div>
-                                            <div class="viz-bar">
-                                                <span style="width: 0%;"></span>
-                                            </div>
-                                            <div class="viz-value">0%</div>
-                                        </div>
-                                    @endif
+                                    <div id="employmentChart" class="viz-chart"></div>
                                 </div>
                             </div>
                         </div>
@@ -226,38 +112,7 @@
                             <div class="viz-card">
                                 <div class="viz-card__header">{{ __('Education Level') }}</div>
                                 <div class="viz-card__body">
-                                    @if ($education_levels->count())
-                                        @foreach ($education_levels as $education_level)
-                                            @php
-                                                $percent = 0;
-                                            @endphp
-                                            @if ($group_by_education->count())
-                                                @foreach ($group_by_education as $education)
-                                                    @if ($education_level->id === $education->education_level_id)
-                                                        @php
-                                                            $percent = $total > 0 ? floor($education->total * 100 / $total) : 0;
-                                                        @endphp
-                                                        @break
-                                                    @endif
-                                                @endforeach
-                                            @endif
-                                            <div class="viz-row">
-                                                <div class="viz-label">{{ $education_level->education_level }}</div>
-                                                <div class="viz-bar">
-                                                    <span style="width: {{ $percent }}%;"></span>
-                                                </div>
-                                                <div class="viz-value">{{ $percent }}%</div>
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div class="viz-row">
-                                            <div class="viz-label">{{ __('No data') }}</div>
-                                            <div class="viz-bar">
-                                                <span style="width: 0%;"></span>
-                                            </div>
-                                            <div class="viz-value">0%</div>
-                                        </div>
-                                    @endif
+                                    <div id="educationChart" class="viz-chart"></div>
                                 </div>
                             </div>
                         </div>
@@ -265,38 +120,7 @@
                             <div class="viz-card">
                                 <div class="viz-card__header">{{ __('Marital Status') }}</div>
                                 <div class="viz-card__body">
-                                    @if ($marital_statuses->count())
-                                        @foreach ($marital_statuses as $marital_status)
-                                            @php
-                                                $percent = 0;
-                                            @endphp
-                                            @if ($group_by_marital->count())
-                                                @foreach ($group_by_marital as $marital)
-                                                    @if ($marital_status->id === $marital->marital_status_id)
-                                                        @php
-                                                            $percent = $total > 0 ? floor($marital->total * 100 / $total) : 0;
-                                                        @endphp
-                                                        @break
-                                                    @endif
-                                                @endforeach
-                                            @endif
-                                            <div class="viz-row">
-                                                <div class="viz-label">{{ $marital_status->marital_status }}</div>
-                                                <div class="viz-bar">
-                                                    <span style="width: {{ $percent }}%;"></span>
-                                                </div>
-                                                <div class="viz-value">{{ $percent }}%</div>
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div class="viz-row">
-                                            <div class="viz-label">{{ __('No data') }}</div>
-                                            <div class="viz-bar">
-                                                <span style="width: 0%;"></span>
-                                            </div>
-                                            <div class="viz-value">0%</div>
-                                        </div>
-                                    @endif
+                                    <div id="maritalChart" class="viz-chart"></div>
                                 </div>
                             </div>
                         </div>
@@ -353,6 +177,136 @@
 
         $("#daterange").on("apply.daterangepicker cancel.daterangepicker", function (ev, picker) {
             picker.hide();
+        });
+    </script>
+
+    <!-- AmCharts Resources -->
+    <script src="{{ asset('plugins/amcharts/4/core.js') }}"></script>
+    <script src="{{ asset('plugins/amcharts/4/charts.js') }}"></script>
+    <script src="{{ asset('plugins/amcharts/4/themes/animated.js') }}"></script>
+
+    @php
+        $genderData = [];
+        foreach ($group_by_gender as $gender) {
+            $percent = $total > 0 ? floor($gender->total * 100 / $total) : 0;
+            $genderData[] = ['category' => __($gender->gender), 'value' => $percent];
+        }
+
+        $ageData = [];
+        foreach ($age_groups as $age_group) {
+            $percent = 0;
+            foreach ($group_by_age as $age) {
+                if ($age_group->id === $age->age) {
+                    $percent = $total > 0 ? floor($age->total * 100 / $total) : 0;
+                    break;
+                }
+            }
+            $ageData[] = ['category' => __($age_group->age_group), 'value' => $percent];
+        }
+
+        $incomeData = [];
+        foreach ($income_groups as $income_group) {
+            $percent = 0;
+            foreach ($group_by_income as $income) {
+                if ($income_group->id === $income->income_id) {
+                    $percent = $total > 0 ? floor($income->total * 100 / $total) : 0;
+                    break;
+                }
+            }
+            $incomeData[] = ['category' => __($income_group->income), 'value' => $percent];
+        }
+
+        $employmentData = [];
+        foreach ($employment_statuses as $employment_status) {
+            $percent = 0;
+            foreach ($group_by_occupation as $occupation) {
+                if ($employment_status->id === $occupation->employment_status_id) {
+                    $percent = $total > 0 ? floor($occupation->total * 100 / $total) : 0;
+                    break;
+                }
+            }
+            $employmentData[] = ['category' => __($employment_status->employment_status), 'value' => $percent];
+        }
+
+        $educationData = [];
+        foreach ($education_levels as $education_level) {
+            $percent = 0;
+            foreach ($group_by_education as $education) {
+                if ($education_level->id === $education->education_level_id) {
+                    $percent = $total > 0 ? floor($education->total * 100 / $total) : 0;
+                    break;
+                }
+            }
+            $educationData[] = ['category' => __($education_level->education_level), 'value' => $percent];
+        }
+
+        $maritalData = [];
+        foreach ($marital_statuses as $marital_status) {
+            $percent = 0;
+            foreach ($group_by_marital as $marital) {
+                if ($marital_status->id === $marital->marital_status_id) {
+                    $percent = $total > 0 ? floor($marital->total * 100 / $total) : 0;
+                    break;
+                }
+            }
+            $maritalData[] = ['category' => __($marital_status->marital_status), 'value' => $percent];
+        }
+    @endphp
+
+    <script>
+        am4core.ready(function() {
+            am4core.useTheme(am4themes_animated);
+
+            function buildBarChart(containerId, data, prefix) {
+                var chart = am4core.create(containerId, am4charts.XYChart);
+                chart.hiddenState.properties.opacity = 0;
+                chart.data = data;
+                chart.numberFormatter.numberFormat = "#'%'";
+
+                var categoryAxis = chart.yAxes.push(new am4charts.CategoryAxis());
+                categoryAxis.dataFields.category = "category";
+                categoryAxis.renderer.inversed = true;
+                categoryAxis.renderer.grid.template.disabled = true;
+                categoryAxis.renderer.minGridDistance = 12;
+                categoryAxis.fontSize = 12;
+
+                var valueAxis = chart.xAxes.push(new am4charts.ValueAxis());
+                valueAxis.min = 0;
+                valueAxis.max = 100;
+                valueAxis.strictMinMax = true;
+                valueAxis.renderer.grid.template.strokeOpacity = 0.1;
+                valueAxis.renderer.labels.template.fontSize = 11;
+                valueAxis.numberFormatter.numberFormat = "#'%'";
+                valueAxis.title.text = "{{ __('Percent') }}";
+
+                var series = chart.series.push(new am4charts.ColumnSeries());
+                series.dataFields.valueX = "value";
+                series.dataFields.categoryY = "category";
+                series.columns.template.strokeOpacity = 0;
+                series.columns.template.tooltipText = "{category}: {value}% {{ __('of beneficiaries') }}";
+                series.columns.template.height = am4core.percent(60);
+                series.columns.template.fill = am4core.color("#0099ff");
+                series.columns.template.cornerRadiusTopRight = 8;
+                series.columns.template.cornerRadiusBottomRight = 8;
+
+                var labelBullet = series.bullets.push(new am4charts.LabelBullet());
+                labelBullet.label.text = "{value}%";
+                labelBullet.label.horizontalCenter = "left";
+                labelBullet.label.dx = 10;
+                labelBullet.label.fontSize = 11;
+
+                chart.exporting.menu = new am4core.ExportMenu();
+                chart.exporting.filePrefix = prefix;
+
+                return chart;
+            }
+
+            buildBarChart("genderChart", @json($genderData), "beneficiary-gender");
+            buildBarChart("ageGroupChart", @json($ageData), "beneficiary-age-group");
+            buildBarChart("incomeChart", @json($incomeData), "beneficiary-income");
+            buildBarChart("employmentChart", @json($employmentData), "beneficiary-employment");
+            buildBarChart("educationChart", @json($educationData), "beneficiary-education");
+            buildBarChart("maritalChart", @json($maritalData), "beneficiary-marital");
         });
     </script>
 @endpush

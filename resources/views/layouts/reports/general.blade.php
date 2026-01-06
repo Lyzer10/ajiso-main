@@ -40,8 +40,10 @@
                         $filter_val = $filter_val ?? 'All';
                         $date_raw = $date_raw ?? __('All time');
                         $summaryCollection = method_exists($disputes, 'getCollection') ? $disputes->getCollection() : $disputes;
-                        $statusCounts = $summaryCollection->groupBy('dispute_status_id')->map->count();
-                        $totalCases = $summaryCollection->count();
+                        $statusCounts = isset($statusCounts)
+                            ? collect($statusCounts)
+                            : $summaryCollection->groupBy('dispute_status_id')->map->count();
+                        $totalCases = $totalCases ?? $summaryCollection->count();
                         $summaryPalette = [
                             'summary-card--blue',
                             'summary-card--green',

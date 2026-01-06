@@ -187,6 +187,7 @@
 
         var chart = am4core.create("surveyChart", am4charts.XYChart);
         chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
+        chart.numberFormatter.numberFormat = "#,###";
 
         chart.exporting.menu = new am4core.ExportMenu();
         chart.exporting.formatOptions.getKey("json").disabled = true;
@@ -201,15 +202,15 @@
         topContainer.width = am4core.percent(100);
 
         var axisTitle = topContainer.createChild(am4core.Label);
-        axisTitle.text = "Values";
+        axisTitle.text = "{{ __('Responses') }}";
         axisTitle.fontWeight = 600;
         axisTitle.align = "left";
         axisTitle.paddingLeft = 10;
 
-        var dateTitle = topContainer.createChild(am4core.Label);
-        dateTitle.text = "Survey Stats";
-        dateTitle.fontWeight = 600;
-        dateTitle.align = "center";
+        var summaryTitle = topContainer.createChild(am4core.Label);
+        summaryTitle.text = "{{ __('Survey Summary') }}";
+        summaryTitle.fontWeight = 600;
+        summaryTitle.align = "center";
         axisTitle.paddingLeft = 10;
 
         var dateTitle = topContainer.createChild(am4core.Label);
@@ -258,11 +259,12 @@
         valueAxis.min = 0;
         valueAxis.renderer.minGridDistance = 30;
         valueAxis.renderer.baseGrid.disabled = true;
+        valueAxis.numberFormatter.numberFormat = "#,###";
 
         var series = chart.series.push(new am4charts.ColumnSeries());
         series.dataFields.categoryX = "choice";
         series.dataFields.valueY = "frequency";
-        series.columns.template.tooltipText = "{valueY.value}";
+        series.columns.template.tooltipText = "{categoryX}: {valueY} {{ __('responses') }}";
         series.columns.template.tooltipY = 0;
         series.columns.template.strokeOpacity = 0;
 

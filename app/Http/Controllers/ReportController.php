@@ -16,6 +16,7 @@ use App\Models\TypeOfService;
 use App\Models\EducationLevel;
 use App\Models\EmploymentStatus;
 use App\Models\SurveyChoice;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -35,6 +36,9 @@ class ReportController extends Controller
      */
     public function index()
     {
+        $resolvedStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['resolved'])
+                                        ->value('id');
+
         // Get all disputes and bind them to the index view
         $disputes = Dispute::with('assignedTo:first_name,middle_name,last_name',
                                     'reportedBy:first_name,middle_name,last_name',
@@ -45,9 +49,15 @@ class ReportController extends Controller
                             ->latest()
                             ->paginate(10);
 
-        // Get count of resolved disputes
-        $resolved_count = Dispute::where('dispute_status_id', '3')
-                                    ->count();
+        $totalCases = Dispute::count();
+
+        $statusCounts = Dispute::select('dispute_status_id', DB::raw('count(*) as total'))
+                                ->groupBy('dispute_status_id')
+                                ->pluck('total', 'dispute_status_id');
+
+        $resolved_count = $resolvedStatusId
+            ? $statusCounts->get($resolvedStatusId, 0)
+            : 0;
 
         // Get all the beneficiaries and bind them to the create  view
         $beneficiaries = Beneficiary::has('user')
@@ -76,7 +86,8 @@ class ReportController extends Controller
         //return $disputes;
         return view('reports.admin.general',compact('disputes', 'beneficiaries', 'staff',
                                                 'type_of_services', 'type_of_cases',
-                                                'dispute_statuses', 'resolved_count'));
+                                                'dispute_statuses', 'resolved_count',
+                                                'statusCounts', 'totalCases'));
     }
 
     /**
@@ -100,7 +111,10 @@ class ReportController extends Controller
             'dateRange' => ['required', 'string', 'max:255'],
         ]);
 
-        $disputes = [];
+        $resolvedStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['resolved'])
+                                        ->value('id');
+
+        $baseQuery = null;
 
         // split dateRange into $date_start and $date_end
 
@@ -124,12 +138,8 @@ class ReportController extends Controller
 
                 $search = $request->all;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                $baseQuery = Dispute::query()
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
 
                 // filter info to be displayed
                 $filter_by = 'N/A';
@@ -144,13 +154,9 @@ class ReportController extends Controller
 
                 $search = $request->legal_aid_provider;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('staff_id', '=', $search)
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                                'type_of_service_id', 'type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
 
                 // Get full name of the search term
                 $val = Staff::with('User')
@@ -172,13 +178,9 @@ class ReportController extends Controller
 
                 $search = $request->beneficiary;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('beneficiary_id', '=', $search)
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                                'type_of_service_id', 'type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
 
                 // Get full name of the search term
                 $val = Beneficiary::with('User')
@@ -199,13 +201,9 @@ class ReportController extends Controller
 
                 $search = $request->type_of_service;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('type_of_service_id', '=', $search)
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
 
                 // Get full name of the search term
                 $val = TypeOfService::select(['id', 'type_of_service'])
@@ -224,13 +222,9 @@ class ReportController extends Controller
 
                 $search = $request->type_of_case;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('type_of_case_id', '=', $search)
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
 
                 // Get full name of the search term
                 $val = TypeOfCase::select(['id', 'type_of_case'])
@@ -249,13 +243,9 @@ class ReportController extends Controller
 
                 $search = $request->dispute_status;
 
-                $disputes = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+                $baseQuery = Dispute::query()
                                     ->where('dispute_status_id', '=', $search)
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
-                                    ->latest()
-                                    ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
-                                            'type_of_service_id','type_of_case_id', 'dispute_status_id'])
-                                    ->paginate(10);
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
 
                 // Get full name of the search term
                 $val = DisputeStatus::select(['id', 'dispute_status'])
@@ -272,18 +262,33 @@ class ReportController extends Controller
             }
         }
 
-        if ($disputes) {
+        if ($baseQuery) {
 
-            // Get count of resolved disputes
-            $resolved_count = $disputes->where('dispute_status_id', '3')
-                                        ->count();
+            $disputes = (clone $baseQuery)
+                        ->with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfService', 'typeOfCase')
+                        ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
+                                'type_of_service_id','type_of_case_id', 'dispute_status_id'])
+                        ->latest()
+                        ->paginate(10);
+
+            $totalCases = (clone $baseQuery)->count();
+
+            $statusCounts = (clone $baseQuery)
+                            ->select('dispute_status_id', DB::raw('count(*) as total'))
+                            ->groupBy('dispute_status_id')
+                            ->pluck('total', 'dispute_status_id');
+
+            $resolved_count = $resolvedStatusId
+                ? $statusCounts->get($resolvedStatusId, 0)
+                : 0;
 
             $dispute_statuses = DisputeStatus::latest()
                                             ->get(['id', 'dispute_status']);
 
             //return $disputes;
             return view('reports.admin.general-results', compact('disputes', 'filter_by', 'filter_val',
-                                                            'date_raw', 'resolved_count', 'dispute_statuses')
+                                                            'date_raw', 'resolved_count', 'dispute_statuses',
+                                                            'statusCounts', 'totalCases')
                                                         );
 
         }else {

@@ -166,6 +166,7 @@
         // Create chart instance
         var chart = am4core.create("casesChart", am4charts.XYChart);
         chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
+        chart.numberFormatter.numberFormat = "#,###";
 
             chart.exporting.menu = new am4core.ExportMenu();
             chart.exporting.formatOptions.getKey("json").disabled = true;
@@ -189,13 +190,15 @@
 
         var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
         valueAxis.renderer.minWidth = 50;
+        valueAxis.title.text = "{{ __('Cases') }}";
+        valueAxis.numberFormatter.numberFormat = "#,###";
 
         // Create series
         var series = chart.series.push(new am4charts.ColumnSeries());
         series.sequencedInterpolation = true;
         series.dataFields.valueY = "frequency";
         series.dataFields.categoryX = "case";
-        series.tooltipText = "[{categoryX}: bold]{valueY}[/]";
+        series.tooltipText = "[{categoryX}: bold]{valueY} {{ __('cases') }}[/]";
         series.columns.template.strokeWidth = 0;
 
         series.tooltip.pointerOrientation = "vertical";
@@ -227,6 +230,7 @@
 
         // Create chart instance
         var chart = am4core.create("servicesChart", am4charts.PieChart);
+        chart.numberFormatter.numberFormat = "#,###";
 
         chart.exporting.menu = new am4core.ExportMenu();
         chart.exporting.formatOptions.getKey("json").disabled = true;
@@ -241,6 +245,7 @@
         var pieSeries = chart.series.push(new am4charts.PieSeries());
         pieSeries.dataFields.value = "frequency";
         pieSeries.dataFields.category = "service";
+        pieSeries.slices.template.tooltipText = "{category}: {value.value} {{ __('services') }} ({value.percent.formatNumber('#.0')}%)";
         pieSeries.labels.template.disabled = true;
 
         chart.radius = am4core.percent(95);
@@ -291,6 +296,7 @@
 
         // Create chart instance
         var chart = am4core.create("disputeStatusChart", am4charts.PieChart);
+        chart.numberFormatter.numberFormat = "#,###";
 
         chart.exporting.menu = new am4core.ExportMenu();
         chart.exporting.formatOptions.getKey("json").disabled = true;
@@ -311,6 +317,7 @@
         pieSeries.slices.template.stroke = am4core.color("#fff");
         pieSeries.slices.template.strokeWidth = 2;
         pieSeries.slices.template.strokeOpacity = 1;
+        pieSeries.slices.template.tooltipText = "{category}: {value.value} {{ __('cases') }} ({value.percent.formatNumber('#.0')}%)";
 
         // This creates initial animation
         pieSeries.hiddenState.properties.opacity = 1;
@@ -335,6 +342,7 @@
         // create chart
         var chart = am4core.create("performanceChart", am4charts.GaugeChart);
         chart.hiddenState.properties.opacity = 0; // this makes initial fade in effect
+        chart.numberFormatter.numberFormat = "#,###";
 
         var title = chart.titles.create();
         title.text = {{ __('performance.title') }};
@@ -342,7 +350,9 @@
         title.marginBottom = 20;
 
         var label = chart.createChild(am4core.Label);
-        label.text = "{{ __('Value / Milestone') }}";
+        var milestoneValue = performance.milestone ?? 100;
+        var performanceValue = performance.value ?? 0;
+        label.text = "{{ __('Value / Milestone') }}: " + performanceValue + " / " + milestoneValue;
         label.fontSize = 14;
         label.align = "center";
         label.marginTop = 10;
@@ -358,7 +368,7 @@
 
         var axis = chart.xAxes.push(new am4charts.ValueAxis());
         axis.min = 0;
-        axis.max = performance.milestone ?? 100;
+        axis.max = milestoneValue;
         axis.strictMinMax = true;
 
         var colorSet = new am4core.ColorSet();
