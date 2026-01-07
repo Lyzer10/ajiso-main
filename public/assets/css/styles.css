@@ -3054,6 +3054,38 @@ table.dataTable thead td {
     font-size: 13px;
 }
 
+.dispute-filter__control {
+    height: 42px;
+    padding: 0.5rem 0.75rem;
+    font-size: 13px;
+    border-radius: 6px;
+}
+
+.dispute-filter .select2-container--default .select2-selection--single {
+    height: 42px;
+    border-color: var(--primary-color);
+    border-radius: 6px;
+}
+
+.dispute-filter .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 40px;
+    padding-left: 12px;
+}
+
+.dispute-filter .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 40px;
+}
+
+.dispute-filter .input-group .btn {
+    height: 42px;
+}
+
+.amcharts-logo,
+.amcharts-chart-div a[aria-label^="Chart created using amCharts"],
+.amcharts-chart-div a[title="JavaScript charts"] {
+    display: none !important;
+}
+
 /*-------------------- Dispute Status Badges -------------------*/
 
 .badge-status {
@@ -3619,7 +3651,7 @@ table.dataTable thead td {
 }
 
 .case-demographics__header {
-    background: #0f766e;
+    background: var(--primary-color);
     color: #ffffff;
     padding: 12px 16px;
     font-weight: 600;

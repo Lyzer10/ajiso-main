@@ -953,6 +953,7 @@
                 $('#recipientAddressGroup').toggleClass('d-none', isReferral);
                 $('#meetingTimeGroup').toggleClass('d-none', isReferral);
                 $('#meetingDayGroup').toggleClass('d-none', isReferral);
+                $('#letterNotesGroup').toggleClass('d-none', isReferral);
                 var nameLabel = isReferral ? 'Client Name' : 'Recipient Name';
                 $('#recipientNameLabel').text(nameLabel);
                 var namePlaceholder = isReferral ? 'Enter client name' : 'Enter recipient full name';

@@ -261,6 +261,7 @@
 
             function buildDonutChart(containerId, data, prefix, unitLabel) {
                 var chart = am4core.create(containerId, am4charts.PieChart);
+                chart.logo.disabled = true;
                 chart.hiddenState.properties.opacity = 0;
                 chart.data = data;
                 chart.innerRadius = am4core.percent(45);

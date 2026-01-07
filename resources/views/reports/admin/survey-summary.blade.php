@@ -186,6 +186,7 @@
         // Themes end
 
         var chart = am4core.create("surveyChart", am4charts.XYChart);
+        chart.logo.disabled = true;
         chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
         chart.numberFormatter.numberFormat = "#,###";
 

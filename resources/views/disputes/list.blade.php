@@ -90,16 +90,11 @@
                                 <div class="form-row align-items-end">
                                     <div class="col-lg-3 col-md-6 mb-3">
                                         <label class="font-weight-bold">{{ __('Search by beneficiary') }}</label>
-                                        <div class="input-group">
-                                            <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control border-prepend-black p-2">
-                                            <div class="input-group-append">
-                                                <button type="submit" class="btn btn-primary btn-sm">{{ __('Filter') }}</button>
-                                            </div>
-                                        </div>
+                                        <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control border-input-primary dispute-filter__control">
                                     </div>
-                                    <div class="col-lg-2 col-md-6 mb-3">
+                                    <div class="col-lg-3 col-md-6 mb-3">
                                         <label class="font-weight-bold">{{ __('Case Type') }}</label>
-                                        <select name="case_type" class="select2 select2-container--default border-input-primary" style="width: 100%;">
+                                        <select name="case_type" class="select2 select2-container--default border-input-primary dispute-filter__control" style="width: 100%;">
                                             <option value="">{{ __('All Case Types') }}</option>
                                             @if (!empty($type_of_cases) && $type_of_cases->count())
                                                 @foreach ($type_of_cases as $type_of_case)
@@ -110,9 +105,9 @@
                                             @endif
                                         </select>
                                     </div>
-                                    <div class="col-lg-2 col-md-6 mb-3">
+                                    <div class="col-lg-3 col-md-6 mb-3">
                                         <label class="font-weight-bold">{{ __('Dispute Status') }}</label>
-                                        <select name="status" class="select2 select2-container--default border-input-primary" style="width: 100%;">
+                                        <select name="status" class="select2 select2-container--default border-input-primary dispute-filter__control" style="width: 100%;">
                                             <option value="">{{ __('All Statuses') }}</option>
                                             @if (!empty($dispute_statuses) && $dispute_statuses->count())
                                                 @foreach ($dispute_statuses as $dispute_status)
@@ -123,9 +118,9 @@
                                             @endif
                                         </select>
                                     </div>
-                                    <div class="col-lg-2 col-md-6 mb-3">
+                                    <div class="col-lg-3 col-md-6 mb-3">
                                         <label class="font-weight-bold">{{ __('Period') }}</label>
-                                        <select name="period" id="period" class="select2 select2-container--default border-input-primary" style="width: 100%;">
+                                        <select name="period" id="period" class="select2 select2-container--default border-input-primary dispute-filter__control" style="width: 100%;">
                                             <option value="">{{ __('All Time') }}</option>
                                             <option value="today" {{ request('period') === 'today' ? 'selected' : '' }}>{{ __('Today') }}</option>
                                             <option value="this_week" {{ request('period') === 'this_week' ? 'selected' : '' }}>{{ __('This Week') }}</option>
@@ -138,7 +133,7 @@
                                     <div class="col-lg-3 col-md-6 mb-3" id="customPeriod">
                                         <label class="font-weight-bold">{{ __('Date Range') }}</label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control border-input-primary float-right" id="disputes_daterange" name="dateRange" value="{{ request('dateRange') }}">
+                                            <input type="text" class="form-control border-input-primary float-right dispute-filter__control" id="disputes_daterange" name="dateRange" value="{{ request('dateRange') }}">
                                             <div class="input-group-append">
                                                 <button type="button" class="btn btn-primary btn-sm" id="disputes_daterange_btn">
                                                     <i class="far fa-calendar-alt"></i>

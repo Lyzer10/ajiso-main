@@ -259,6 +259,7 @@
 
             function buildBarChart(containerId, data, prefix) {
                 var chart = am4core.create(containerId, am4charts.XYChart);
+                chart.logo.disabled = true;
                 chart.hiddenState.properties.opacity = 0;
                 chart.data = data;
                 chart.numberFormatter.numberFormat = "#";

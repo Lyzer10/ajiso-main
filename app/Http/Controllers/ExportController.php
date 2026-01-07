@@ -82,7 +82,7 @@ class ExportController extends Controller
                                                     );
 
         return $pdf->setPaper('a4', 'landscape')
-                    ->download('report_'.time());
+                    ->download('report_'.time().'.pdf');
 
         return redirect()->back()
                         ->withSuccess('Export started!');

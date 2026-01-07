@@ -165,6 +165,7 @@
 
         // Create chart instance
         var chart = am4core.create("casesChart", am4charts.XYChart);
+        chart.logo.disabled = true;
         chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
         chart.numberFormatter.numberFormat = "#,###";
 
@@ -187,11 +188,15 @@
         categoryAxis.renderer.labels.template.rotation = 325;
         categoryAxis.tooltip.disabled = true;
         categoryAxis.renderer.minHeight = 110;
+        categoryAxis.renderer.grid.template.strokeOpacity = 0.1;
+        categoryAxis.renderer.cellStartLocation = 0.1;
+        categoryAxis.renderer.cellEndLocation = 0.9;
 
         var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
         valueAxis.renderer.minWidth = 50;
         valueAxis.title.text = "{{ __('Cases') }}";
         valueAxis.numberFormatter.numberFormat = "#,###";
+        valueAxis.renderer.grid.template.strokeOpacity = 0.15;
 
         // Create series
         var series = chart.series.push(new am4charts.ColumnSeries());
@@ -200,6 +205,10 @@
         series.dataFields.categoryX = "case";
         series.tooltipText = "[{categoryX}: bold]{valueY} {{ __('cases') }}[/]";
         series.columns.template.strokeWidth = 0;
+        series.columns.template.width = am4core.percent(40);
+        series.columns.template.maxWidth = 26;
+        series.columns.template.column.cornerRadiusTopLeft = 6;
+        series.columns.template.column.cornerRadiusTopRight = 6;
 
         series.tooltip.pointerOrientation = "vertical";
 
@@ -230,6 +239,7 @@
 
         // Create chart instance
         var chart = am4core.create("servicesChart", am4charts.PieChart);
+        chart.logo.disabled = true;
         chart.numberFormatter.numberFormat = "#,###";
 
         chart.exporting.menu = new am4core.ExportMenu();
@@ -296,6 +306,7 @@
 
         // Create chart instance
         var chart = am4core.create("disputeStatusChart", am4charts.PieChart);
+        chart.logo.disabled = true;
         chart.numberFormatter.numberFormat = "#,###";
 
         chart.exporting.menu = new am4core.ExportMenu();
@@ -341,6 +352,7 @@
 
         // create chart
         var chart = am4core.create("performanceChart", am4charts.GaugeChart);
+        chart.logo.disabled = true;
         chart.hiddenState.properties.opacity = 0; // this makes initial fade in effect
         chart.numberFormatter.numberFormat = "#,###";
 

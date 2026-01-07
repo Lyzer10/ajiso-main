@@ -10,7 +10,7 @@
         }
 
         popup.document.open();
-        popup.document.write('<html><head><title>Letter Preview</title>');
+        popup.document.write('<html><head><title></title>');
         popup.document.write('<style>body{font-family:\"Times New Roman\",serif;font-size:12px;line-height:1.6;padding:30px;color:#111827;}');
         popup.document.write('.letter-head{text-align:center;}');
         popup.document.write('.letter-logo img{max-height:70px;width:auto;}');

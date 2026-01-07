@@ -163,7 +163,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" id="letterNotesGroup">
                             <label for="letterNotes">{{ __('Additional Notes') }}</label>
                             <textarea class="form-control" id="letterNotes" rows="3" placeholder="{{ __('Any additional notes...') }}"></textarea>
                         </div>
