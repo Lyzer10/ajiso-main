@@ -424,7 +424,7 @@ class DisputeActivityController extends Controller
             'files_names' => ['nullable'],
             'files_names.*' => ['string', 'max:190'],
             'files' => ['nullable'],
-            'files.*' => ['mimes:jpg,jpeg,csv,txt,xlx,xls,xlxs,doc,docx,pdf', 'max:2048']
+            'files.*' => ['mimes:jpg,jpeg,png,csv,txt,xls,xlsx,doc,docx,pdf', 'max:2048']
         ]);
 
         /**
@@ -584,6 +584,27 @@ class DisputeActivityController extends Controller
             return redirect()->back()
                             ->withErrors('errors', 'Recording LAAC clinic information failed, please try again.');
         }
+    }
+
+    /**
+     * Display a clinic visit file in the browser.
+     *
+     * @param  string  $locale
+     * @param  \App\Models\DisputeFile  $file
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function viewClinicFile($locale, DisputeFile $file)
+    {
+        $path = (string) $file->path;
+        $relativePath = Str::startsWith($path, 'public/')
+            ? Str::after($path, 'public/')
+            : $path;
+
+        if (!Storage::disk('public')->exists($relativePath)) {
+            abort(404);
+        }
+
+        return response()->file(Storage::disk('public')->path($relativePath));
     }
 
     /**

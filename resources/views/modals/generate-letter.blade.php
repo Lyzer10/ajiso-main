@@ -134,25 +134,13 @@
                             <div class="form-group col-md-4" id="meetingDateGroup">
                                 <label for="meeting_date" id="meetingDateLabel">{{ __('Meeting Date') }}</label>
                                 <div class="input-group date" id="meeting_date_picker" data-target-input="nearest">
-                                    <input type="text" class="form-control datetimepicker-input border-input-primary" id="meeting_date"
-                                        placeholder="dd/mm/yyyy" readonly inputmode="none" data-target="#meeting_date_picker" data-toggle="datetimepicker">
-                                    <div class="input-group-append" data-target="#meeting_date_picker" data-toggle="datetimepicker">
-                                        <div class="input-group-text border-append-primary bg-prepend-primary">
-                                            <i class="far fa-calendar-alt"></i>
-                                        </div>
-                                    </div>
+                                    <input type="date" class="form-control border-input-primary" id="meeting_date">
                                 </div>
                             </div>
                             <div class="form-group col-md-4" id="meetingTimeGroup">
                                 <label for="meeting_time" id="meetingTimeLabel">{{ __('Time') }}</label>
                                 <div class="input-group date" id="meeting_time_picker" data-target-input="nearest">
-                                    <input type="text" class="form-control datetimepicker-input border-input-primary" id="meeting_time"
-                                        placeholder="hh:mm" readonly inputmode="none" data-target="#meeting_time_picker" data-toggle="datetimepicker">
-                                    <div class="input-group-append" data-target="#meeting_time_picker" data-toggle="datetimepicker">
-                                        <div class="input-group-text border-append-primary bg-prepend-primary">
-                                            <i class="far fa-clock"></i>
-                                        </div>
-                                    </div>
+                                    <input type="time" class="form-control border-input-primary" id="meeting_time" step="60">
                                 </div>
                             </div>
                             <div class="form-group col-md-4" id="meetingDayGroup">

@@ -203,6 +203,23 @@
 
 .metismenu li ul {
     padding-left: 37px;
+    margin-top: 6px;
+}
+
+.assign-card .card-header .header-title {
+    font-size: 16px;
+}
+
+.assign-form .select2-container {
+    width: 100% !important;
+}
+
+.assign-form .btn {
+    min-width: 110px;
+}
+
+.assign-form .assign-icon {
+    padding-top: 10px;
 }
 
 .metismenu > li:hover > a {
@@ -212,7 +229,7 @@
 
 .metismenu > li.active > a {
     color: #fff;
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 6px !important;
 }
 
@@ -3879,4 +3896,3 @@ table.dataTable thead td {
 .badge-primary {
     background-color: var(--primary-color);
 }
-

@@ -30,20 +30,19 @@
         </div>
         <!-- Assign Disputes area start -->
         <div class="col-12">
-            <div class="card mt-5">
-                <div class="card-header">
-                    <h4 class="header-title">{{ __('Dispute assignment') }}
-                        <a href="{{ route('disputes.list', app()->getLocale()) }}" class="btn btn-sm text-white light-custom-color pull-right text-white">
-                            {{ __('Back') }}
-                        </a>
-                    </h4>
+            <div class="card mt-5 assign-card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h4 class="header-title mb-0">{{ __('Dispute assignment') }}</h4>
+                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="btn btn-sm text-white light-custom-color">
+                        {{ __('Back') }}
+                    </a>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ route('dispute.assign.bind', app()->getLocale()) }}">
                         @csrf
                         @METHOD('PATCH')
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
+                        <div class="form-row align-items-end assign-form">
+                            <div class="col-lg-5 col-md-12 mb-3">
                                 <label for="dispute" class="font-weight-bold">{{ __('Dispute') }}<sup class="text-danger">*</sup></label>
                                 <select id="dispute" aria-describedby="selectDispute"
                                     class="select2 select2-container--default border-input-primary @error('dispute') is-invalid @enderror"
@@ -95,10 +94,10 @@
                                     </span>
                                 @enderror
                             </div>
-                            <div class="col-md-1 mb-2">
-                                <i class="fas fa-link fa-fw fa-2x pt-4 mt-2 text-success"></i>
+                            <div class="col-lg-1 d-none d-lg-flex mb-3 justify-content-center assign-icon">
+                                <i class="fas fa-link fa-fw fa-2x text-success"></i>
                             </div>
-                            <div class="col-md-4 mb-2">
+                            <div class="col-lg-5 col-md-12 mb-3">
                                 <label for="staff" class="font-weight-bold">{{ __('Legal Aid Provider') }}<sup class="text-danger">*</sup></label>
                                 <select id="staff" aria-describedby="selectStaff"
                                     class="select2 select2-container--default  border-input-primary @error('staff') is-invalid @enderror"
@@ -125,8 +124,8 @@
                                     </span>
                                 @enderror
                             </div>
-                            <div class="col-md-1 mt-4 pt-1">
-                                <button class="btn text-white light-custom-color btn-rounded float-right" type="submit">
+                            <div class="col-lg-1 col-md-12 mb-3 text-right">
+                                <button class="btn text-white light-custom-color btn-rounded w-100" type="submit">
                                     {{ __('Assign') }}
                                 </button>
                             </div>

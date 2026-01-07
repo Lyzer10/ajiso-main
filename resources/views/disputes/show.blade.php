@@ -380,63 +380,10 @@
                                             <i class="fas fa-marker fa-fw text-secondary"></i>
                                             {{ __('Legal Aid Provider Remarks') }}
                                         </a>
-                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#disputeAttachmentModal">
-                                            <i class="fas fa-paperclip fa-fw text-info"></i>
-                                            {{ __('Add Attachment') }}
-                                        </a>
                                         <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#generateLetterModal">
                                             <i class="fas fa-file-alt fa-fw text-primary"></i>
                                             {{ __('Generate Letter (WITO / Referral / Feedback)') }}
                                         </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card dispute-card mb-3">
-                                <div class="dispute-card-header">
-                                    <div class="dispute-card-title">{{ __('Dispute Attachments') }}</div>
-                                    <span class="badge badge-success">
-                                        {{ ($dispute->attachments->count()) ?? 0 }}
-                                    </span>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert-items">
-                                        @if ($dispute->attachments->count())
-                                            @foreach ($dispute->attachments as $attachment)
-                                                <div class="alert alert-info lead attachment-item" role="alert">
-                                                    <div class="d-flex flex-wrap align-items-center justify-content-between attachment-row">
-                                                        <div class="attachment-meta">
-                                                            <strong>{{ '#'.$loop->iteration }}</strong> |
-                                                            <span class="attachment-name" title="{{ $attachment->name }}">
-                                                                {{ Str::limit($attachment->name, 30) }}
-                                                            </span> |
-                                                            {{ Str::upper($attachment->file_type) }}
-                                                        </div>
-                                                        <div class="attachment-actions">
-                                                            <a href="{{ route('dispute.activity.attachment.view', ['locale' => app()->getLocale(), 'attachment' => $attachment->id]) }}" target="_blank" rel="noopener">
-                                                                {{ __('View') }}
-                                                            </a>
-                                                            /
-                                                            <a href="{{ route('dispute.activity.attachment.download', ['locale' => app()->getLocale(), 'attachment' => $attachment->id]) }}">
-                                                                {{ __('Download') }}
-                                                            </a>
-                                                            /
-                                                            <form method="POST" action="{{ route('dispute.activity.attachment.delete', ['locale' => app()->getLocale(), 'attachment' => $attachment->id]) }}" class="d-inline" onsubmit="return confirm('{{ __('Delete this attachment?') }}')">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="btn btn-link p-0 text-danger" title="{{ __('Delete attachment') }}">
-                                                                    <i class="fas fa-trash-alt"></i>
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        @else
-                                            <div class="alert alert-primary lead" role="alert">
-                                                <strong><i class="fas fa-exclamation-triangle text-warning"></i></strong>
-                                                {{ __('Attachments Not Found.') }}
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -495,22 +442,20 @@
     {{-- Letter date/time --}}
     <script type="text/javascript">
         $(function () {
-            var letterModal = $('#generateLetterModal');
-            var widgetParent = letterModal.length ? letterModal : undefined;
-            $('#meeting_date_picker').datetimepicker({
-                format: 'DD/MM/YYYY',
-                viewMode: 'years',
-                ignoreReadonly: true,
-                allowInputToggle: true,
-                widgetParent: widgetParent
-            });
+            function initLetterPickers() {
+                var datePicker = $('#meeting_date_picker');
+                var timePicker = $('#meeting_time_picker');
+                if (datePicker.data('datetimepicker')) {
+                    datePicker.datetimepicker('destroy');
+                }
+                if (timePicker.data('datetimepicker')) {
+                    timePicker.datetimepicker('destroy');
+                }
+            }
 
-            $('#meeting_time_picker').datetimepicker({
-                format: 'HH:mm',
-                stepping: 1,
-                ignoreReadonly: true,
-                allowInputToggle: true,
-                widgetParent: widgetParent
+            initLetterPickers();
+            $('#generateLetterModal').on('shown.bs.modal', function () {
+                initLetterPickers();
             });
         });
     </script>
@@ -656,7 +601,7 @@
                         + "<div class=\"letter-subject\">YAH: <span class=\"letter-subject-underline\">BARUA YA WITO.</span></div>"
                         + "<p>Tafadhali rejea kichwa cha habari hapo juu.</p>"
                         + "<p>AJISO ni Kituo cha Msaada wa Sheria na Habari za Haki za Binadamu kinatoa msaada wa kisheria kwa jamii.</p>"
-                        + "<p>Hivyo basi kwa barua hii, tunakuomba ufike hapa ofisini kwetu tarehe <span class=\"letter-line letter-line--medium\">{meetingDate}</span>, saa <span class=\"letter-line letter-line--short\">{meetingTime}</span> asubuhi/mchana siku ya <span class=\"letter-line letter-line--medium\">{meetingDay}</span> kwa majadiliano ya pamoja.</p>"
+                        + "<p>Hivyo basi kwa barua hii, tunakuomba ufike hapa ofisini kwetu tarehe <span class=\"letter-line letter-line--medium\">{meetingDate}</span>, saa <span class=\"letter-line letter-line--short\">{meetingTime}</span> <span class=\"letter-line letter-line--short\">{meetingPeriod}</span> siku ya <span class=\"letter-line letter-line--medium\">{meetingDay}</span> kwa majadiliano ya pamoja.</p>"
                         + "<p>Ofisi ipo KARIBU NA KANISA KATOLIKI KORONGONI AU KARIBU NA HOSPITALI YA MOSHI HEALTH CENTRE, KATA YA KIUSA, MTAA WA RAMOLE unaotazamana na shule ya msingi jamhuri, utaona kibao kinachoelekeza.</p>"
                         + "<p>Tafadhali tunaomba ushirikiano wako.</p>"
                         + "<p>Wako.</p>"
@@ -688,7 +633,7 @@
                         + "<div class=\"letter-subject\">YAH: KUMBUSHO LA WITO.</div>"
                         + "<p>Kichwa cha habari hapo juu cha husika.</p>"
                         + "<p>Rejea barua yetu ya tarehe <span class=\"letter-line letter-line--long\">{letterDate}</span> yenye kichwa cha habari Wito.</p>"
-                        + "<p>Kwa barua hii, tunakuomba ufike hapa ofisini kwetu tarehe <span class=\"letter-line letter-line--short\">{meetingDate}</span> saa <span class=\"letter-line letter-line--short\">{meetingTime}</span> asubuhi/mchana kwa majadiliano ya pamoja.</p>"
+                        + "<p>Kwa barua hii, tunakuomba ufike hapa ofisini kwetu tarehe <span class=\"letter-line letter-line--short\">{meetingDate}</span> saa <span class=\"letter-line letter-line--short\">{meetingTime}</span> <span class=\"letter-line letter-line--short\">{meetingPeriod}</span> kwa majadiliano ya pamoja.</p>"
                         + "<p>Ofisi ipo KARIBU NA KANISA KATOLIKI KORONGONI AU KARIBU NA HOSPITALI YA MOSHI HEALTH CENTRE, KATA YA KIUSA, MTAA WA RAMOLE unaotazamana na shule ya Msingi Jamhuri, utaona kibao kinachoelekeza.</p>"
                         + "<p>Endapo hutafika tutawajibika kuchukua hatua zaidi za kisheria ikiwa ni pamoja na kufungua kesi Mahakamani.</p>"
                         + "<p>Kwa maelezo zaidi unaweza kuwasiliana na ofisi kupitia namba 0622450127</p>"
@@ -897,7 +842,7 @@
                 }
                 var parsed = moment.isMoment(dateValue)
                     ? dateValue.clone()
-                    : moment(dateValue, ['DD/MM/YYYY', 'D/M/YYYY', 'L'], true);
+                    : moment(dateValue, ['DD/MM/YYYY', 'D/M/YYYY', 'L', 'YYYY-MM-DD'], true);
                 if (!parsed.isValid()) {
                     return;
                 }
@@ -939,6 +884,21 @@
                 return value || '';
             }
 
+            function getMeetingPeriod(timeValue, language) {
+                if (!timeValue) {
+                    return '';
+                }
+                var parsed = moment(timeValue, ['HH:mm', 'H:mm', 'hh:mm A', 'h:mm A'], true);
+                if (!parsed.isValid()) {
+                    return '';
+                }
+                var isMorning = parsed.hour() < 12;
+                if (language === 'en') {
+                    return isMorning ? 'morning' : 'afternoon';
+                }
+                return isMorning ? 'asubuhi' : 'mchana';
+            }
+
             function setFieldIfEmpty(selector, value) {
                 var field = $(selector);
                 if (!field.length || field.val()) {
@@ -947,6 +907,34 @@
                 if (value && value.toString().trim().length) {
                     field.val(value).trigger('change');
                 }
+            }
+
+            function normalizeDateForInput(value) {
+                if (!value) {
+                    return '';
+                }
+                var parsed = moment(value, ['DD/MM/YYYY', 'D/M/YYYY', 'L', 'YYYY-MM-DD'], true);
+                return parsed.isValid() ? parsed.format('YYYY-MM-DD') : '';
+            }
+
+            function formatMeetingDateForLetter(value) {
+                if (!value) {
+                    return '';
+                }
+                var parsed = moment(value, ['YYYY-MM-DD', 'DD/MM/YYYY', 'D/M/YYYY', 'L'], true);
+                return parsed.isValid() ? parsed.format('DD/MM/YYYY') : value;
+            }
+
+            function setMeetingDateIfEmpty(value) {
+                var field = $('#meeting_date');
+                if (!field.length || field.val()) {
+                    return;
+                }
+                var parsed = moment(value, ['DD/MM/YYYY', 'D/M/YYYY', 'L', 'YYYY-MM-DD'], true);
+                if (!parsed.isValid()) {
+                    return;
+                }
+                field.val(parsed.format('YYYY-MM-DD')).trigger('change');
             }
 
             function applyAutoFill(letterType) {
@@ -962,7 +950,7 @@
                 setFieldIfEmpty('#referral_district', beneficiaryDistrict);
                 setFieldIfEmpty('#referral_village', locationFallback);
                 setFieldIfEmpty('#referral_dispute_from', whereReported);
-                setFieldIfEmpty('#meeting_date', reportedOn || letterDate);
+                setMeetingDateIfEmpty(reportedOn || letterDate);
                 applyMeetingDayFromDate($('#meeting_date').val());
             }
 
@@ -1045,6 +1033,7 @@
                 var recipientNameOrSirMadam = normalizeValue(recipientName, language === 'sw' ? 'Mheshimiwa' : 'Sir/Madam');
                 var longDots = "................................................";
                 var shortDots = "....................";
+                var meetingPeriod = getMeetingPeriod(meetingTime, language);
 
                 var data = {
                     logoUrl: logoUrl,
@@ -1059,15 +1048,16 @@
                     villageWard: escapeHtml(normalizeLineValue(villageWard)),
                     disputeFrom: escapeHtml(normalizeLineValue(disputeFrom)),
                     disputeTo: escapeHtml(normalizeLineValue(disputeTo)),
-                    referralDate: escapeHtml(normalizeLineValue(meetingDate)),
+                    referralDate: escapeHtml(normalizeLineValue(formatMeetingDateForLetter(meetingDate))),
                     clientSexF: sexFMark,
                     clientSexM: sexMMark,
                     letterTitle: escapeHtml(letterTitle),
                     recipientNameOrSirMadam: escapeHtml(recipientNameOrSirMadam),
                     caseType: escapeHtml(normalizeValue(caseType, longDots)),
-                    meetingDate: escapeHtml(normalizeLineValue(meetingDate)),
+                    meetingDate: escapeHtml(normalizeLineValue(formatMeetingDateForLetter(meetingDate))),
                     meetingTime: escapeHtml(normalizeLineValue(meetingTime)),
                     meetingDay: escapeHtml(normalizeLineValue(meetingDay)),
+                    meetingPeriod: escapeHtml(normalizeLineValue(meetingPeriod)),
                     notes: formatMultiline(normalizeValue(notes, "-")),
                     feedbackName: escapeHtml(normalizeLineValue(beneficiaryName)),
                     feedbackAge: escapeHtml(normalizeLineValue(beneficiaryAge)),
@@ -1110,6 +1100,8 @@
             }
 
             modal.on('shown.bs.modal', function () {
+                setMeetingDateIfEmpty(letterDate);
+                applyMeetingDayFromDate($('#meeting_date').val());
                 scheduleLetterPreview();
             });
 
@@ -1117,18 +1109,12 @@
                 scheduleLetterPreview();
             });
 
-            $('#meeting_date_picker').on('change.datetimepicker', function (event) {
-                if (event.date) {
-                    $('#meeting_date').val(event.date.format('DD/MM/YYYY'));
-                }
-                applyMeetingDayFromDate(event.date || $('#meeting_date').val());
+            $('#meeting_date').off('change.letter').on('change.letter', function () {
+                applyMeetingDayFromDate($(this).val());
                 scheduleLetterPreview();
             });
 
-            $('#meeting_time_picker').on('change.datetimepicker', function (event) {
-                if (event.date) {
-                    $('#meeting_time').val(event.date.format('HH:mm'));
-                }
+            $('#meeting_time').off('change.letter').on('change.letter', function () {
                 scheduleLetterPreview();
             });
 
@@ -1161,6 +1147,5 @@
     @include('modals.clinic-progress')
     @include('modals.change-dispute-status')
     @include('modals.provider-remarks')
-    @include('modals.dispute-attachment')
     @include('modals.generate-letter')
 @endpush

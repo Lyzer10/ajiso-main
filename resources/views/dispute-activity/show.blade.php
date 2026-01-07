@@ -112,7 +112,7 @@
                                                     {{ Str::ucfirst($file->name) }} |
                                                     {{  Str::upper($file->file_type) }} | 
                                                     2 MB |
-                                                    <a href="{{ asset(str_replace('public/', 'storage/', $file->path)) }}">
+                                                    <a href="{{ route('dispute.activity.clinic.file', [app()->getLocale(), $file]) }}" target="_blank" rel="noopener">
                                                         {{ __('Download / View') }}
                                                     </a>
                                                 </div>

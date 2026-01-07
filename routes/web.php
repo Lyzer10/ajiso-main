@@ -156,6 +156,7 @@ Route::group([
 
     // Dispute Clinic sheets
     Route::get('/disputes/activity/clinic/{sheet}/show', [App\Http\Controllers\DisputeActivityController::class, 'clinicSheet'])->name('disputes.activity.sheet');
+    Route::get('/disputes/activity/clinic/files/{file}', [App\Http\Controllers\DisputeActivityController::class, 'viewClinicFile'])->name('dispute.activity.clinic.file');
 
     // Reports
 
