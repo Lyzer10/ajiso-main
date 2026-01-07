@@ -18,13 +18,14 @@ class LegalAidProviderExportController extends Controller
 
     public function exportListPdf(Request $request)
     {
+        $this->preparePdfRuntime();
         $staff = $this->buildListQuery($request)->get();
 
         $pdf = PDF::loadView('exports.staff-list', [
             'staff' => $staff,
             'search' => $request->get('search'),
             'generatedAt' => Carbon::now()->format('d-m-Y H:i'),
-        ]);
+        ])->setPaper('a4', 'landscape');
 
         return $pdf->download('legal_aid_providers_' . time() . '.pdf');
     }
@@ -53,6 +54,7 @@ class LegalAidProviderExportController extends Controller
 
     public function exportProfilePdf($locale, Staff $staff)
     {
+        $this->preparePdfRuntime();
         $staff->load(['user', 'center']);
 
         $pdf = PDF::loadView('exports.staff-profile', [
@@ -137,5 +139,11 @@ class LegalAidProviderExportController extends Controller
             ['Office', optional($staff->center)->location ?? ''],
             ['Assignment', ($staff->is_assigned == 1) ? 'assigned' : 'unassigned'],
         ];
+    }
+
+    private function preparePdfRuntime()
+    {
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
     }
 }

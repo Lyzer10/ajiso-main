@@ -213,6 +213,8 @@ class DisputeActivityController extends Controller
          * @return \App\Models\DisputeActivity
          */
 
+        $status = null;
+
         // Register dispute activity on dispute status update
         $activity = new DisputeActivity();
 
@@ -313,10 +315,10 @@ class DisputeActivityController extends Controller
             // Get today date
             $updated_at = Carbon::now()->format('d/m/Y');
 
-            if($activity) {
+            $message = null;
 
-                $message = null;
-                $statusName = $status->dispute_status ?? optional($dispute->disputeStatus)->dispute_status;
+            if($activity) {
+                $statusName = optional($status)->dispute_status ?? optional($dispute->disputeStatus)->dispute_status;
 
                 switch ($activity->dispute_activity) {
                     case 'Dispute Resolved':

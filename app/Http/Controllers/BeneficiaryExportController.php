@@ -18,13 +18,14 @@ class BeneficiaryExportController extends Controller
 
     public function exportListPdf(Request $request)
     {
+        $this->preparePdfRuntime();
         $beneficiaries = $this->buildListQuery($request)->get();
 
         $pdf = PDF::loadView('exports.beneficiaries-list', [
             'beneficiaries' => $beneficiaries,
             'search' => $request->get('search'),
             'generatedAt' => Carbon::now()->format('d-m-Y H:i'),
-        ]);
+        ])->setPaper('a4', 'landscape');
 
         return $pdf->download('beneficiaries_' . time() . '.pdf');
     }
@@ -53,6 +54,7 @@ class BeneficiaryExportController extends Controller
 
     public function exportProfilePdf($locale, Beneficiary $beneficiary)
     {
+        $this->preparePdfRuntime();
         $beneficiary->load([
             'user',
             'district.region',
@@ -160,5 +162,11 @@ class BeneficiaryExportController extends Controller
             ['Occupation / Business', $beneficiary->occupation_business ?? ''],
             ['Enrolled On', $beneficiary->created_at ? Carbon::parse($beneficiary->created_at)->format('d-m-Y') : ''],
         ];
+    }
+
+    private function preparePdfRuntime()
+    {
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
     }
 }
