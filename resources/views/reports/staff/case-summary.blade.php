@@ -98,6 +98,65 @@
                             </div>
                         </div>
                     </div>
+                    @php
+                        $case_demographics = $case_demographics ?? [];
+                        $age_group_distribution = $age_group_distribution ?? [];
+                    @endphp
+                    <div class="case-demographics mt-4">
+                        <div class="case-demographics__header">
+                            <span>{{ __('Case Demographics Breakdown') }}</span>
+                        </div>
+                        <div class="case-demographics__grid">
+                            @forelse ($case_demographics as $case)
+                                <div class="case-demographics__card">
+                                    <div class="case-demographics__name">{{ __($case['label']) }}</div>
+                                    <div class="case-demographics__stats">
+                                        <div class="case-demographics__stat">
+                                            <span class="stat-icon stat-icon--male">
+                                                <i class="fas fa-mars"></i>
+                                            </span>
+                                            <span class="case-demographics__label">{{ __('Male') }}</span>
+                                            <span class="case-demographics__value">{{ $case['male'] }}</span>
+                                        </div>
+                                        <div class="case-demographics__stat">
+                                            <span class="stat-icon stat-icon--female">
+                                                <i class="fas fa-venus"></i>
+                                            </span>
+                                            <span class="case-demographics__label">{{ __('Female') }}</span>
+                                            <span class="case-demographics__value">{{ $case['female'] }}</span>
+                                        </div>
+                                        <div class="case-demographics__stat">
+                                            <span class="stat-icon stat-icon--age">
+                                                <i class="fas fa-users"></i>
+                                            </span>
+                                            <span class="case-demographics__label">{{ __($case['top_age_group_label']) }}</span>
+                                            <span class="case-demographics__value">{{ $case['top_age_group_count'] }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="case-demographics__empty">{{ __('No demographics available') }}</div>
+                            @endforelse
+                        </div>
+                        <div class="age-group-strip">
+                            <div class="age-group-strip__title">{{ __('Age Group Distribution') }}</div>
+                            <div class="age-group-strip__grid">
+                                @foreach ($age_group_distribution as $age_group)
+                                    <div class="age-group-chip">
+                                        <div class="age-group-chip__label">{{ __($age_group['label']) }}</div>
+                                        <div class="age-group-chip__values">
+                                            <span class="age-group-chip__value age-group-chip__value--male">
+                                                {{ $age_group['male'] }} {{ __('Male') }}
+                                            </span>
+                                            <span class="age-group-chip__value age-group-chip__value--female">
+                                                {{ $age_group['female'] }} {{ __('Female') }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

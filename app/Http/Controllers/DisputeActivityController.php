@@ -434,6 +434,8 @@ class DisputeActivityController extends Controller
          * @return \App\Models\DisputeActivity
          */
 
+        $dispute = Dispute::findOrFail($request->dispute);
+
         // Get the authenticated staff
         $curr_staff = optional(auth()->user()->staff)->id;
 
@@ -518,6 +520,60 @@ class DisputeActivityController extends Controller
                 } catch (\Throwable $th) {
                     return redirect()->back()
                         ->withErrors('errors', 'Files could not be uploaded, please try again.');
+                }
+            }
+
+            $beneficiary = Beneficiary::has('user')
+                ->with('user.designation')
+                ->select(['id', 'user_id'])
+                ->find($dispute->beneficiary_id);
+
+            if ($beneficiary && env('SEND_NOTIFICATIONS') == TRUE) {
+                $full_name = trim(implode(' ', array_filter([
+                    $beneficiary->user->first_name,
+                    $beneficiary->user->middle_name,
+                    $beneficiary->user->last_name,
+                ])));
+                $title = trim((string) optional($beneficiary->user->designation)->name);
+                $display_name = $full_name;
+                if ($title !== '' && strtolower($title) !== 'other') {
+                    $display_name = trim($title . ' ' . $full_name);
+                }
+
+                $attended_at = $request->attended_at;
+                try {
+                    $attended_at = Carbon::parse($request->attended_at)->format('d/m/Y');
+                } catch (\Throwable $th) {
+                    $attended_at = $request->attended_at;
+                }
+
+                $formatTime = function ($value) {
+                    try {
+                        return Carbon::parse($value)->format('H:i');
+                    } catch (\Throwable $th) {
+                        return $value;
+                    }
+                };
+
+                $time_in = $formatTime($request->time_in);
+                $time_out = $formatTime($request->time_out);
+                $advice = Str::limit(trim($request->advice_given), 160, '...');
+
+                $message = 'Habari, ' . $display_name .
+                    '. AJISO inakutaarifu kuwa umehudhuria kliniki tarehe ' . $attended_at .
+                    ', muda ' . $time_in . ' - ' . $time_out .
+                    '. Ushauri uliotolewa: ' . $advice .
+                    '. Ahsante.';
+
+                try {
+                    $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
+                    $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
+                    $sms = new SmsService();
+                    $sms->sendSMS($recipients, $message);
+
+                    Notification::send($beneficiary->user, new SendClientNotification($beneficiary->user, $message));
+                } catch (\Throwable $th) {
+                    throw $th;
                 }
             }
             return redirect()->back()

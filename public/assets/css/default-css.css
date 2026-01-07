@@ -411,9 +411,9 @@ Page section padding
 /* Colors */
 
 :root {
-    --primary-color: rgb(0 153 255);
-    --primary-color-dark: rgb(0 122 204);
-    --primary-color-soft: rgba(0, 153, 255, 0.15);
+    --primary-color: hsl(199.03deg 88.96% 31.96%);
+    --primary-color-dark: hsl(199.03deg 88.96% 31.96%);
+    --primary-color-soft: hsla(199.03deg, 88.96%, 31.96%, 0.15);
     --header-color: rgb(12 70 109);
 }
 

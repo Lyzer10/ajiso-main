@@ -63,6 +63,7 @@ class ExportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $this->preparePdfRuntime();
         $disputes_input = $request->dispute;
         $filter_by = $request->filter_by;
         $filter_val = $request->filter_val ;
@@ -151,5 +152,11 @@ class ExportController extends Controller
         } catch (\Throwable $th) {
             //throw $th;
         }
+    }
+
+    private function preparePdfRuntime()
+    {
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
     }
 }

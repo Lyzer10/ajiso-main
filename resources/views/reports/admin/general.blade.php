@@ -227,14 +227,16 @@
                         ? collect($statusCounts)
                         : $summaryCollection->groupBy('dispute_status_id')->map->count();
                     $totalCases = $totalCases ?? $summaryCollection->count();
-                    $summaryPalette = [
-                        'summary-card--blue',
-                        'summary-card--green',
-                        'summary-card--amber',
-                        'summary-card--purple',
-                        'summary-card--teal',
-                        'summary-card--rose',
-                        'summary-card--indigo',
+                    $summaryToneMap = [
+                        'judged' => 'summary-card--slate',
+                        'resolved' => 'summary-card--red',
+                        'continue' => 'summary-card--amber',
+                        'continued' => 'summary-card--amber',
+                        'referred' => 'summary-card--green',
+                        'discontinued' => 'summary-card--teal',
+                        'discontinue' => 'summary-card--teal',
+                        'pending' => 'summary-card--orange',
+                        'proceeding' => 'summary-card--purple',
                     ];
                 @endphp
                 <div class="card-header">
@@ -298,7 +300,8 @@
                         </div>
                         @foreach ($dispute_statuses as $dispute_status)
                             @php
-                                $paletteClass = $summaryPalette[$loop->index % count($summaryPalette)];
+                                $statusSlug = \Illuminate\Support\Str::slug($dispute_status->dispute_status);
+                                $paletteClass = $summaryToneMap[$statusSlug] ?? 'summary-card--blue';
                             @endphp
                             <div class="summary-card summary-card--tone {{ $paletteClass }}">
                                 <div class="summary-card__label">{{ __($dispute_status->dispute_status) }}</div>

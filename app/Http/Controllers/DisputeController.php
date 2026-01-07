@@ -57,7 +57,8 @@ class DisputeController extends Controller
                         'beneficiary_id',
                         'staff_id',
                         'reported_on',
-                        'dispute_status_id'
+                        'dispute_status_id',
+                        'type_of_case_id'
                     ]
                 )
                 ->latest();
@@ -65,6 +66,17 @@ class DisputeController extends Controller
             // Filter by dispute status if provided
             if ($statusId = request('status')) {
                 $query->where('dispute_status_id', (int) $statusId);
+            }
+
+            // Filter by case type if provided
+            if ($caseTypeId = request('case_type')) {
+                $query->where('type_of_case_id', (int) $caseTypeId);
+            }
+
+            // Filter by period if provided
+            [$periodStart, $periodEnd] = $this->resolvePeriodRange(request('period'), request('dateRange'));
+            if ($periodStart && $periodEnd) {
+                $query->whereBetween('reported_on', [$periodStart, $periodEnd]);
             }
 
             // Search by beneficiary name
@@ -78,12 +90,13 @@ class DisputeController extends Controller
 
             $disputes = $query->paginate(10);
             $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
+            $type_of_cases = TypeOfCase::get(['id', 'type_of_case']);
         } else {
             return response('You are not authorized to perform this action!', 403);
         }
 
         //return $disputes;
-        return response(view('disputes.list', compact('disputes', 'dispute_statuses')));
+        return response(view('disputes.list', compact('disputes', 'dispute_statuses', 'type_of_cases')));
     }
 
     /**
@@ -1185,6 +1198,46 @@ class DisputeController extends Controller
         } else {
             return response(redirect()->back()
                 ->withErrors('errors', 'Deleting dispute information failed, please try again.'));
+        }
+    }
+
+    private function resolvePeriodRange($period, $dateRange)
+    {
+        $period = $period ?: ($dateRange ? 'custom' : null);
+        if (!$period) {
+            return [null, null];
+        }
+
+        $now = Carbon::now();
+
+        switch ($period) {
+            case 'today':
+                return [$now->copy()->startOfDay()->format('Y-m-d'), $now->copy()->endOfDay()->format('Y-m-d')];
+            case 'this_week':
+                return [$now->copy()->startOfWeek()->format('Y-m-d'), $now->copy()->endOfWeek()->format('Y-m-d')];
+            case 'this_month':
+                return [$now->copy()->startOfMonth()->format('Y-m-d'), $now->copy()->endOfMonth()->format('Y-m-d')];
+            case 'last_three_months':
+                return [$now->copy()->subMonths(3)->startOfDay()->format('Y-m-d'), $now->copy()->endOfDay()->format('Y-m-d')];
+            case 'this_year':
+                return [$now->copy()->startOfYear()->format('Y-m-d'), $now->copy()->endOfYear()->format('Y-m-d')];
+            case 'custom':
+                if (!$dateRange || !Str::contains($dateRange, '-')) {
+                    return [null, null];
+                }
+                $date = explode(' - ', $dateRange);
+                if (count($date) !== 2) {
+                    return [null, null];
+                }
+                try {
+                    $date_start = Carbon::parse($date[0])->format('Y-m-d');
+                    $date_end = Carbon::parse($date[1])->format('Y-m-d');
+                    return [$date_start, $date_end];
+                } catch (\Throwable $th) {
+                    return [null, null];
+                }
+            default:
+                return [null, null];
         }
     }
 }

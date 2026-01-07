@@ -120,7 +120,7 @@
 
 .sidebar-header {
     padding: 19px 32px 20px;
-    background: rgba(0, 122, 204, 0.6);
+    background: hsla(199.03deg, 88.96%, 31.96%, 0.8);
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -2960,10 +2960,9 @@ table.dataTable thead td {
 
 .summary-card {
     background: #fff;
-    border: 1px solid rgba(0, 153, 255, 0.2);
-    border-radius: 12px;
-    padding: 16px 18px;
-    box-shadow: 0 12px 22px rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
     position: relative;
     overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -2975,37 +2974,26 @@ table.dataTable thead td {
 }
 
 .summary-card::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 4px;
-    width: 100%;
-    background: var(--primary-color);
+    content: none;
 }
 
 .summary-card__label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #3d6480;
+    color: #1f2a33;
 }
 
 .summary-card__value {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: #1f2a33;
     margin-top: 6px;
 }
 
 .summary-card--tone {
-    border-color: transparent;
     color: #fff;
-}
-
-.summary-card--tone::before {
-    background: rgba(255, 255, 255, 0.45);
 }
 
 .summary-card--tone .summary-card__label {
@@ -3017,35 +3005,47 @@ table.dataTable thead td {
 }
 
 .summary-card--brand {
-    background: linear-gradient(135deg, rgba(0, 153, 255, 0.95), rgba(0, 122, 204, 0.95));
+    background: #3b82f6;
 }
 
 .summary-card--blue {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background: #2563eb;
 }
 
 .summary-card--green {
-    background: linear-gradient(135deg, #16a34a, #15803d);
+    background: #22c55e;
 }
 
 .summary-card--amber {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: #f59e0b;
 }
 
 .summary-card--purple {
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    background: #8b5cf6;
 }
 
 .summary-card--teal {
-    background: linear-gradient(135deg, #14b8a6, #0f766e);
+    background: #14b8a6;
 }
 
 .summary-card--rose {
-    background: linear-gradient(135deg, #ef4444, #be123c);
+    background: #ef4444;
 }
 
 .summary-card--indigo {
-    background: linear-gradient(135deg, #6366f1, #4338ca);
+    background: #1f2937;
+}
+
+.summary-card--slate {
+    background: #475569;
+}
+
+.summary-card--orange {
+    background: #f97316;
+}
+
+.summary-card--red {
+    background: #ef4444;
 }
 
 .dispute-filter .select2-container--default .select2-selection--single,
@@ -3606,6 +3606,149 @@ table.dataTable thead td {
 .viz-chart {
     width: 100%;
     height: 300px;
+}
+
+/*-------------------- Case Summary Demographics -------------------*/
+
+.case-demographics {
+    background: #ffffff;
+    border: 1px solid #e7eef4;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 22px rgba(0, 0, 0, 0.04);
+}
+
+.case-demographics__header {
+    background: #0f766e;
+    color: #ffffff;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.case-demographics__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 16px;
+    background: #f8fbff;
+}
+
+.case-demographics__card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    border: 1px solid #e6eef5;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.case-demographics__name {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.case-demographics__stats {
+    display: grid;
+    gap: 8px;
+}
+
+.case-demographics__stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #1f2a33;
+}
+
+.case-demographics__label {
+    flex: 1;
+}
+
+.case-demographics__value {
+    font-weight: 700;
+}
+
+.stat-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.stat-icon--female {
+    background: #fde2e8;
+    color: #db2777;
+}
+
+.stat-icon--age {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.case-demographics__empty {
+    padding: 12px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.age-group-strip {
+    margin: 0 16px 16px;
+    background: #ffffff;
+    border: 1px solid #e6eef5;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.age-group-strip__title {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.age-group-strip__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.age-group-chip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+}
+
+.age-group-chip__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.age-group-chip__values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-top: 6px;
+}
+
+.age-group-chip__value--male {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.age-group-chip__value--female {
+    color: #db2777;
+    font-weight: 600;
 }
 
 .viz-row {

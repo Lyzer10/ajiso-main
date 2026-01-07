@@ -334,9 +334,17 @@ class ReportController extends Controller
         $type_of_cases = TypeOfCase::latest()
                                     ->get(['id','type_of_case']);
 
+        $age_groups = AgeGroup::orderBy('id')
+                                ->get(['id', 'age_group']);
+
+        $case_demographics_raw = $this->fetchCaseDemographicsRaw();
+        $case_demographics = $this->buildCaseDemographics($type_of_cases, $age_groups, $case_demographics_raw);
+        $age_group_distribution = $this->buildAgeGroupDistribution($age_groups, $case_demographics_raw);
+
         return view('reports.admin.case-summary', compact('total', 'date_ranges','group_by_service','group_by_case',
                                                     'group_by_status','dispute_statuses',
-                                                    'type_of_services','type_of_cases'));
+                                                    'type_of_services','type_of_cases',
+                                                    'case_demographics', 'age_group_distribution'));
 
     }
 
@@ -397,9 +405,16 @@ class ReportController extends Controller
         $type_of_cases = TypeOfCase::latest()
                                     ->get(['id','type_of_case']);
 
+        $age_groups = AgeGroup::orderBy('id')
+                                ->get(['id', 'age_group']);
+
+        $case_demographics_raw = $this->fetchCaseDemographicsRaw($date_start, $date_end);
+        $case_demographics = $this->buildCaseDemographics($type_of_cases, $age_groups, $case_demographics_raw);
+        $age_group_distribution = $this->buildAgeGroupDistribution($age_groups, $case_demographics_raw);
+
         return view('reports.admin.case-summary', compact('total', 'date_ranges','group_by_service','group_by_case',
                                                     'group_by_status','dispute_statuses','type_of_services',
-                                                    'type_of_cases'));
+                                                    'type_of_cases', 'case_demographics', 'age_group_distribution'));
     }
 
     /**
@@ -675,6 +690,98 @@ class ReportController extends Controller
 
         return view('reports.admin.survey-summary', compact('total', 'group_by_survey', 'survey_choices', 'data_arr'))
                 ->with('status', 'Survey data found');
+    }
+
+    private function fetchCaseDemographicsRaw($date_start = null, $date_end = null)
+    {
+        $query = Dispute::query()
+            ->join('beneficiaries', 'beneficiaries.id', '=', 'disputes.beneficiary_id')
+            ->select(
+                'disputes.type_of_case_id',
+                'beneficiaries.gender',
+                'beneficiaries.age_group',
+                DB::raw('count(*) as total')
+            )
+            ->groupBy('disputes.type_of_case_id', 'beneficiaries.gender', 'beneficiaries.age_group');
+
+        if ($date_start && $date_end) {
+            $query->whereBetween('disputes.reported_on', [$date_start, $date_end]);
+        }
+
+        return $query->get();
+    }
+
+    private function buildCaseDemographics($type_of_cases, $age_groups, $case_demographics_raw)
+    {
+        $demographics = collect($case_demographics_raw);
+        $case_demographics = [];
+
+        foreach ($type_of_cases as $type_of_case) {
+            $case_items = $demographics->where('type_of_case_id', $type_of_case->id);
+            $male = (int) $case_items->filter(function ($item) {
+                return $this->normalizeGender($item->gender) === 'male';
+            })->sum('total');
+            $female = (int) $case_items->filter(function ($item) {
+                return $this->normalizeGender($item->gender) === 'female';
+            })->sum('total');
+
+            $age_counts = [];
+            foreach ($age_groups as $age_group) {
+                $age_counts[$age_group->age_group] = (int) $case_items->where('age_group', $age_group->id)->sum('total');
+            }
+
+            $top_age_group_label = 'N/A';
+            $top_age_group_count = 0;
+            foreach ($age_counts as $label => $count) {
+                if ($count > $top_age_group_count) {
+                    $top_age_group_label = $label;
+                    $top_age_group_count = $count;
+                }
+            }
+
+            $case_demographics[] = [
+                'label' => $type_of_case->type_of_case,
+                'male' => $male,
+                'female' => $female,
+                'top_age_group_label' => $top_age_group_label,
+                'top_age_group_count' => $top_age_group_count,
+            ];
+        }
+
+        return $case_demographics;
+    }
+
+    private function buildAgeGroupDistribution($age_groups, $case_demographics_raw)
+    {
+        $demographics = collect($case_demographics_raw);
+        $distribution = [];
+
+        foreach ($age_groups as $age_group) {
+            $age_items = $demographics->where('age_group', $age_group->id);
+            $distribution[] = [
+                'label' => $age_group->age_group,
+                'male' => (int) $age_items->filter(function ($item) {
+                    return $this->normalizeGender($item->gender) === 'male';
+                })->sum('total'),
+                'female' => (int) $age_items->filter(function ($item) {
+                    return $this->normalizeGender($item->gender) === 'female';
+                })->sum('total'),
+            ];
+        }
+
+        return $distribution;
+    }
+
+    private function normalizeGender($gender)
+    {
+        $gender = strtolower(trim((string) $gender));
+        if (in_array($gender, ['male', 'm'], true)) {
+            return 'male';
+        }
+        if (in_array($gender, ['female', 'f'], true)) {
+            return 'female';
+        }
+        return 'other';
     }
 
 }
