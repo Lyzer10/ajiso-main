@@ -459,13 +459,20 @@ class DisputeController extends Controller
                 $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
-                $title = $beneficiary->user->designation->name;
-
-                $full_name = $beneficiary->user->first_name . ' ' . $beneficiary->user->middle_name . ' ' . $beneficiary->user->last_name;
+                $title = trim((string) optional($beneficiary->user->designation)->name);
+                $full_name = trim(implode(' ', array_filter([
+                    $beneficiary->user->first_name ?? '',
+                    $beneficiary->user->middle_name ?? '',
+                    $beneficiary->user->last_name ?? '',
+                ])));
+                $display_name = $full_name;
+                if ($title !== '' && strtolower($title) !== 'other') {
+                    $display_name = trim($title . ' ' . $full_name);
+                }
                 $beneficiary_no = $beneficiary->user->user_no;
                 $created_at = Carbon::parse($beneficiary->created_at)->format('d/m/Y');
 
-                $message = 'Habari, ' . $title . ' ' . $full_name .
+                $message = 'Habari, ' . $display_name .
                     ', AJISO inapenda kukutaarifu kuwa, Kesi yako yenye namba ya usajili No.' . $dispute->dispute_no .
                     ' imefanikiwa kusajiliwa leo, ' . $created_at .
                     '. Ahsante.';
@@ -598,12 +605,19 @@ class DisputeController extends Controller
                 $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
-                $title = $beneficiary->user->designation->name;
-
-                $full_name = $beneficiary->user->first_name . ' ' . $beneficiary->user->middle_name . ' ' . $beneficiary->user->last_name;
+                $title = trim((string) optional($beneficiary->user->designation)->name);
+                $full_name = trim(implode(' ', array_filter([
+                    $beneficiary->user->first_name ?? '',
+                    $beneficiary->user->middle_name ?? '',
+                    $beneficiary->user->last_name ?? '',
+                ])));
+                $display_name = $full_name;
+                if ($title !== '' && strtolower($title) !== 'other') {
+                    $display_name = trim($title . ' ' . $full_name);
+                }
                 $created_at = Carbon::parse($beneficiary->created_at)->format('d/m/Y');
 
-                $message = 'Habari, ' . $title . ' ' . $full_name .
+                $message = 'Habari, ' . $display_name .
                     ', AJISO inapenda kukutaarifu kuwa, Kesi yako yenye namba ya usajili No.' . $dispute->dispute_no .
                     ' imefanikiwa kusajiliwa leo, ' . $created_at .
                     '. Ahsante.';
@@ -765,11 +779,12 @@ class DisputeController extends Controller
                 $staff_assigned->update();
 
                 // Prepare the dispute activity information
-
-                $staff_title = $staff_assigned->user->designation->name;
-                $staff_name = $staff_assigned->user->first_name . ' '
-                    . $staff_assigned->user->middle_name . ' '
-                    . $staff_assigned->user->last_name;
+                $staff_name = trim(implode(' ', array_filter([
+                    $staff_assigned->user->first_name,
+                    $staff_assigned->user->middle_name,
+                    $staff_assigned->user->last_name,
+                ])));
+                $staff_title = trim((string) optional($staff_assigned->user->designation)->name);
 
                 $activity->dispute_activity = 'Dispute Assigned';
                 $activity->description = 'Legal Aid Provider : ' . $staff_name;
@@ -796,13 +811,24 @@ class DisputeController extends Controller
                     ->select(['id', 'user_id'])
                     ->findOrFail($dispute->beneficiary_id);
 
-                // Get title of the beneficiary
-                $beneficiary_title = $beneficiary->user->designation->name;
-
                 // Get full name of the beneficiary
-                $beneficiary_name = $beneficiary->user->first_name . ' '
-                    . $beneficiary->user->middle_name . ' '
-                    . $beneficiary->user->last_name;
+                $beneficiary_name = trim(implode(' ', array_filter([
+                    $beneficiary->user->first_name,
+                    $beneficiary->user->middle_name,
+                    $beneficiary->user->last_name,
+                ])));
+                $beneficiary_title = trim((string) optional($beneficiary->user->designation)->name);
+
+                $formatDisplayName = function ($title, $name) {
+                    $title = trim((string) $title);
+                    if ($title === '' || strtolower($title) === 'other') {
+                        return $name;
+                    }
+                    return trim($title.' '.$name);
+                };
+
+                $beneficiary_display_name = $formatDisplayName($beneficiary_title, $beneficiary_name);
+                $staff_display_name = $formatDisplayName($staff_title, $staff_name);
 
                 // Get date when the case was registered
                 $reported_on = Carbon::parse($dispute->reported_on)->format('d/m/Y');
@@ -814,10 +840,10 @@ class DisputeController extends Controller
                 $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
-                $message = 'Habari, ' . $beneficiary_title . ' ' . $beneficiary_name .
+                $message = 'Habari, ' . $beneficiary_display_name .
                     ', AJISO inapenda kukutaarifu kuwa, shauri lako uliloripoti tarehe ' . $reported_on .
                     ' lenye namba ya usajili No. ' . $dispute->dispute_no .
-                    ' limepangiwa mtoa msaada wa kisheria ' . $staff_title . ' ' . $staff_name .
+                    ' limepangiwa mtoa msaada wa kisheria ' . $staff_display_name .
                     ' leo, ' . $assigned_at . '.' .
                     ' Ahsante.';
 
@@ -825,10 +851,10 @@ class DisputeController extends Controller
                 $staff_dest_addr = SmsService::normalizeRecipient($staff_assigned->user->tel_no);
                 $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
-                $staff_message = 'Habari, ' . $staff_title . ' ' . $staff_name .
+                $staff_message = 'Habari, ' . $staff_display_name .
                     ', AJISO inapenda kukutaarifu kuwa, shauri lililoripotiwa tarehe ' . $reported_on .
                     ' lenye namba ya usajili No. ' . $dispute->dispute_no .
-                    ' na ' . $beneficiary_title . ' ' . $beneficiary_name .
+                    ' na ' . $beneficiary_display_name .
                     ' limepangiwa kwako leo, ' . $assigned_at .
                     '. Tembelea Mfumo wa ALAS kujua zaidi.' .
                     ' Ahsante.';
@@ -846,17 +872,20 @@ class DisputeController extends Controller
 
                     // Staff infos
 
-                    $last_staff_title = $last_assigned_staff->user->designation->name;
-                    $last_staff_name = $last_assigned_staff->user->first_name . ' '
-                        . $last_assigned_staff->user->middle_name . ' '
-                        . $last_assigned_staff->user->last_name;
+                    $last_staff_name = trim(implode(' ', array_filter([
+                        $last_assigned_staff->user->first_name,
+                        $last_assigned_staff->user->middle_name,
+                        $last_assigned_staff->user->last_name,
+                    ])));
+                    $last_staff_title = trim((string) optional($last_assigned_staff->user->designation)->name);
+                    $last_staff_display_name = $formatDisplayName($last_staff_title, $last_staff_name);
                     $last_staff_dest_addr = SmsService::normalizeRecipient($last_assigned_staff->user->tel_no);
                     $last_staff_recipients = ['recipient_id' => 1, 'dest_addr' => $last_staff_dest_addr];
 
-                    $last_staff_message = 'Habari, ' . $last_staff_title . ' ' . $last_staff_name .
+                    $last_staff_message = 'Habari, ' . $last_staff_display_name .
                         ', AJISO inapenda kukutaarifu kuwa, shauri' .
                         ' lenye namba ya usajili No. ' . $dispute->dispute_no .
-                        ' ya ' . $beneficiary_title . ' ' . $beneficiary_name .
+                        ' ya ' . $beneficiary_display_name .
                         ' ulilokuwa unalishughulikia limepangiwa mtoa huduma mwingine leo, ' .
                         $assigned_at . '.' .
                         ' Ahsante.';

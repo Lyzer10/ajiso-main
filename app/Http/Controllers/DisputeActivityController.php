@@ -119,13 +119,23 @@ class DisputeActivityController extends Controller
             $recipients = ['recipient_id' => 1, 'dest_addr'=> $dest_addr];
 
             // Get title of the beneficiary
-            $title = $user->designation->name;
+            $title = optional($user->designation)->name;
 
             // Get full name of the beneficiary
-            $full_name = $user->first_name.' '.$user->middle_name.' '.$user->last_name;
+            $full_name = trim(implode(' ', array_filter([
+                $user->first_name,
+                $user->middle_name,
+                $user->last_name,
+            ])));
+
+            $title = trim((string) $title);
+            $display_name = $full_name;
+            if ($title !== '' && strtolower($title) !== 'other') {
+                $display_name = trim($title.' '.$full_name);
+            }
 
             // Prepare message to be sent
-            $message = 'Habari, '.$title.' '.$full_name.
+            $message = 'Habari, '.$display_name.
                         '. '.$activity->description.
                         '. Ahsante.';
 
@@ -155,7 +165,8 @@ class DisputeActivityController extends Controller
             }
 
             return redirect()->back()
-                            ->with('status', 'Notification sent to beneficiary, successfully.');
+                            ->with('status', 'Notification sent to beneficiary, successfully.')
+                            ->with('prompt_status_update', true);
 
         } else {
             return redirect()->back()
@@ -283,11 +294,18 @@ class DisputeActivityController extends Controller
             $dest_addr = SmsService::normalizeRecipient($beneficiary->user->tel_no);
             $recipients = ['recipient_id' => 1, 'dest_addr'=> $dest_addr];
 
-            // Get title of the beneficiary
-            $beneficiary_title = $beneficiary->user->designation->name;
-
             // Get full name of the beneficiary
-            $beneficiary_name = $beneficiary->user->first_name.' '.$beneficiary->user->middle_name.' '.$beneficiary->user->last_name;
+            $beneficiary_name = trim(implode(' ', array_filter([
+                $beneficiary->user->first_name,
+                $beneficiary->user->middle_name,
+                $beneficiary->user->last_name,
+            ])));
+
+            $beneficiary_title = trim((string) optional($beneficiary->user->designation)->name);
+            $beneficiary_display_name = $beneficiary_name;
+            if ($beneficiary_title !== '' && strtolower($beneficiary_title) !== 'other') {
+                $beneficiary_display_name = trim($beneficiary_title.' '.$beneficiary_name);
+            }
 
             // Get date when the dispute was reported
             $reported_at = Carbon::parse($dispute->reported_on)->format('d/m/Y');
@@ -297,9 +315,12 @@ class DisputeActivityController extends Controller
 
             if($activity) {
 
+                $message = null;
+                $statusName = $status->dispute_status ?? optional($dispute->disputeStatus)->dispute_status;
+
                 switch ($activity->dispute_activity) {
                     case 'Dispute Resolved':
-                        $message = 'Habari, '.$beneficiary_title.' '.$beneficiary_name.
+                        $message = 'Habari, '.$beneficiary_display_name.
                                     '. AJISO inapenda kukutaarifu kuwa, kesi yako uliyo ripoti tarehe '.$reported_at.
                                     ' yenye namba ya usajili No. '.$dispute->dispute_no.
                                     ' imefanikiwa kusuluhishwa leo tarehe '.$updated_at.
@@ -307,7 +328,7 @@ class DisputeActivityController extends Controller
 
                         break;
                     case 'Dispute Discontinued':
-                        $message = 'Habari, '.$beneficiary_title.' '.$beneficiary_name.
+                        $message = 'Habari, '.$beneficiary_display_name.
                                     '. AJISO inakutaarifu kuwa, kesi yako uliyo ripoti tarehe '.$reported_at.
                                     ' yenye namba ya usajili No. '.$dispute->dispute_no.
                                     ' sitishwa leo tarehe '.$updated_at.
@@ -316,7 +337,7 @@ class DisputeActivityController extends Controller
 
                         break;
                     case 'Dispute Referred':
-                        $message = 'Habari, '.$beneficiary_title.' '.$beneficiary_name.
+                        $message = 'Habari, '.$beneficiary_display_name.
                                     '. AJISO inakutaarifu kuwa, kesi yako uliyo ripoti tarehe '.$reported_at.
                                     ' yenye namba ya usajili No. '.$dispute->dispute_no.
                                     ' imepewa rufaa leo tarehe '.$updated_at.
@@ -325,11 +346,19 @@ class DisputeActivityController extends Controller
 
                         break;
                     case 'Dispute Continued':
-                        $message = 'Habari, '.$beneficiary_title.' '.$beneficiary_name.
+                        $message = 'Habari, '.$beneficiary_display_name.
                                     '. AJISO inapenda kukutaarifu kuwa, kesi yako uliyo ripoti tarehe '.$reported_at.
                                     ' yenye namba ya usajili No. '.$dispute->dispute_no.
                                     ' imeendelezwa leo tarehe '.$updated_at.
                                     '. Ahsante.';
+                        break;
+                    default:
+                        $message = 'Habari, '.$beneficiary_display_name.
+                                    '. AJISO inapenda kukutaarifu kuwa, kesi yako uliyo ripoti tarehe '.$reported_at.
+                                    ' yenye namba ya usajili No. '.$dispute->dispute_no.
+                                    ' imesasishwa leo tarehe '.$updated_at.'.'.
+                                    ($statusName ? ' Hali ya kesi ni: '.$statusName.'.' : '').
+                                    ' Ahsante.';
                         break;
                 }
             
@@ -342,10 +371,14 @@ class DisputeActivityController extends Controller
                     {
                         // SMS
                         $sms = new SmsService();
-                        $sms->sendSMS($recipients, $message);
+                        if ($message) {
+                            $sms->sendSMS($recipients, $message);
+                        }
 
                         // Database & email
-                        Notification::send($beneficiary->user, new UpdateDisputeStatus($beneficiary, $message));
+                        if ($message) {
+                            Notification::send($beneficiary->user, new UpdateDisputeStatus($beneficiary, $message));
+                        }
                     
                     }
 
@@ -486,7 +519,8 @@ class DisputeActivityController extends Controller
                 }
             }
             return redirect()->back()
-                            ->with('status', 'LAAC clinic information recorded, successfully.');
+                            ->with('status', 'LAAC clinic information recorded, successfully.')
+                            ->with('prompt_status_update', true);
 
         } else {
             return redirect()->back()
@@ -548,7 +582,8 @@ class DisputeActivityController extends Controller
             activity()->log('Made remarks on dispute');
 
             return redirect()->back()
-                            ->with('status', 'Dispute remarks added, successfully.');
+                            ->with('status', 'Dispute remarks added, successfully.')
+                            ->with('prompt_status_update', true);
 
         } else {
             return redirect()->back()
@@ -609,7 +644,8 @@ class DisputeActivityController extends Controller
             $activity->save();
 
             return redirect()->back()
-                ->with('status', 'Attachment added, successfully.');
+                ->with('status', 'Attachment added, successfully.')
+                ->with('prompt_status_update', true);
         }
 
         return redirect()->back()

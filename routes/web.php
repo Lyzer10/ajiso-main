@@ -78,7 +78,13 @@ Route::group([
     Route::get('/staff', [App\Http\Controllers\StaffController::class, 'index'])->name('staff.list');
     Route::get('/staff/create', [App\Http\Controllers\StaffController::class, 'create'])->name('staff.create');
     Route::post('/staff', [App\Http\Controllers\StaffController::class, 'store'])->name('staff.store');
+    Route::get('/staff/export/pdf', [App\Http\Controllers\LegalAidProviderExportController::class, 'exportListPdf'])->name('staff.export.pdf');
+    Route::get('/staff/export/excel', [App\Http\Controllers\LegalAidProviderExportController::class, 'exportListExcel'])->name('staff.export.excel');
+    Route::get('/staff/export/csv', [App\Http\Controllers\LegalAidProviderExportController::class, 'exportListCsv'])->name('staff.export.csv');
     Route::get('/staff/{staff}/profile', [App\Http\Controllers\StaffController::class, 'show'])->name('staff.show');
+    Route::get('/staff/{staff}/export/pdf', [App\Http\Controllers\LegalAidProviderExportController::class, 'exportProfilePdf'])->name('staff.export.profile.pdf');
+    Route::get('/staff/{staff}/export/excel', [App\Http\Controllers\LegalAidProviderExportController::class, 'exportProfileExcel'])->name('staff.export.profile.excel');
+    Route::get('/staff/{staff}/export/csv', [App\Http\Controllers\LegalAidProviderExportController::class, 'exportProfileCsv'])->name('staff.export.profile.csv');
     Route::get('/staff/{staff}/access', [App\Http\Controllers\StaffController::class, 'access'])->name('staff.access');
     Route::get('/staff/{staff}/edit', [App\Http\Controllers\StaffController::class, 'edit'])->name('staff.edit');
     Route::put('/staff/{staff}', [App\Http\Controllers\StaffController::class, 'update'])->name('staff.update');
@@ -90,7 +96,13 @@ Route::group([
     Route::get('/beneficiaries', [App\Http\Controllers\BeneficiaryController::class, 'index'])->name('beneficiaries.list');
     Route::get('/beneficiaries/create', [App\Http\Controllers\BeneficiaryController::class, 'create'])->name('beneficiary.create');
     Route::post('/beneficiaries', [App\Http\Controllers\BeneficiaryController::class, 'store'])->name('beneficiary.store');
+    Route::get('/beneficiaries/export/pdf', [App\Http\Controllers\BeneficiaryExportController::class, 'exportListPdf'])->name('beneficiaries.export.pdf');
+    Route::get('/beneficiaries/export/excel', [App\Http\Controllers\BeneficiaryExportController::class, 'exportListExcel'])->name('beneficiaries.export.excel');
+    Route::get('/beneficiaries/export/csv', [App\Http\Controllers\BeneficiaryExportController::class, 'exportListCsv'])->name('beneficiaries.export.csv');
     Route::get('/beneficiaries/{beneficiary}/profile', [App\Http\Controllers\BeneficiaryController::class, 'show'])->name('beneficiary.show');
+    Route::get('/beneficiaries/{beneficiary}/export/pdf', [App\Http\Controllers\BeneficiaryExportController::class, 'exportProfilePdf'])->name('beneficiary.export.pdf');
+    Route::get('/beneficiaries/{beneficiary}/export/excel', [App\Http\Controllers\BeneficiaryExportController::class, 'exportProfileExcel'])->name('beneficiary.export.excel');
+    Route::get('/beneficiaries/{beneficiary}/export/csv', [App\Http\Controllers\BeneficiaryExportController::class, 'exportProfileCsv'])->name('beneficiary.export.csv');
     Route::get('/beneficiaries/{beneficiary}/access', [App\Http\Controllers\BeneficiaryController::class, 'access'])->name('beneficiary.access');
     Route::get('/beneficiaries/{beneficiary}/edit', [App\Http\Controllers\BeneficiaryController::class, 'edit'])->name('beneficiary.edit');
     Route::put('/beneficiaries/{beneficiary}', [App\Http\Controllers\BeneficiaryController::class, 'update'])->name('beneficiary.update');

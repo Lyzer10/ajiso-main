@@ -335,13 +335,21 @@ class BeneficiaryController extends Controller
                 $dest_addr = SmsService::normalizeRecipient($user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
 
-                $title = $user->designation->name;
+                $title = trim((string) optional($user->designation)->name);
 
-                $full_name = $beneficiary->user->first_name . ' ' . $beneficiary->user->middle_name . ' ' . $beneficiary->user->last_name;
+                $full_name = trim(implode(' ', array_filter([
+                    $beneficiary->user->first_name ?? '',
+                    $beneficiary->user->middle_name ?? '',
+                    $beneficiary->user->last_name ?? '',
+                ])));
+                $display_name = $full_name;
+                if ($title !== '' && strtolower($title) !== 'other') {
+                    $display_name = trim($title . ' ' . $full_name);
+                }
                 $beneficiary_no = $beneficiary->user->user_no;
                 $created_at = Carbon::parse($beneficiary->created_at)->format('d/m/Y');
 
-                $message = 'Habari, ' . $title . ' ' . $full_name .
+                $message = 'Habari, ' . $display_name .
                     ', AJISO inapenda kukutaarifu kuwa, akaunti yako yenye namba ya usajili No. ' . $beneficiary_no .
                     ' imesajiliwa rasmi leo, ' . $created_at .
                     '. Ahsante.';

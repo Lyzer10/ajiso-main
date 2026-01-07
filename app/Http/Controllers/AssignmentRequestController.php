@@ -219,16 +219,22 @@ class AssignmentRequestController extends Controller
             $staff = Staff::with('user.designation')
                 ->findOrFail($assignment_request->staff_id);
 
-            $staff_title = $staff->user->designation->name;
-            $staff_name  = $staff->user->first_name . ' '
-                . $staff->user->middle_name . ' '
-                . $staff->user->last_name;
+            $staff_title = trim((string) optional($staff->user->designation)->name);
+            $staff_name  = trim(implode(' ', array_filter([
+                $staff->user->first_name ?? '',
+                $staff->user->middle_name ?? '',
+                $staff->user->last_name ?? '',
+            ])));
+            $staff_display_name = $staff_name;
+            if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
+                $staff_display_name = trim($staff_title . ' ' . $staff_name);
+            }
             $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
 
             $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
 
-            $staff_message = 'Habari, ' . $staff_title . ' ' . $staff_name .
+            $staff_message = 'Habari, ' . $staff_display_name .
                 ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
                 ' lenye namba ya usajili No. ' . $dispute->dispute_no . ' limepokelewa' .
                 '. Tembelea Mfumo wa ALAS kujua zaidi.' .
@@ -336,15 +342,21 @@ class AssignmentRequestController extends Controller
             $dispute = Dispute::findOrFail((int) $assignment_request->dispute_id) ?? NULL;
 
             // Staff infos
-            $staff_title = $staff->user->designation->name;
-            $staff_name = $staff->user->first_name . ' '
-                . $staff->user->middle_name . ' '
-                . $staff->user->last_name;
+            $staff_title = trim((string) optional($staff->user->designation)->name);
+            $staff_name = trim(implode(' ', array_filter([
+                $staff->user->first_name ?? '',
+                $staff->user->middle_name ?? '',
+                $staff->user->last_name ?? '',
+            ])));
+            $staff_display_name = $staff_name;
+            if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
+                $staff_display_name = trim($staff_title . ' ' . $staff_name);
+            }
 
             $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
             $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
-            $staff_message = 'Habari, ' . $staff_title . ' ' . $staff_name .
+            $staff_message = 'Habari, ' . $staff_display_name .
                 ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
                 ' lenye namba ya usajili No. ' . $dispute->dispute_no . ' limekubaliwa' .
                 '. Tembelea Mfumo wa ALAS kujua zaidi.' .
@@ -430,15 +442,21 @@ class AssignmentRequestController extends Controller
             $dispute = Dispute::findOrFail((int) $assignment_request->dispute_id) ?? NULL;
 
             // Staff infos
-            $staff_title = $staff->user->designation->name;
-            $staff_name = $staff->user->first_name . ' '
-                . $staff->user->middle_name . ' '
-                . $staff->user->last_name;
+            $staff_title = trim((string) optional($staff->user->designation)->name);
+            $staff_name = trim(implode(' ', array_filter([
+                $staff->user->first_name ?? '',
+                $staff->user->middle_name ?? '',
+                $staff->user->last_name ?? '',
+            ])));
+            $staff_display_name = $staff_name;
+            if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
+                $staff_display_name = trim($staff_title . ' ' . $staff_name);
+            }
 
             $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
             $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
 
-            $staff_message = 'Habari, ' . $staff_title . ' ' . $staff_name .
+            $staff_message = 'Habari, ' . $staff_display_name .
                 ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
                 ' lenye namba ya usajili No. ' . $dispute->dispute_no . ' limekataliwa' .
                 '. Tembelea Mfumo wa ALAS kujua zaidi.' .

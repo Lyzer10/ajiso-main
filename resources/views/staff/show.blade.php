@@ -49,6 +49,26 @@
                         <a href=" {{ route('staff.list', app()->getLocale())}}" class="btn btn-sm text-white light-custom-color pull-right">
                             {{ __('Legal Aid Provider List') }}
                         </a>
+                        <div class="dropdown pull-right mr-2">
+                            <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-toggle="dropdown">
+                                <i class="fas fa-download fa-fw"></i>
+                                {{ __('Export') }}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{{ route('staff.export.profile.pdf', [app()->getLocale(), $staff]) }}">
+                                    <i class="fas fa-file-pdf text-danger"></i>
+                                    {{ __('as pdf') }}
+                                </a>
+                                <a class="dropdown-item" href="{{ route('staff.export.profile.excel', [app()->getLocale(), $staff]) }}">
+                                    <i class="fas fa-file-excel text-success"></i>
+                                    {{ __('as excel') }}
+                                </a>
+                                <a class="dropdown-item" href="{{ route('staff.export.profile.csv', [app()->getLocale(), $staff]) }}">
+                                    <i class="fas fa-file-csv text-warning"></i>
+                                    {{ __('as csv') }}
+                                </a>
+                            </div>
+                        </div>
                     </h4>
                 </div>
                 @if ($staff->count())

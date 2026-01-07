@@ -376,10 +376,6 @@
                                             <i class="fas fa-comment-medical fa-fw text-primary"></i>
                                             {{ __('Legal Aid Advice Counseling Clinic') }}
                                         </a>
-                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#disputeStatusModal">
-                                            <i class="fas fa-edit fa-fw text-success"></i>
-                                            {{ __('Update Dispute Statuses') }}
-                                        </a>
                                         <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#providerRemarksModal">
                                             <i class="fas fa-marker fa-fw text-secondary"></i>
                                             {{ __('Legal Aid Provider Remarks') }}
@@ -499,14 +495,14 @@
     {{-- Letter date/time --}}
     <script type="text/javascript">
         $(function () {
-            $('#meeting_date').datetimepicker({
+            $('#meeting_date_picker').datetimepicker({
                 format: 'DD/MM/YYYY',
                 viewMode: 'years',
                 ignoreReadonly: true,
                 allowInputToggle: true
             });
 
-            $('#meeting_time').datetimepicker({
+            $('#meeting_time_picker').datetimepicker({
                 format: 'HH:mm',
                 stepping: 1,
                 ignoreReadonly: true,
@@ -540,6 +536,16 @@
 
             var disputeNo = modal.data('dispute-no') || '';
             var beneficiaryName = modal.data('beneficiary') || '';
+            var beneficiaryAge = modal.data('beneficiary-age') || '';
+            var beneficiaryGender = modal.data('beneficiary-gender') || '';
+            var beneficiaryAddress = modal.data('beneficiary-address') || '';
+            var beneficiaryWard = modal.data('beneficiary-ward') || '';
+            var beneficiaryDistrict = modal.data('beneficiary-district') || '';
+            var beneficiaryLocation = modal.data('beneficiary-location') || '';
+            var serviceType = modal.data('service-type') || '';
+            var problemDescription = modal.data('problem-description') || '';
+            var whereReported = modal.data('where-reported') || '';
+            var reportedOn = modal.data('reported-on') || '';
             var caseType = modal.data('case-type') || '';
             var letterDate = modal.data('letter-date') || '';
 
@@ -561,35 +567,35 @@
                 return ""
                     + "<div class=\"letter-form\">"
                     + "<div class=\"letter-center\">ACTION FOR JUSTICE IN SOCIETY (AJISO)</div>"
-                    + "<div class=\"letter-center\">FOMU YA MAONI YA MTEJA - 2018</div>"
+                    + "<div class=\"letter-center\">FOMU YA MAONI YA MTEJA</div>"
                     + "<div class=\"letter-line-row\">"
                     + "<span class=\"letter-line-label\">JINA</span>"
-                    + "<span class=\"letter-dots letter-dots--lg\"></span>"
+                    + "<span class=\"letter-line letter-line--xl\">{feedbackName}</span>"
                     + "<span class=\"letter-note\">(Usiandike Jina)</span>"
                     + "</div>"
                     + "<div class=\"letter-line-row\">"
                     + "<span class=\"letter-line-label\">UMRI</span>"
-                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "<span class=\"letter-line letter-line--sm\">{feedbackAge}</span>"
                     + "</div>"
                     + "<div class=\"letter-line-row\">"
                     + "<span class=\"letter-line-label\">JINSIA</span>"
-                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "<span class=\"letter-line letter-line--sm\">{feedbackGender}</span>"
                     + "</div>"
                     + "<div class=\"letter-line-row\">"
                     + "<span class=\"letter-line-label\">UNAKOTOKEA</span>"
-                    + "<span class=\"letter-dots letter-dots--lg\"></span>"
+                    + "<span class=\"letter-line letter-line--xl\">{feedbackLocation}</span>"
                     + "</div>"
                     + "<div class=\"letter-line-row letter-line-row--wrap\">"
                     + "<span class=\"letter-line-label\">TATIZO LAKO</span>"
-                    + "<span class=\"letter-dots letter-dots--md\"></span>"
+                    + "<span class=\"letter-line letter-line--lg\">{feedbackIssue}</span>"
                     + "<span class=\"letter-line-label\">MUDA ULIOINGIA</span>"
-                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "<span class=\"letter-line letter-line--sm\">{feedbackTimeIn}</span>"
                     + "<span class=\"letter-line-label\">MUDA ULIOTOKA</span>"
-                    + "<span class=\"letter-dots letter-dots--sm\"></span>"
+                    + "<span class=\"letter-line letter-line--sm\">{feedbackTimeOut}</span>"
                     + "</div>"
                     + "<div class=\"letter-line-row\">"
                     + "<span class=\"letter-line-label\">UMEKUJA KWA HUDUMA GANI ?</span>"
-                    + "<span class=\"letter-dots letter-dots--lg\"></span>"
+                    + "<span class=\"letter-line letter-line--xl\">{feedbackService}</span>"
                     + "</div>"
                     + "<table class=\"letter-table\">"
                     + "<tr>"
@@ -629,12 +635,6 @@
             }
 
             var templates = {
-                registration: {
-                    language: "sw",
-                    title: "FOMU YA USAJILI WA MTEJA.",
-                    html: buildHeader("P.O. BOX 272, MOSHI.  PHONE: 255-792 119 129 EMAIL:ajisotz@yahoo.com/info@ajiso.org Web:www.ajiso.")
-                        + "<pre class=\"letter-pre\">FOMU YA USAJILI WA MTEJA.\nLEGAL AID HUMAN RIGHTS INFORMATION UNIT CLIENT IN TAKE SHEET - AJISO\nIwapo nitagundulika kusema uongo sitapewa Msaada wa Kisheria\nKwa wafanyakazi wa ofisi.\nNamba ya Mteja {disputeNo}\nTarehe: {letterDate}\nUwezo wa mteja: Anao: .................... Hana: .................... Vinginevyo: ....................\n\nJina kamili la Mteja ............................................................\nJinsi: ME             KE              Mteja wa zamani              Mteja mpya\nMahali anapoishi Mteja\nAnuani\nNamba ya simu\nUmefahamuje AJISO ?\n\n\nUmri    Kabila    Dini: Mkiristo, Muislamu, Ingine.    Elimu: Msingi, Sekondari,\nDiploma, Chuo Kikuu\nNdoa:\nUmeoa:              Umeolewa\nMjane:                 Umeachika\nMzazi pekee                 Hujaoa/Hujaolewa\nNdoa ilifanyikia mahali gani\nTarehe/mwaka wa kufunga ndoa    Idadi ya watoto\nUmeajiriwa ?                   Hapana\n\nUmejiajiri ? Ndiyo                  Hapana    Hali ya Kipato:\nUnafanya biashara au kazi gani.................................\nKipato chako kwa mwezi ....................\n\nTatizo:\n\n\n\n\n\nWapi ulishapeleka tatizo lako ?\n\nWalikusaidiaje ?\n\nKuna usumbufu wowote  uliupata ?\n\nUlishawahi kupeleka suala hili Mahakamani ?\n\nUnataka usaidiwe nini ?\n\nMajina ya watu\nWatakaofutiliwa/kuchukuliwa hatua\n    Anuani zao\nKWA MATUMIZI YA MWANASHERIA TU\nJina la Mwanasheria    Aina ya kesi\nKifungu cha Sheria kilichotumika\nMaelezo ya Mwanasheria\n(a) Kuhusiana na tatizo: ....................................................\n............................................................\n............................................................\n(b) Hatua za ufuatiliaji, endapo kuna ukiukwaji wa Haki za Binadamu\nUelimishaji/Uhamasishaji    Mahakamani /Uwakilishi    Utafiti    Rufaa\n\n\nHatua za kuchukua\nUshauri/Usuluhishi uliotolewa\nTarehe ya kurudi: ....................................\nSaini ya Mwanasheria................................\n\nMaoni ya Mtendaji Mkuu ................................................\n\n\n\nWapi ulishapeleka tatizo lako ?\n\nWalikusaidiaje ?\n\nKuna usumbufu wowote  uliupata ?\n\nUlishawahi kupeleka suala hili Mahakamani ?\n\nUnataka usaidiwe nini ?\n\nMajina ya watu\nWatakaofutiliwa/kuchukuliwa hatua\n    Anuani zao\nKWA MATUMIZI YA MWANASHERIA TU\nJina la Mwanakisheria    Aina ya kesi\nKifungu cha Sheria kilichotumika\nMaelezo ya Msaidizi wa kisheria\n(a) Kuhusiana na tatizo: ....................................................\n............................................................\n............................................................\n(b) Hatua za ufuatiliaji, endapo kuna ukiukwaji wa Haki za Binadamu\nUelimishaji/Uhamasishaji    Mahakamani /Uwakilishi    Utafiti    Rufaa\n\n\nHatua za kuchukua\nUshauri/Usuluhishi uliotolewa\nTarehe ya kurudi: ....................................\nSaini ya Mwanasheria ................................\n\nMaoni ya Mtendaji Mkuu ................................................\n............................................................</pre>"
-                },
                 wito: {
                     language: "sw",
                     title: "BARUA YA WITO.",
@@ -699,7 +699,7 @@
                 },
                 feedback: {
                     language: "sw",
-                    title: "FOMU YA MAONI YA MTEJA - 2018",
+                    title: "FOMU YA MAONI YA MTEJA",
                     html: buildFeedbackSection() + buildFeedbackSection() + buildFeedbackSection()
                 },
                 referral: {
@@ -889,14 +889,62 @@
 
             function updatePickerLocale(language) {
                 var locale = language === 'en' ? 'en' : 'sw';
-                var datePicker = $('#meeting_date');
-                var timePicker = $('#meeting_time');
+                var datePicker = $('#meeting_date_picker');
+                var timePicker = $('#meeting_time_picker');
                 if (datePicker.data('datetimepicker')) {
                     datePicker.datetimepicker('locale', locale);
                 }
                 if (timePicker.data('datetimepicker')) {
                     timePicker.datetimepicker('locale', locale);
                 }
+            }
+
+            function normalizeSex(value) {
+                var raw = (value || '').toString().trim().toLowerCase();
+                if (raw === 'm' || raw === 'male' || raw === 'me') {
+                    return 'M';
+                }
+                if (raw === 'f' || raw === 'female' || raw === 'ke') {
+                    return 'F';
+                }
+                return '';
+            }
+
+            function normalizeGenderLabel(value) {
+                var raw = (value || '').toString().trim().toLowerCase();
+                if (raw === 'm' || raw === 'male' || raw === 'me') {
+                    return 'ME';
+                }
+                if (raw === 'f' || raw === 'female' || raw === 'ke') {
+                    return 'KE';
+                }
+                return value || '';
+            }
+
+            function setFieldIfEmpty(selector, value) {
+                var field = $(selector);
+                if (!field.length || field.val()) {
+                    return;
+                }
+                if (value && value.toString().trim().length) {
+                    field.val(value).trigger('change');
+                }
+            }
+
+            function applyAutoFill(letterType) {
+                if (letterType !== 'referral') {
+                    return;
+                }
+                var normalizedSex = normalizeSex(beneficiaryGender);
+                var locationFallback = beneficiaryWard || beneficiaryAddress || beneficiaryLocation || beneficiaryDistrict || '';
+
+                setFieldIfEmpty('#recipientName', beneficiaryName);
+                setFieldIfEmpty('#referral_age', beneficiaryAge);
+                setFieldIfEmpty('#referral_sex', normalizedSex);
+                setFieldIfEmpty('#referral_district', beneficiaryDistrict);
+                setFieldIfEmpty('#referral_village', locationFallback);
+                setFieldIfEmpty('#referral_dispute_from', whereReported);
+                setFieldIfEmpty('#meeting_date', reportedOn || letterDate);
             }
 
             function toggleLetterFields(letterType, language) {
@@ -940,6 +988,7 @@
                     $('#letterLanguage').val(language).trigger('change.select2').trigger('change');
                 }
                 toggleLetterFields(selectedType, language);
+                applyAutoFill(selectedType);
                 updateLetterPreview();
             });
 
@@ -953,6 +1002,7 @@
                 updateMeetingDayOptions(language);
                 updatePickerLocale(language);
                 toggleLetterFields(letterType, language);
+                applyAutoFill(letterType);
                 var recipientName = $('#recipientName').val();
                 var recipientAddress = $('#recipientAddress').val();
                 var meetingDate = $('#meeting_date').val();
@@ -967,6 +1017,8 @@
                 var disputeTo = $('#referral_dispute_to').val();
                 var sexFMark = clientSex === 'F' ? 'X' : '';
                 var sexMMark = clientSex === 'M' ? 'X' : '';
+                var feedbackGender = normalizeGenderLabel(beneficiaryGender);
+                var feedbackLocation = beneficiaryLocation || beneficiaryAddress || beneficiaryDistrict || '';
 
                 var template = templateConfig.html || '';
                 var letterTitle = templateConfig.title || '';
@@ -996,7 +1048,15 @@
                     meetingDate: escapeHtml(normalizeLineValue(meetingDate)),
                     meetingTime: escapeHtml(normalizeLineValue(meetingTime)),
                     meetingDay: escapeHtml(normalizeLineValue(meetingDay)),
-                    notes: formatMultiline(normalizeValue(notes, "-"))
+                    notes: formatMultiline(normalizeValue(notes, "-")),
+                    feedbackName: escapeHtml(normalizeLineValue(beneficiaryName)),
+                    feedbackAge: escapeHtml(normalizeLineValue(beneficiaryAge)),
+                    feedbackGender: escapeHtml(normalizeLineValue(feedbackGender)),
+                    feedbackLocation: escapeHtml(normalizeLineValue(feedbackLocation)),
+                    feedbackIssue: escapeHtml(normalizeLineValue(problemDescription)),
+                    feedbackTimeIn: escapeHtml(normalizeLineValue('')),
+                    feedbackTimeOut: escapeHtml(normalizeLineValue('')),
+                    feedbackService: escapeHtml(normalizeLineValue(serviceType))
                 };
 
                 return compileTemplate(template, data);
@@ -1024,6 +1084,16 @@
                     window.ajisoPrintLetter(content);
                 }
             });
+        });
+    </script>
+    <script type="text/javascript">
+        $(function () {
+            @if (session('prompt_status_update'))
+                var statusModal = $('#disputeStatusModal');
+                if (statusModal.length) {
+                    statusModal.modal('show');
+                }
+            @endif
         });
     </script>
 @endpush

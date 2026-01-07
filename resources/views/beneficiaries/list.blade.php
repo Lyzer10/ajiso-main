@@ -53,6 +53,30 @@
                             <a href="{{ route('beneficiary.create', app()->getLocale()) }}" class="btn btn-sm text-white light-custom-color pull-right">
                                 {{ __('Add Beneficiary') }}
                             </a>
+                            @php
+                                $exportSearch = request('search');
+                                $exportQuery = $exportSearch ? '?search=' . urlencode($exportSearch) : '';
+                            @endphp
+                            <div class="dropdown pull-right mr-2">
+                                <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-toggle="dropdown">
+                                    <i class="fas fa-download fa-fw"></i>
+                                    {{ __('Export') }}
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="{{ route('beneficiaries.export.pdf', app()->getLocale()) }}{{ $exportQuery }}">
+                                        <i class="fas fa-file-pdf text-danger"></i>
+                                        {{ __('as pdf') }}
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('beneficiaries.export.excel', app()->getLocale()) }}{{ $exportQuery }}">
+                                        <i class="fas fa-file-excel text-success"></i>
+                                        {{ __('as excel') }}
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('beneficiaries.export.csv', app()->getLocale()) }}{{ $exportQuery }}">
+                                        <i class="fas fa-file-csv text-warning"></i>
+                                        {{ __('as csv') }}
+                                    </a>
+                                </div>
+                            </div>
 
                              <form method="GET" action="{{ route('beneficiaries.list', [app()->getLocale()]) }}" class="d-flex align-items-center pull-right mb-2">
                                 <div class="d-flex align-items-center mr-4">

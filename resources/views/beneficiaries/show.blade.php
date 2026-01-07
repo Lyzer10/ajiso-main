@@ -51,6 +51,26 @@
                 <div class="card-header">
                     <h4 class="header-title">
                         {{ __('Beneficiary Profile') }}
+                        <div class="dropdown pull-right mr-2">
+                            <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-toggle="dropdown">
+                                <i class="fas fa-download fa-fw"></i>
+                                {{ __('Export') }}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{{ route('beneficiary.export.pdf', [app()->getLocale(), $beneficiary]) }}">
+                                    <i class="fas fa-file-pdf text-danger"></i>
+                                    {{ __('as pdf') }}
+                                </a>
+                                <a class="dropdown-item" href="{{ route('beneficiary.export.excel', [app()->getLocale(), $beneficiary]) }}">
+                                    <i class="fas fa-file-excel text-success"></i>
+                                    {{ __('as excel') }}
+                                </a>
+                                <a class="dropdown-item" href="{{ route('beneficiary.export.csv', [app()->getLocale(), $beneficiary]) }}">
+                                    <i class="fas fa-file-csv text-warning"></i>
+                                    {{ __('as csv') }}
+                                </a>
+                            </div>
+                        </div>
                         @cannot('isStaff')
                         <a href=" {{ route('beneficiaries.list', app()->getLocale())}}" class="btn btn-sm text-white light-custom-color pull-right">
                             {{ __('Beneficiaries List') }}

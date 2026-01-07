@@ -1,18 +1,47 @@
 @php
+    $beneficiary = $dispute->beneficiary;
+    $beneficiaryUser = optional($beneficiary)->user;
     $beneficiaryName = trim(implode(' ', array_filter([
-        optional($dispute->reportedBy)->first_name,
-        optional($dispute->reportedBy)->middle_name,
-        optional($dispute->reportedBy)->last_name,
+        optional($beneficiaryUser)->first_name,
+        optional($beneficiaryUser)->middle_name,
+        optional($beneficiaryUser)->last_name,
+    ])));
+    $beneficiaryAge = $beneficiary->age ?? '';
+    $beneficiaryGender = $beneficiary->gender ?? '';
+    $beneficiaryDistrict = optional($beneficiary->district)->district ?? '';
+    $beneficiaryRegion = optional(optional($beneficiary->district)->region)->region ?? '';
+    $beneficiaryWard = $beneficiary->ward ?? '';
+    $beneficiaryStreet = $beneficiary->street ?? '';
+    $beneficiaryAddress = $beneficiary->address ?? '';
+    $beneficiaryLocation = trim(implode(', ', array_filter([
+        $beneficiaryWard,
+        $beneficiaryStreet,
+        $beneficiaryDistrict,
+        $beneficiaryRegion,
     ])));
     $caseType = optional($dispute->typeOfCase)->type_of_case ?? __('N/A');
     $disputeNo = $dispute->dispute_no ?? __('N/A');
     $letterDate = \Carbon\Carbon::now()->format('d/m/Y');
+    $reportedOn = $dispute->reported_on ? \Carbon\Carbon::parse($dispute->reported_on)->format('d/m/Y') : '';
+    $serviceType = optional($dispute->typeOfService)->type_of_service ?? '';
+    $problemDescription = $dispute->problem_description ?? '';
+    $whereReported = $dispute->where_reported ?? '';
 @endphp
 
 <!-- Generate Letter modal -->
 <div class="modal fade letter-modal" id="generateLetterModal" tabindex="-1" aria-labelledby="generateLetterModalLabel" aria-hidden="true"
     data-dispute-no="{{ $disputeNo }}"
     data-beneficiary="{{ $beneficiaryName }}"
+    data-beneficiary-age="{{ $beneficiaryAge }}"
+    data-beneficiary-gender="{{ $beneficiaryGender }}"
+    data-beneficiary-address="{{ $beneficiaryAddress }}"
+    data-beneficiary-ward="{{ $beneficiaryWard }}"
+    data-beneficiary-district="{{ $beneficiaryDistrict }}"
+    data-beneficiary-location="{{ $beneficiaryLocation }}"
+    data-service-type="{{ $serviceType }}"
+    data-problem-description="{{ $problemDescription }}"
+    data-where-reported="{{ $whereReported }}"
+    data-reported-on="{{ $reportedOn }}"
     data-case-type="{{ $caseType }}"
     data-letter-date="{{ $letterDate }}">
     <div class="modal-dialog modal-xl">
@@ -43,8 +72,7 @@
                                     <option value="wito">BARUA YA WITO</option>
                                     <option value="reminder">KUMBUSHO LA WITO</option>
                                     <option value="referral">REFFERAL FORM</option>
-                                    <option value="feedback">FOMU YA MAONI YA MTEJA - 2018</option>
-                                    <option value="registration">FOMU YA USAJILI WA MTEJA.</option>
+                                    <option value="feedback">FOMU YA MAONI YA MTEJA</option>
                                 </select>
                             </div>
                             <div class="form-group col-md-6">
@@ -105,19 +133,25 @@
                         <div class="form-row">
                             <div class="form-group col-md-4" id="meetingDateGroup">
                                 <label for="meeting_date" id="meetingDateLabel">{{ __('Meeting Date') }}</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control border-input-primary" id="meeting_date" placeholder="dd/mm/yyyy" readonly inputmode="none">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                <div class="input-group date" id="meeting_date_picker" data-target-input="nearest">
+                                    <input type="text" class="form-control datetimepicker-input border-input-primary" id="meeting_date"
+                                        placeholder="dd/mm/yyyy" readonly inputmode="none" data-target="#meeting_date_picker" data-toggle="datetimepicker">
+                                    <div class="input-group-append" data-target="#meeting_date_picker" data-toggle="datetimepicker">
+                                        <div class="input-group-text border-append-primary bg-prepend-primary">
+                                            <i class="far fa-calendar-alt"></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="form-group col-md-4" id="meetingTimeGroup">
                                 <label for="meeting_time" id="meetingTimeLabel">{{ __('Time') }}</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control border-input-primary" id="meeting_time" placeholder="hh:mm" readonly inputmode="none">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text"><i class="far fa-clock"></i></span>
+                                <div class="input-group date" id="meeting_time_picker" data-target-input="nearest">
+                                    <input type="text" class="form-control datetimepicker-input border-input-primary" id="meeting_time"
+                                        placeholder="hh:mm" readonly inputmode="none" data-target="#meeting_time_picker" data-toggle="datetimepicker">
+                                    <div class="input-group-append" data-target="#meeting_time_picker" data-toggle="datetimepicker">
+                                        <div class="input-group-text border-append-primary bg-prepend-primary">
+                                            <i class="far fa-clock"></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
