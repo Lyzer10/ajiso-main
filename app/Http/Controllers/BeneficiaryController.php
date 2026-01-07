@@ -177,6 +177,7 @@ class BeneficiaryController extends Controller
             'gender' => ['required'],
             'age' => ['required', 'max:3'],
             'disabled' => ['required', 'in:yes,no'],
+            'registration_source' => ['required', Rule::in(['office', 'paralegal'])],
             'tribe' => ['required', 'integer', 'exists:tribes,id'],
             'religion' => ['required', 'integer', 'exists:religions,id'],
             'education_level' => ['required'],
@@ -319,6 +320,7 @@ class BeneficiaryController extends Controller
             $beneficiary->occupation_business = $request->occupation_business;
             $defaultIncomeId = Income::where('income', 'N/A')->value('id') ?? Income::min('id') ?? 1;
             $beneficiary->income_id = $request->input('monthly_income', $defaultIncomeId);
+            $beneficiary->registration_source = $request->registration_source;
 
             /**
              * Save the user to the database
@@ -358,32 +360,32 @@ class BeneficiaryController extends Controller
                  * Send sms, email & database notification
                  */
 
-                try {
+                if ($beneficiary->registration_source === 'office') {
+                    try {
+                        if (env('SEND_NOTIFICATIONS') == TRUE) {
+                            // SMS
+                            $sms = new SmsService();
+                            $sms->sendSMS($recipients, $message);
 
-                    if (env('SEND_NOTIFICATIONS') == TRUE) {
+                            // Database & email
+                            Notification::send($beneficiary->user, new BeneficiaryEnrolled($beneficiary, $message));
 
-                        // SMS
-                        $sms = new SmsService();
-                        $sms->sendSMS($recipients, $message);
+                            // Notify admins and superadmins
+                            $admins = $this->getAdmins();
+                            $superAdmins = $this->getSuperAdmins();
+                            $allAdmins = $admins->merge($superAdmins);
 
-                        // Database & email
-                        Notification::send($beneficiary->user, new BeneficiaryEnrolled($beneficiary, $message));
+                            $adminMessage = "New beneficiary registered: " . $full_name . " (ID: " . $beneficiary_no . ")";
 
-                        // Notify admins and superadmins
-                        $admins = $this->getAdmins();
-                        $superAdmins = $this->getSuperAdmins();
-                        $allAdmins = $admins->merge($superAdmins);
-
-                        $adminMessage = "New beneficiary registered: " . $full_name . " (ID: " . $beneficiary_no . ")";
-
-                        Notification::send($allAdmins, new CustomNotice(
-                            'New Beneficiary Registration',
-                            'info',
-                            $adminMessage
-                        ));
+                            Notification::send($allAdmins, new CustomNotice(
+                                'New Beneficiary Registration',
+                                'info',
+                                $adminMessage
+                            ));
+                        }
+                    } catch (\Throwable $th) {
+                        throw $th;
                     }
-                } catch (\Throwable $th) {
-                    throw $th;
                 }
             }
 
@@ -503,6 +505,7 @@ class BeneficiaryController extends Controller
             'gender' => ['required'],
             'age' => ['required', 'max:3'],
             'disabled' => ['required', 'in:yes,no'],
+            'registration_source' => ['required', Rule::in(['office', 'paralegal'])],
             'tribe' => ['required', 'integer', 'exists:tribes,id'],
             'religion' => ['required', 'integer', 'exists:religions,id'],
             'education_level' => ['required'],
@@ -650,8 +653,9 @@ class BeneficiaryController extends Controller
             }
             $beneficiary->no_of_children = $isMarried ? ($request->no_of_children ?? 0) : 0;
             $beneficiary->financial_capability = $request->financial_capability;
-            $beneficiary->employment_status_id = $request->employment_status;
-            $beneficiary->occupation_business = $request->occupation_business;
+        $beneficiary->employment_status_id = $request->employment_status;
+        $beneficiary->occupation_business = $request->occupation_business;
+        $beneficiary->registration_source = $request->registration_source;
             if ($request->filled('monthly_income')) {
                 $beneficiary->income_id = $request->monthly_income;
             }

@@ -495,18 +495,22 @@
     {{-- Letter date/time --}}
     <script type="text/javascript">
         $(function () {
+            var letterModal = $('#generateLetterModal');
+            var widgetParent = letterModal.length ? letterModal : undefined;
             $('#meeting_date_picker').datetimepicker({
                 format: 'DD/MM/YYYY',
                 viewMode: 'years',
                 ignoreReadonly: true,
-                allowInputToggle: true
+                allowInputToggle: true,
+                widgetParent: widgetParent
             });
 
             $('#meeting_time_picker').datetimepicker({
                 format: 'HH:mm',
                 stepping: 1,
                 ignoreReadonly: true,
-                allowInputToggle: true
+                allowInputToggle: true,
+                widgetParent: widgetParent
             });
         });
     </script>
@@ -887,6 +891,20 @@
                 $('#meeting_day').trigger('change.select2');
             }
 
+            function applyMeetingDayFromDate(dateValue) {
+                if (!dateValue) {
+                    return;
+                }
+                var parsed = moment.isMoment(dateValue)
+                    ? dateValue.clone()
+                    : moment(dateValue, ['DD/MM/YYYY', 'D/M/YYYY', 'L'], true);
+                if (!parsed.isValid()) {
+                    return;
+                }
+                var dayLabel = parsed.locale(currentLanguage === 'en' ? 'en' : 'sw').format('dddd');
+                $('#meeting_day').val(dayLabel).trigger('change.select2').trigger('change');
+            }
+
             function updatePickerLocale(language) {
                 var locale = language === 'en' ? 'en' : 'sw';
                 var datePicker = $('#meeting_date_picker');
@@ -945,6 +963,7 @@
                 setFieldIfEmpty('#referral_village', locationFallback);
                 setFieldIfEmpty('#referral_dispute_from', whereReported);
                 setFieldIfEmpty('#meeting_date', reportedOn || letterDate);
+                applyMeetingDayFromDate($('#meeting_date').val());
             }
 
             function toggleLetterFields(letterType, language) {
@@ -1095,6 +1114,21 @@
             });
 
             modal.find('input, textarea, select').on('input change', function () {
+                scheduleLetterPreview();
+            });
+
+            $('#meeting_date_picker').on('change.datetimepicker', function (event) {
+                if (event.date) {
+                    $('#meeting_date').val(event.date.format('DD/MM/YYYY'));
+                }
+                applyMeetingDayFromDate(event.date || $('#meeting_date').val());
+                scheduleLetterPreview();
+            });
+
+            $('#meeting_time_picker').on('change.datetimepicker', function (event) {
+                if (event.date) {
+                    $('#meeting_time').val(event.date.format('HH:mm'));
+                }
                 scheduleLetterPreview();
             });
 

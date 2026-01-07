@@ -84,7 +84,7 @@
                                     <div class="container mb-5">
                                         <div class="row">
                                             <button type="submit" class="btn light-custom-color text-white w-100">
-                                                {{ __('Login') }}
+                                                {{ __('Sign In') }}
                                                 <i class="fas fa-arrow-right"></i>
                                             </button>
                                         </div>

@@ -34,6 +34,14 @@
     <!-- Template Main CSS File -->
     <link rel="stylesheet" href="{{ asset('landing/css/style.css') }}">
 
+    <style>
+        :root {
+            --primary-color: hsl(199.03deg 88.96% 31.96%);
+            --primary-color-dark: hsl(199.03deg 88.96% 31.96%);
+            --primary-color-soft: hsla(199.03deg, 88.96%, 31.96%, 0.15);
+            --header-color: rgb(12 70 109);
+        }
+    </style>
 </head>
 
 <body>

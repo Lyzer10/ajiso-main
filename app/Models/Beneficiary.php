@@ -28,6 +28,7 @@ class Beneficiary extends Model
         'id',
         'gender',
         'disabled',
+        'registration_source',
         'date_of_birth',
         'education_level_id',
         'address',

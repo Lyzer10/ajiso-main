@@ -50,7 +50,7 @@
                         <nav>
                             <ul class="metismenu" id="menu">
     {{-- Dashboard --}}
-  <li class="{{ request()->routeIs('admin.super.home') || request()->routeIs('admin.home') || request()->routeIs('staff.home') ? 'active' : '' }}">
+  <li class="{{ request()->routeIs('admin.super.home') || request()->routeIs('admin.home') || request()->routeIs('staff.home') || request()->routeIs('clerk.home') || request()->routeIs('beneficiary.home') ? 'active' : '' }}">
     @canany(['isSuperAdmin'])
         <a href="{{ route('admin.super.home', app()->getLocale()) }}" aria-expanded="true">
     @elsecanany(['isAdmin','isClerk'])
@@ -68,7 +68,7 @@
 
     {{-- Users --}}
     @canany(['isSuperAdmin','isAdmin','isClerk'])
-        <li class="{{ request()->routeIs('staff.*') || request()->routeIs('beneficiaries.*') ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('staff.*') || request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-user-friends"></i>
                 <span>{{ __('Users') }}</span>
@@ -82,7 +82,7 @@
                     </a>
                 </li>
                 @endcannot
-                <li class="{{ request()->routeIs('beneficiaries.*') ? 'active' : '' }}">
+                <li class="{{ request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') ? 'active' : '' }}">
                     <a href="{{ route('beneficiaries.list', app()->getLocale()) }}">
                         <i class="fas fa-chevron-right"></i>
                         {{ __('Beneficiaries') }}
@@ -92,13 +92,13 @@
         </li>
     @endcanany
     @canany(['isStaff'])
-        <li class="{{ request()->routeIs('beneficiaries.*') ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-user-friends"></i>
                 <span>{{ __('Users') }}</span>
             </a>
             <ul class="collapse">
-                <li class="{{ request()->routeIs('beneficiaries.*') ? 'active' : '' }}">
+                <li class="{{ request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') ? 'active' : '' }}">
                     <a href="{{ route('beneficiaries.list', app()->getLocale()) }}">
                         <i class="fas fa-chevron-right"></i>
                         {{ __('Beneficiaries') }}

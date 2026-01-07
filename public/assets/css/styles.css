@@ -195,6 +195,12 @@
     padding: 8px 20px;
 }
 
+.metismenu li ul li.active > a {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #fff;
+}
+
 .metismenu li ul {
     padding-left: 37px;
 }
@@ -3873,5 +3879,4 @@ table.dataTable thead td {
 .badge-primary {
     background-color: var(--primary-color);
 }
-
 
