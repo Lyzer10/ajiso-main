@@ -1063,16 +1063,39 @@
                 return compileTemplate(template, data);
             }
 
+            var isPreviewUpdating = false;
+            var previewQueued = false;
+            var previewTimer = null;
+
             function updateLetterPreview() {
-                $('#letterPreview').html(buildLetterHtml());
+                if (isPreviewUpdating) {
+                    previewQueued = true;
+                    return;
+                }
+                isPreviewUpdating = true;
+                window.requestAnimationFrame(function () {
+                    $('#letterPreview').html(buildLetterHtml());
+                    isPreviewUpdating = false;
+                    if (previewQueued) {
+                        previewQueued = false;
+                        updateLetterPreview();
+                    }
+                });
+            }
+
+            function scheduleLetterPreview() {
+                if (previewTimer) {
+                    clearTimeout(previewTimer);
+                }
+                previewTimer = setTimeout(updateLetterPreview, 80);
             }
 
             modal.on('shown.bs.modal', function () {
-                updateLetterPreview();
+                scheduleLetterPreview();
             });
 
             modal.find('input, textarea, select').on('input change', function () {
-                updateLetterPreview();
+                scheduleLetterPreview();
             });
 
             $('#previewLetter').on('click', function () {

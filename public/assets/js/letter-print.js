@@ -68,7 +68,26 @@
         popup.document.write(content);
         popup.document.write('</body></html>');
         popup.document.close();
-        popup.focus();
-        popup.print();
+
+        var hasPrinted = false;
+        function triggerPrint() {
+            if (hasPrinted || popup.closed) {
+                return;
+            }
+            hasPrinted = true;
+            popup.focus();
+            popup.print();
+            popup.onafterprint = function () {
+                if (!popup.closed) {
+                    popup.close();
+                }
+            };
+        }
+
+        var printTimeout = setTimeout(triggerPrint, 500);
+        popup.onload = function () {
+            clearTimeout(printTimeout);
+            triggerPrint();
+        };
     };
 })();
