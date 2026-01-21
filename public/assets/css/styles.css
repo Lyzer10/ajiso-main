@@ -143,6 +143,13 @@
     color: #e8f6ff;
 }
 
+.logo a.logo-text {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
+}
+
 .metismenu > li > a {
     padding-left: 32px !important;
 }

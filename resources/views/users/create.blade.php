@@ -207,7 +207,7 @@
                                     <option hidden disabled selected value>{{ __('Choose a role') }}</option>
                                     @if ($user_roles->count())
                                         @foreach ($user_roles as $user_role)
-                                            <option value="{{ $user_role->id }}">
+                                            <option value="{{ $user_role->id }}" data-role="{{ $user_role->role_abbreviation }}">
                                                 {{ __($user_role->role_abbreviation) }}
                                             </option>
                                         @endforeach
@@ -216,6 +216,28 @@
                                     @endif
                                 </select>
                                 @error('user_role')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                            <div class="col-md-4 mb-3" id="organization_group" style="display: none;">
+                                <label for="organization_id" class="font-weight-bold">{{ __('Organization') }}<sup class="text-danger">*</sup></label>
+                                <select id="organization_id"
+                                    class="select2 select2-container--default border-input-primary @error('organization_id') is-invalid @enderror"
+                                    name="organization_id" autocomplete="organization_id" style="width: 100%;">
+                                    <option hidden disabled selected value>{{ __('Choose organization') }}</option>
+                                    @if ($organizations->count())
+                                        @foreach ($organizations as $organization)
+                                            <option value="{{ $organization->id }}" {{ old('organization_id') == $organization->id ? ' selected="selected"' : '' }}>
+                                                {{ __($organization->name) }}
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option>{{ __('No organizations found') }}</option>
+                                    @endif
+                                </select>
+                                @error('organization_id')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
@@ -240,6 +262,23 @@
     <script type="text/javascript">
         $(function() {
             $('.select2').select2();
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(function() {
+            function toggleOrganization() {
+                var role = $('#user_role').find(':selected').data('role');
+                if (role === 'paralegal') {
+                    $('#organization_group').show();
+                } else {
+                    $('#organization_group').hide();
+                    $('#organization_id').val(null).trigger('change');
+                }
+            }
+
+            toggleOrganization();
+            $('#user_role').on('change', toggleOrganization);
         });
     </script>
 @endpush

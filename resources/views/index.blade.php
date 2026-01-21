@@ -13,7 +13,7 @@
         <a class="nav-link scrollto" href="#faq">{{ __('FAQs') }}</a>
     </li>
     <li>
-        <a class="nav-link scrollto" href="{{ route('login', app()->getLocale()) }}">
+        <a class="nav-link" href="{{ route('login', app()->getLocale()) }}">
             {{ __('Login') }}
         </a>
     </li>

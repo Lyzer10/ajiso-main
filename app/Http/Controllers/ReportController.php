@@ -7,6 +7,7 @@ use App\Models\Staff;
 use App\Models\Income;
 use App\Models\Dispute;
 use App\Models\AgeGroup;
+use App\Models\District;
 use App\Models\TypeOfCase;
 use App\Models\Beneficiary;
 use Illuminate\Http\Request;
@@ -36,22 +37,33 @@ class ReportController extends Controller
      */
     public function index()
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         $resolvedStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['resolved'])
                                         ->value('id');
 
         // Get all disputes and bind them to the index view
-        $disputes = Dispute::with('assignedTo:first_name,middle_name,last_name',
-                                    'reportedBy:first_name,middle_name,last_name',
-                                    'disputeStatus', 'typeOfService','typeOfCase')
-                            ->select(['id', 'dispute_no', 'reported_on', 'beneficiary_id', 'staff_id',
-                                        'type_of_service_id','type_of_case_id', 'dispute_status_id',
-                            ])
-                            ->latest()
-                            ->paginate(10);
+        $disputesQuery = Dispute::with('assignedTo:first_name,middle_name,last_name',
+                                        'reportedBy:first_name,middle_name,last_name',
+                                        'disputeStatus', 'typeOfService','typeOfCase')
+                                ->select(['id', 'dispute_no', 'reported_on', 'beneficiary_id', 'staff_id',
+                                            'type_of_service_id','type_of_case_id', 'dispute_status_id',
+                                ])
+                                ->latest();
+        $this->scopeDisputesByOrganization($disputesQuery, $organizationId);
+        $disputes = $disputesQuery->paginate(10);
 
-        $totalCases = Dispute::count();
+        $totalCasesQuery = Dispute::query();
+        $this->scopeDisputesByOrganization($totalCasesQuery, $organizationId);
+        $totalCases = $totalCasesQuery->count();
 
-        $statusCounts = Dispute::select('dispute_status_id', DB::raw('count(*) as total'))
+        $statusCountsQuery = Dispute::select('dispute_status_id', DB::raw('count(*) as total'));
+        $this->scopeDisputesByOrganization($statusCountsQuery, $organizationId);
+        $statusCounts = $statusCountsQuery
                                 ->groupBy('dispute_status_id')
                                 ->pluck('total', 'dispute_status_id');
 
@@ -60,10 +72,11 @@ class ReportController extends Controller
             : 0;
 
         // Get all the beneficiaries and bind them to the create  view
-        $beneficiaries = Beneficiary::has('user')
+        $beneficiariesQuery = Beneficiary::has('user')
                                     ->with('user')
-                                    ->latest()
-                                    ->get(['id','user_id']);
+                                    ->latest();
+        $this->scopeBeneficiariesByOrganization($beneficiariesQuery, $organizationId);
+        $beneficiaries = $beneficiariesQuery->get(['id','user_id']);
 
         // Get all the staff and bind them to the create  view
         $staff = Staff::has('user')
@@ -110,6 +123,12 @@ class ReportController extends Controller
             'filterBy' => ['required', 'string', 'max:255'],
             'dateRange' => ['required', 'string', 'max:255'],
         ]);
+
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
 
         $resolvedStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['resolved'])
                                         ->value('id');
@@ -263,6 +282,7 @@ class ReportController extends Controller
         }
 
         if ($baseQuery) {
+            $this->scopeDisputesByOrganization($baseQuery, $organizationId);
 
             $disputes = (clone $baseQuery)
                         ->with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfService', 'typeOfCase')
@@ -306,19 +326,33 @@ class ReportController extends Controller
      */
     public function disputesSummary()
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         $date_ranges = 'All';
 
-        $total = Dispute::count();
+        $totalQuery = Dispute::query();
+        $this->scopeDisputesByOrganization($totalQuery, $organizationId);
+        $total = $totalQuery->count();
 
-        $group_by_service = Dispute::select('type_of_service_id', Dispute::raw('count(*) as total'))
+        $group_by_service = Dispute::select('type_of_service_id', Dispute::raw('count(*) as total'));
+        $this->scopeDisputesByOrganization($group_by_service, $organizationId);
+        $group_by_service = $group_by_service
                                     ->groupBy('type_of_service_id')
                                     ->get();
 
-        $group_by_case = Dispute::select('type_of_case_id', Dispute::raw('count(*) as total'))
+        $group_by_case = Dispute::select('type_of_case_id', Dispute::raw('count(*) as total'));
+        $this->scopeDisputesByOrganization($group_by_case, $organizationId);
+        $group_by_case = $group_by_case
                                 ->groupBy('type_of_case_id')
                                 ->get();
 
-        $group_by_status = Dispute::select('dispute_status_id', Dispute::raw('count(*) as total'))
+        $group_by_status = Dispute::select('dispute_status_id', Dispute::raw('count(*) as total'));
+        $this->scopeDisputesByOrganization($group_by_status, $organizationId);
+        $group_by_status = $group_by_status
                                     ->groupBy('dispute_status_id')
                                     ->get();
 
@@ -337,7 +371,7 @@ class ReportController extends Controller
         $age_groups = AgeGroup::orderBy('id')
                                 ->get(['id', 'age_group']);
 
-        $case_demographics_raw = $this->fetchCaseDemographicsRaw();
+        $case_demographics_raw = $this->fetchCaseDemographicsRaw(null, null, $organizationId);
         $case_demographics = $this->buildCaseDemographics($type_of_cases, $age_groups, $case_demographics_raw);
         $age_group_distribution = $this->buildAgeGroupDistribution($age_groups, $case_demographics_raw);
 
@@ -366,6 +400,12 @@ class ReportController extends Controller
             'dateRange' => ['required', 'string', 'max:255'],
         ]);
 
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // split dateRange into $date_start and $date_end
 
         $date_ranges = $request->dateRange;
@@ -375,21 +415,28 @@ class ReportController extends Controller
         $date_start =  Carbon::parse($date[0])->format('Y-m-d');
         $date_end = Carbon::parse($date[1])->format('Y-m-d');
 
-        $total = Dispute::whereBetween('reported_on', [$date_start, $date_end])
-                        ->count();
+        $totalQuery = Dispute::whereBetween('reported_on', [$date_start, $date_end]);
+        $this->scopeDisputesByOrganization($totalQuery, $organizationId);
+        $total = $totalQuery->count();
 
         $group_by_service = Dispute::select('type_of_service_id', Dispute::raw('count(*) as total'))
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
+        $this->scopeDisputesByOrganization($group_by_service, $organizationId);
+        $group_by_service = $group_by_service
                                     ->groupBy('type_of_service_id')
                                     ->get();
 
         $group_by_case = Dispute::select('type_of_case_id', Dispute::raw('count(*) as total'))
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
+        $this->scopeDisputesByOrganization($group_by_case, $organizationId);
+        $group_by_case = $group_by_case
                                     ->groupBy('type_of_case_id')
                                     ->get();
 
         $group_by_status = Dispute::select('dispute_status_id', Dispute::raw('count(*) as total'))
-                                    ->whereBetween('reported_on', [$date_start, $date_end])
+                                    ->whereBetween('reported_on', [$date_start, $date_end]);
+        $this->scopeDisputesByOrganization($group_by_status, $organizationId);
+        $group_by_status = $group_by_status
                                     ->groupBy('dispute_status_id')
                                     ->get();
 
@@ -408,7 +455,7 @@ class ReportController extends Controller
         $age_groups = AgeGroup::orderBy('id')
                                 ->get(['id', 'age_group']);
 
-        $case_demographics_raw = $this->fetchCaseDemographicsRaw($date_start, $date_end);
+        $case_demographics_raw = $this->fetchCaseDemographicsRaw($date_start, $date_end, $organizationId);
         $case_demographics = $this->buildCaseDemographics($type_of_cases, $age_groups, $case_demographics_raw);
         $age_group_distribution = $this->buildAgeGroupDistribution($age_groups, $case_demographics_raw);
 
@@ -422,32 +469,51 @@ class ReportController extends Controller
      */
     public function beneficiariesEnrollSummary()
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
 
         $date_ranges = 'All Time';
 
-        $total = Beneficiary::count();
+        $totalQuery = Beneficiary::query();
+        $this->scopeBeneficiariesByOrganization($totalQuery, $organizationId);
+        $total = $totalQuery->count();
 
-        $group_by_gender = Beneficiary::select('gender', Beneficiary::raw('count(*) as total'))
+        $group_by_gender = Beneficiary::select('gender', Beneficiary::raw('count(*) as total'));
+        $this->scopeBeneficiariesByOrganization($group_by_gender, $organizationId);
+        $group_by_gender = $group_by_gender
                                         ->groupBy('gender')
                                         ->get();
 
-        $group_by_occupation = Beneficiary::select('employment_status_id', Beneficiary::raw('count(*) as total'))
+        $group_by_occupation = Beneficiary::select('employment_status_id', Beneficiary::raw('count(*) as total'));
+        $this->scopeBeneficiariesByOrganization($group_by_occupation, $organizationId);
+        $group_by_occupation = $group_by_occupation
                                             ->groupBy('employment_status_id')
                                             ->get();
 
-        $group_by_age = Beneficiary::select('age', Beneficiary::raw('count(*) as total'))
+        $group_by_age = Beneficiary::select('age', Beneficiary::raw('count(*) as total'));
+        $this->scopeBeneficiariesByOrganization($group_by_age, $organizationId);
+        $group_by_age = $group_by_age
                                     ->groupBy('age')
                                     ->get();
 
-        $group_by_income = Beneficiary::select('income_id', Beneficiary::raw('count(*) as total'))
+        $group_by_income = Beneficiary::select('income_id', Beneficiary::raw('count(*) as total'));
+        $this->scopeBeneficiariesByOrganization($group_by_income, $organizationId);
+        $group_by_income = $group_by_income
                                         ->groupBy('income_id')
                                         ->get();
 
-        $group_by_education = Beneficiary::select('education_level_id', Beneficiary::raw('count(*) as total'))
+        $group_by_education = Beneficiary::select('education_level_id', Beneficiary::raw('count(*) as total'));
+        $this->scopeBeneficiariesByOrganization($group_by_education, $organizationId);
+        $group_by_education = $group_by_education
                                             ->groupBy('education_level_id')
                                             ->get();
 
-        $group_by_marital = Beneficiary::select('marital_status_id', Beneficiary::raw('count(*) as total'))
+        $group_by_marital = Beneficiary::select('marital_status_id', Beneficiary::raw('count(*) as total'));
+        $this->scopeBeneficiariesByOrganization($group_by_marital, $organizationId);
+        $group_by_marital = $group_by_marital
                                         ->groupBy('marital_status_id')
                                         ->get();
 
@@ -498,6 +564,12 @@ class ReportController extends Controller
             'dateRange' => ['required', 'string', 'max:255'],
         ]);
 
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // split dateRange into $date_start and $date_end
 
         $date_ranges = $request->dateRange;
@@ -507,36 +579,49 @@ class ReportController extends Controller
         $date_start =  Carbon::parse($date[0])->format('Y-m-d');
         $date_end = Carbon::parse($date[1])->format('Y-m-d');
 
-        $total = Beneficiary::whereBetween('created_at', [$date_start, $date_end])
-                            ->count();
+        $totalQuery = Beneficiary::whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($totalQuery, $organizationId);
+        $total = $totalQuery->count();
 
         $group_by_gender = Beneficiary::select('gender', Beneficiary::raw('count(*) as total'))
-                                        ->whereBetween('created_at', [$date_start, $date_end])
+                                        ->whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($group_by_gender, $organizationId);
+        $group_by_gender = $group_by_gender
                                         ->groupBy('gender')
                                         ->get();
 
         $group_by_occupation = Beneficiary::select('employment_status_id', Beneficiary::raw('count(*) as total'))
-                                            ->whereBetween('created_at', [$date_start, $date_end])
+                                            ->whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($group_by_occupation, $organizationId);
+        $group_by_occupation = $group_by_occupation
                                             ->groupBy('employment_status_id')
                                             ->get();
 
         $group_by_age = Beneficiary::select('age', Beneficiary::raw('count(*) as total'))
-                                    ->whereBetween('created_at', [$date_start, $date_end])
+                                    ->whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($group_by_age, $organizationId);
+        $group_by_age = $group_by_age
                                     ->groupBy('age')
                                     ->get();
 
         $group_by_income = Beneficiary::select('income_id', Beneficiary::raw('count(*) as total'))
-                                        ->whereBetween('created_at', [$date_start, $date_end])
+                                        ->whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($group_by_income, $organizationId);
+        $group_by_income = $group_by_income
                                         ->groupBy('income_id')
                                         ->get();
 
         $group_by_education = Beneficiary::select('education_level_id', Beneficiary::raw('count(*) as total'))
-                                            ->whereBetween('created_at', [$date_start, $date_end])
+                                            ->whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($group_by_education, $organizationId);
+        $group_by_education = $group_by_education
                                             ->groupBy('education_level_id')
                                             ->get();
 
         $group_by_marital = Beneficiary::select('marital_status_id', Beneficiary::raw('count(*) as total'))
-                                        ->whereBetween('created_at', [$date_start, $date_end])
+                                        ->whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($group_by_marital, $organizationId);
+        $group_by_marital = $group_by_marital
                                         ->groupBy('marital_status_id')
                                         ->get();
 
@@ -574,9 +659,19 @@ class ReportController extends Controller
      */
     public function surveySummary(){
 
-        $total = Beneficiary::count();
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
 
-        $group_by_survey = Beneficiary::select('survey_choice_id', Beneficiary::raw('count(*) as total'))
+        $totalQuery = Beneficiary::query();
+        $this->scopeBeneficiariesByOrganization($totalQuery, $organizationId);
+        $total = $totalQuery->count();
+
+        $group_by_survey = Beneficiary::select('survey_choice_id', Beneficiary::raw('count(*) as total'));
+        $this->scopeBeneficiariesByOrganization($group_by_survey, $organizationId);
+        $group_by_survey = $group_by_survey
                                         ->groupBy('survey_choice_id')
                                         ->get();
 
@@ -636,6 +731,12 @@ class ReportController extends Controller
             'dateRange' => ['required', 'string', 'max:255'],
         ]);
 
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // split dateRange into $date_start and $date_end
 
         $date_ranges = $request->dateRange;
@@ -645,11 +746,14 @@ class ReportController extends Controller
         $date_start =  Carbon::parse($date[0])->format('Y-m-d');
         $date_end = Carbon::parse($date[1])->format('Y-m-d');
 
-        $total = Beneficiary::whereBetween('created_at', [$date_start, $date_end])
-                                ->count();
+        $totalQuery = Beneficiary::whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($totalQuery, $organizationId);
+        $total = $totalQuery->count();
 
         $group_by_survey = Beneficiary::select('survey_choice_id', Beneficiary::raw('count(*) as total'))
-                                        ->whereBetween('created_at', [$date_start, $date_end])
+                                        ->whereBetween('created_at', [$date_start, $date_end]);
+        $this->scopeBeneficiariesByOrganization($group_by_survey, $organizationId);
+        $group_by_survey = $group_by_survey
                                         ->groupBy('survey_choice_id')
                                         ->get();
 
@@ -692,10 +796,82 @@ class ReportController extends Controller
                 ->with('status', 'Survey data found');
     }
 
-    private function fetchCaseDemographicsRaw($date_start = null, $date_end = null)
+    /**
+     * Paralegal reports summary.
+     */
+    public function paralegalSummary()
+    {
+        $user = auth()->user();
+        if (!$user || !$user->role || !in_array($user->role->role_abbreviation, ['superadmin', 'admin'], true)) {
+            return redirect()->back()
+                ->withErrors('errors', 'You are not authorized to perform this action.');
+        }
+
+        $baseQuery = Dispute::query()
+            ->join('beneficiaries', 'beneficiaries.id', '=', 'disputes.beneficiary_id')
+            ->where('beneficiaries.registration_source', 'paralegal');
+
+        $total_cases = (clone $baseQuery)->count();
+
+        $case_type_counts = (clone $baseQuery)
+            ->whereNotNull('disputes.type_of_case_id')
+            ->select('disputes.type_of_case_id', DB::raw('count(*) as total'))
+            ->groupBy('disputes.type_of_case_id')
+            ->pluck('total', 'disputes.type_of_case_id');
+
+        $service_counts = (clone $baseQuery)
+            ->whereNotNull('disputes.type_of_service_id')
+            ->select('disputes.type_of_service_id', DB::raw('count(*) as total'))
+            ->groupBy('disputes.type_of_service_id')
+            ->pluck('total', 'disputes.type_of_service_id');
+
+        $gender_counts = (clone $baseQuery)
+            ->whereNotNull('beneficiaries.gender')
+            ->select('beneficiaries.gender', DB::raw('count(*) as total'))
+            ->groupBy('beneficiaries.gender')
+            ->pluck('total', 'beneficiaries.gender');
+
+        $district_counts = (clone $baseQuery)
+            ->whereNotNull('beneficiaries.district_id')
+            ->select('beneficiaries.district_id', DB::raw('count(*) as total'))
+            ->groupBy('beneficiaries.district_id')
+            ->pluck('total', 'beneficiaries.district_id');
+
+        $ward_counts = (clone $baseQuery)
+            ->whereNotNull('beneficiaries.ward')
+            ->where('beneficiaries.ward', '!=', '')
+            ->select('beneficiaries.ward', DB::raw('count(*) as total'))
+            ->groupBy('beneficiaries.ward')
+            ->orderBy('beneficiaries.ward')
+            ->get();
+
+        $case_types = TypeOfCase::orderBy('type_of_case')->get(['id', 'type_of_case']);
+        $service_types = TypeOfService::orderBy('type_of_service')->get(['id', 'type_of_service']);
+
+        $districts = $district_counts->isEmpty()
+            ? collect()
+            : District::whereIn('id', $district_counts->keys())
+                ->orderBy('district')
+                ->get(['id', 'district']);
+
+        return view('reports.admin.paralegal-summary', compact(
+            'total_cases',
+            'case_types',
+            'service_types',
+            'districts',
+            'case_type_counts',
+            'service_counts',
+            'gender_counts',
+            'district_counts',
+            'ward_counts'
+        ));
+    }
+
+    private function fetchCaseDemographicsRaw($date_start = null, $date_end = null, $organizationId = null)
     {
         $query = Dispute::query()
             ->join('beneficiaries', 'beneficiaries.id', '=', 'disputes.beneficiary_id')
+            ->join('users', 'users.id', '=', 'beneficiaries.user_id')
             ->select(
                 'disputes.type_of_case_id',
                 'beneficiaries.gender',
@@ -703,6 +879,10 @@ class ReportController extends Controller
                 DB::raw('count(*) as total')
             )
             ->groupBy('disputes.type_of_case_id', 'beneficiaries.gender', 'beneficiaries.age_group');
+
+        if ($organizationId) {
+            $query->where('users.organization_id', $organizationId);
+        }
 
         if ($date_start && $date_end) {
             $query->whereBetween('disputes.reported_on', [$date_start, $date_end]);
@@ -782,6 +962,39 @@ class ReportController extends Controller
             return 'female';
         }
         return 'other';
+    }
+
+    private function isParalegal()
+    {
+        $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function getOrganizationId()
+    {
+        return $this->isParalegal() ? auth()->user()->organization_id : null;
+    }
+
+    private function scopeDisputesByOrganization($query, $organizationId)
+    {
+        if (!$organizationId) {
+            return $query;
+        }
+
+        return $query->whereHas('reportedBy', function ($q) use ($organizationId) {
+            $q->where('organization_id', $organizationId);
+        });
+    }
+
+    private function scopeBeneficiariesByOrganization($query, $organizationId)
+    {
+        if (!$organizationId) {
+            return $query;
+        }
+
+        return $query->whereHas('user', function ($q) use ($organizationId) {
+            $q->where('organization_id', $organizationId);
+        });
     }
 
 }

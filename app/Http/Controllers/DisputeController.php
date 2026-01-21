@@ -41,6 +41,12 @@ class DisputeController extends Controller
      */
     public function index()
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // Check if current user is an authenticated staff
         if (Gate::denies('isStaff')) {
             // Get all disputes and bind them to the index view
@@ -62,6 +68,12 @@ class DisputeController extends Controller
                     ]
                 )
                 ->latest();
+
+            if ($organizationId) {
+                $query->whereHas('reportedBy', function ($q) use ($organizationId) {
+                    $q->where('organization_id', $organizationId);
+                });
+            }
 
             // Filter by dispute status if provided
             if ($statusId = request('status')) {
@@ -169,11 +181,24 @@ class DisputeController extends Controller
      */
     public function create()
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // Get all the beneficiaries and bind them to the create  view
-        $beneficiaries = Beneficiary::has('user')
+        $beneficiariesQuery = Beneficiary::has('user')
             ->with('user')
-            ->latest()
-            ->get(['id', 'user_id']);
+            ->latest();
+
+        if ($organizationId) {
+            $beneficiariesQuery->whereHas('user', function ($query) use ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            });
+        }
+
+        $beneficiaries = $beneficiariesQuery->get(['id', 'user_id']);
 
         // Get all the type_of_services and bind them to the create  view
         $type_of_services = TypeOfService::latest()
@@ -198,8 +223,14 @@ class DisputeController extends Controller
     public function selectArchived()
 
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // Get all disputes and bind them to the index view
-        $disputes = Dispute::has('reportedBy')
+        $disputesQuery = Dispute::has('reportedBy')
             ->with(
                 'reportedBy:first_name,middle_name,last_name,user_no',
                 'typeOfService:id,type_of_service',
@@ -208,7 +239,7 @@ class DisputeController extends Controller
             )
             ->latest()
             ->take(10)
-            ->get([
+            ->select([
                 'id',
                 'dispute_no',
                 'beneficiary_id',
@@ -217,6 +248,14 @@ class DisputeController extends Controller
                 'type_of_case_id',
                 'dispute_status_id'
             ]);
+
+        if ($organizationId) {
+            $disputesQuery->whereHas('reportedBy', function ($query) use ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            });
+        }
+
+        $disputes = $disputesQuery->get();
 
         //return $disputes;
         return response(view('disputes.select-archive', compact('disputes')));
@@ -240,14 +279,23 @@ class DisputeController extends Controller
             'dispute' => ['required', 'string', 'max:255'],
         ]);
 
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         $disputes = [];
 
         $search = $request->dispute;
 
         if ($search && !is_null($search)) {
 
-            $disputes = Dispute::whereHas('reportedBy', function ($query) use ($search) {
+            $disputes = Dispute::whereHas('reportedBy', function ($query) use ($search, $organizationId) {
                 $query->where('disputes.id', 'Like', '%' . $search . '%');
+                if ($organizationId) {
+                    $query->where('organization_id', $organizationId);
+                }
             })
                 ->with('reportedBy', 'disputeStatus')
                 ->latest()
@@ -297,6 +345,12 @@ class DisputeController extends Controller
             'q' => ['required', 'string', 'max:255'],
         ]);
 
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         $disputes = [];
 
         if ($request->has('q')) {
@@ -305,9 +359,12 @@ class DisputeController extends Controller
 
             if ($search && !is_null($search)) {
 
-                $disputes = Dispute::whereHas('reportedBy', function ($query) use ($search) {
+                $disputes = Dispute::whereHas('reportedBy', function ($query) use ($search, $organizationId) {
                     $query->where('user_no', 'like', '%' . $search . '%')
                         ->orWhere('dispute_no', 'Like', '%' . $search . '%');
+                    if ($organizationId) {
+                        $query->where('organization_id', $organizationId);
+                    }
                 })
                     ->with('reportedBy', 'disputeStatus')
                     ->latest()
@@ -342,16 +399,31 @@ class DisputeController extends Controller
      */
     public function createArchived($locale, $id)
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // Find dispute information by Id and return a edit view
         $dispute = Dispute::has('reportedBy')
             ->with('assignedTo', 'reportedBy', 'disputeStatus')
             ->findOrFail($id);
 
+        $this->ensureOrganizationAccess($dispute);
+
         // Get all the beneficiaries and bind them to the create  view
-        $beneficiaries = Beneficiary::has('user')
+        $beneficiariesQuery = Beneficiary::has('user')
             ->with('user')
-            ->latest()
-            ->get(['id', 'user_id']);
+            ->latest();
+
+        if ($organizationId) {
+            $beneficiariesQuery->whereHas('user', function ($query) use ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            });
+        }
+
+        $beneficiaries = $beneficiariesQuery->get(['id', 'user_id']);
 
         // Get all the staff and bind them to the create  view
         $staff = Staff::has('user')
@@ -388,6 +460,12 @@ class DisputeController extends Controller
      */
     public function store(Request $request)
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         /**
          * Get a validator for an incoming store request.
          *
@@ -409,6 +487,8 @@ class DisputeController extends Controller
             'how_can_we_help' => ['required', 'string'],
             'defendant_names_addr' => ['nullable', 'string'],
         ]);
+
+        $this->ensureBeneficiaryAccess($request->beneficiary);
 
         /**
          * Create a new dispute instance for a valid registration.
@@ -529,6 +609,12 @@ class DisputeController extends Controller
      */
     public function storeArchived(Request $request)
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         /**
          * Get a validator for an incoming store request.
          *
@@ -549,6 +635,8 @@ class DisputeController extends Controller
             'how_can_we_help' => ['required', 'string'],
             'defendant_names_addr' => ['nullable', 'string'],
         ]);
+
+        $this->ensureBeneficiaryAccess($request->beneficiary);
 
         /**
          * Create a new dispute instance for a valid registration.
@@ -670,12 +758,18 @@ class DisputeController extends Controller
      */
     public function assign($locale, $id)
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         if ($id === 'all' && !is_numeric($id)) {
 
-            $disputes = Dispute::has('reportedBy')
+            $disputesQuery = Dispute::has('reportedBy')
                 ->with('reportedBy', 'assignedTo')
                 ->latest()
-                ->get([
+                ->select([
                     'id',
                     'dispute_no',
                     'beneficiary_id',
@@ -683,6 +777,14 @@ class DisputeController extends Controller
                     'dispute_status_id',
                     'reported_on'
                 ]);
+
+            if ($organizationId) {
+                $disputesQuery->whereHas('reportedBy', function ($query) use ($organizationId) {
+                    $query->where('organization_id', $organizationId);
+                });
+            }
+
+            $disputes = $disputesQuery->get();
 
             // create an empty collection to help render view logic
             $dispute = collect();
@@ -697,6 +799,8 @@ class DisputeController extends Controller
             $dispute = Dispute::has('reportedBy')
                 ->with('reportedBy', 'assignedTo')
                 ->findOrFail($id);
+
+            $this->ensureOrganizationAccess($dispute);
 
             // create an empty collection to help render view logic
             $disputes = collect();
@@ -746,6 +850,8 @@ class DisputeController extends Controller
             ]
         )
             ->findOrFail($request->dispute);
+
+        $this->ensureOrganizationAccess($dispute);
 
         $dispute_last_staff = $dispute->staff_id;
 
@@ -1002,6 +1108,8 @@ class DisputeController extends Controller
             'attachments'
         )->findOrFail($id);
 
+        $this->ensureOrganizationAccess($dispute);
+
         // TODO : Try the only() method on the above models within the show view
         // Get how many times a dispute has been reported
         $occurrences = Dispute::with('assignedTo', 'disputeStatus')
@@ -1024,6 +1132,8 @@ class DisputeController extends Controller
     {
         // Find dispute information by Id and return a edit view
         $dispute = Dispute::with('assignedTo', 'reportedBy', 'disputeStatus')->findOrFail($id);
+
+        $this->ensureOrganizationAccess($dispute);
 
         // Get all the type_of_services and bind them to the create  view
         $type_of_services = TypeOfService::get(['id', 'type_of_service']);
@@ -1080,6 +1190,8 @@ class DisputeController extends Controller
          */
 
         $dispute = Dispute::findOrFail($id);
+        $this->ensureOrganizationAccess($dispute);
+        $this->ensureBeneficiaryAccess($request->beneficiary);
 
         $dispute->reported_on = Carbon::parse($request->reported_on)->format('Y-m-d');
         $dispute->beneficiary_id = $request->beneficiary;
@@ -1127,6 +1239,7 @@ class DisputeController extends Controller
         //Deleting dispute information from the database
 
         $dispute = Dispute::findOrFail($id);
+        $this->ensureOrganizationAccess($dispute);
 
         $dispute->delete();
 
@@ -1154,6 +1267,7 @@ class DisputeController extends Controller
         //Restoring dispute information from the database
 
         $dispute = Dispute::onlyTrashed()->findOrFail($id);
+        $this->ensureOrganizationAccess($dispute);
 
         $dispute->restore();
 
@@ -1185,6 +1299,7 @@ class DisputeController extends Controller
         //Deleting dispute information from the database
 
         $dispute = Dispute::onlyTrashed()->findOrFail($id);
+        $this->ensureOrganizationAccess($dispute);
 
         $dispute->forceDelete();
 
@@ -1238,6 +1353,50 @@ class DisputeController extends Controller
                 }
             default:
                 return [null, null];
+        }
+    }
+
+    private function isParalegal()
+    {
+        $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function getOrganizationId()
+    {
+        return $this->isParalegal() ? auth()->user()->organization_id : null;
+    }
+
+    private function ensureOrganizationAccess(Dispute $dispute)
+    {
+        $organizationId = $this->getOrganizationId();
+        if (!$organizationId) {
+            return;
+        }
+
+        $dispute->loadMissing('reportedBy:id,organization_id');
+        $disputeOrgId = optional($dispute->reportedBy)->organization_id;
+
+        if ((int) $disputeOrgId !== (int) $organizationId) {
+            abort(403, 'You are not authorized to access this dispute.');
+        }
+    }
+
+    private function ensureBeneficiaryAccess($beneficiaryId)
+    {
+        $organizationId = $this->getOrganizationId();
+        if (!$organizationId) {
+            return;
+        }
+
+        $belongsToOrg = Beneficiary::whereKey($beneficiaryId)
+            ->whereHas('user', function ($query) use ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            })
+            ->exists();
+
+        if (!$belongsToOrg) {
+            abort(403, 'You are not authorized to access this beneficiary.');
         }
     }
 }

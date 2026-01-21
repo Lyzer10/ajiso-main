@@ -53,10 +53,18 @@ class BeneficiaryController extends Controller
      */
     public function index()
     {
+        $organizationId = $this->getOrganizationId();
+
         // Build initial query
         $query = Beneficiary::whereHas('user')
             ->with('user')
             ->latest();
+
+        if ($organizationId) {
+            $query->whereHas('user', function ($q) use ($organizationId) {
+                $q->where('organization_id', $organizationId);
+            });
+        }
 
         // Apply search if request has ?search=
         if ($search = request('search')) {
@@ -81,6 +89,12 @@ class BeneficiaryController extends Controller
      */
     public function create()
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         // Get all the marital_statuses and bind them to the create view
         $marital_statuses = MaritalStatus::get(['id', 'marital_status']);
 
@@ -153,6 +167,12 @@ class BeneficiaryController extends Controller
      */
     public function store(Request $request)
     {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
         $marriedStatusId = MaritalStatus::where('marital_status', 'Married')->value('id');
         $isMarried = $marriedStatusId && (int) $request->marital_status === (int) $marriedStatusId;
         $defaultMarriageFormId = MarriageForm::where('marriage_form', 'N/A')->value('id')
@@ -165,6 +185,10 @@ class BeneficiaryController extends Controller
          * @param  array  $request
          * @return \Illuminate\Contracts\Validation\Validator
          */
+        $registrationSourceRule = $this->isParalegal()
+            ? ['sometimes', Rule::in(['office', 'paralegal'])]
+            : ['required', Rule::in(['office', 'paralegal'])];
+
         $this->validate($request, [
             'user_no' => ['required', 'string', 'max:255', 'unique:users'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users'],
@@ -177,7 +201,7 @@ class BeneficiaryController extends Controller
             'gender' => ['required'],
             'age' => ['required', 'max:3'],
             'disabled' => ['required', 'in:yes,no'],
-            'registration_source' => ['required', Rule::in(['office', 'paralegal'])],
+            'registration_source' => $registrationSourceRule,
             'tribe' => ['required', 'integer', 'exists:tribes,id'],
             'religion' => ['required', 'integer', 'exists:religions,id'],
             'education_level' => ['required'],
@@ -221,6 +245,7 @@ class BeneficiaryController extends Controller
         $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
         $user->mobile_no = Str::replaceFirst('0', '+255', $request->mobile_no);
         $user->user_role_id = '4';
+        $user->organization_id = $this->isParalegal() ? $organizationId : null;
 
 
         /**
@@ -320,7 +345,9 @@ class BeneficiaryController extends Controller
             $beneficiary->occupation_business = $request->occupation_business;
             $defaultIncomeId = Income::where('income', 'N/A')->value('id') ?? Income::min('id') ?? 1;
             $beneficiary->income_id = $request->input('monthly_income', $defaultIncomeId);
-            $beneficiary->registration_source = $request->registration_source;
+            $beneficiary->registration_source = $this->isParalegal()
+                ? 'paralegal'
+                : $request->registration_source;
 
             /**
              * Save the user to the database
@@ -414,6 +441,8 @@ class BeneficiaryController extends Controller
             )
             ->findOrFail($id);
 
+        $this->ensureOrganizationAccess($beneficiary);
+
         return view('beneficiaries.show', compact('beneficiary'));
     }
 
@@ -429,6 +458,8 @@ class BeneficiaryController extends Controller
         $beneficiary = Beneficiary::has('user')
             ->with('user')
             ->findOrFail($id);
+
+        $this->ensureOrganizationAccess($beneficiary);
 
         // Get all the marital_statuses and bind them to the edit  view
         $marital_statuses = MaritalStatus::get(['id', 'marital_status']);
@@ -480,6 +511,8 @@ class BeneficiaryController extends Controller
     {
         $beneficiary = Beneficiary::findOrFail($id);
         $user = User::findOrFail($beneficiary->user_id);
+        $this->ensureOrganizationAccess($beneficiary);
+
         $marriedStatusId = MaritalStatus::where('marital_status', 'Married')->value('id');
         $isMarried = $marriedStatusId && (int) $request->marital_status === (int) $marriedStatusId;
         $defaultMarriageFormId = MarriageForm::where('marriage_form', 'N/A')->value('id')
@@ -689,6 +722,7 @@ class BeneficiaryController extends Controller
         //Deleting beneficiary information from the database
 
         $beneficiary = Beneficiary::findOrFail($id);
+        $this->ensureOrganizationAccess($beneficiary);
 
         $beneficiary->delete();
 
@@ -714,6 +748,7 @@ class BeneficiaryController extends Controller
         //Restoring beneficiary information from the database
 
         $beneficiary = Beneficiary::onlyTrashed()->findOrFail($id);
+        $this->ensureOrganizationAccess($beneficiary);
 
         $beneficiary->restore();
 
@@ -739,6 +774,7 @@ class BeneficiaryController extends Controller
         //Deleting beneficiary information from the database
 
         $beneficiary = Beneficiary::onlyTrashed()->findOrFail($id);
+        $this->ensureOrganizationAccess($beneficiary);
 
         $beneficiary->forceDelete();
 
@@ -750,6 +786,32 @@ class BeneficiaryController extends Controller
             return redirect()->back()->with('status', 'Beneficiary information deleted, successfully.');
         } else {
             return redirect()->back()->withErrors('errors', 'Deleting beneficiary information failed, please try again.');
+        }
+    }
+
+    private function isParalegal()
+    {
+        $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function getOrganizationId()
+    {
+        return $this->isParalegal() ? auth()->user()->organization_id : null;
+    }
+
+    private function ensureOrganizationAccess(Beneficiary $beneficiary)
+    {
+        $organizationId = $this->getOrganizationId();
+        if (!$organizationId) {
+            return;
+        }
+
+        $beneficiary->loadMissing('user:id,organization_id');
+        $beneficiaryOrgId = optional($beneficiary->user)->organization_id;
+
+        if ((int) $beneficiaryOrgId !== (int) $organizationId) {
+            abort(403, 'You are not authorized to access this beneficiary.');
         }
     }
 }

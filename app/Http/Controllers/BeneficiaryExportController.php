@@ -54,6 +54,7 @@ class BeneficiaryExportController extends Controller
 
     public function exportProfilePdf($locale, Beneficiary $beneficiary)
     {
+        $this->ensureOrganizationAccess($beneficiary);
         $this->preparePdfRuntime();
         $beneficiary->load([
             'user',
@@ -75,6 +76,7 @@ class BeneficiaryExportController extends Controller
 
     public function exportProfileExcel($locale, Beneficiary $beneficiary)
     {
+        $this->ensureOrganizationAccess($beneficiary);
         $rows = $this->buildProfileRows($beneficiary);
         $headings = [['Field', 'Value']];
 
@@ -83,6 +85,7 @@ class BeneficiaryExportController extends Controller
 
     public function exportProfileCsv($locale, Beneficiary $beneficiary)
     {
+        $this->ensureOrganizationAccess($beneficiary);
         $rows = $this->buildProfileRows($beneficiary);
         $headings = [['Field', 'Value']];
 
@@ -94,6 +97,8 @@ class BeneficiaryExportController extends Controller
         $query = Beneficiary::whereHas('user')
             ->with(['user', 'district.region'])
             ->latest();
+
+        $this->scopeBeneficiariesByOrganization($query);
 
         if ($search = $request->get('search')) {
             $query->whereHas('user', function ($q) use ($search) {
@@ -168,5 +173,47 @@ class BeneficiaryExportController extends Controller
     {
         @set_time_limit(300);
         @ini_set('memory_limit', '512M');
+    }
+
+    private function isParalegal()
+    {
+        $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function getOrganizationId()
+    {
+        return $this->isParalegal() ? auth()->user()->organization_id : null;
+    }
+
+    private function scopeBeneficiariesByOrganization($query)
+    {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            abort(403, 'Organization not assigned.');
+        }
+        if (!$organizationId) {
+            return;
+        }
+
+        $query->whereHas('user', function ($q) use ($organizationId) {
+            $q->where('organization_id', $organizationId);
+        });
+    }
+
+    private function ensureOrganizationAccess(Beneficiary $beneficiary)
+    {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            abort(403, 'Organization not assigned.');
+        }
+        if (!$organizationId) {
+            return;
+        }
+
+        $beneficiary->loadMissing('user:id,organization_id');
+        if ((int) optional($beneficiary->user)->organization_id !== (int) $organizationId) {
+            abort(403, 'You are not authorized to access this beneficiary.');
+        }
     }
 }

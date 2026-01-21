@@ -42,6 +42,9 @@
             --header-color: rgb(12 70 109);
         }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.min.js" defer></script>
+    @livewireStyles
 </head>
 
 <body>
@@ -178,6 +181,14 @@
     <!-- Template Main JS File -->
     <script src="{{ asset('landing/js/main.js') }}"></script>
 
+    @livewireScripts
+    <script>
+        document.addEventListener('turbo:load', function () {
+            if (window.Livewire && typeof window.Livewire.restart === 'function') {
+                window.Livewire.restart();
+            }
+        });
+    </script>
 </body>
 
 </html>

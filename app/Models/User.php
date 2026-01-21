@@ -40,6 +40,7 @@ class User extends Authenticatable
         'role',
         'is_active',
         'image',
+        'organization_id',
     ];
 
     /**
@@ -77,6 +78,12 @@ class User extends Authenticatable
     {
 
         return $this->belongsTo(UserRole::class, 'user_role_id', 'id');
+    }
+
+    // Get the organization associated with the user
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     //Get the staff associated with the user

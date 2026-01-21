@@ -380,10 +380,12 @@
                                             <i class="fas fa-marker fa-fw text-secondary"></i>
                                             {{ __('Legal Aid Provider Remarks') }}
                                         </a>
-                                        <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#generateLetterModal">
-                                            <i class="fas fa-file-alt fa-fw text-primary"></i>
-                                            {{ __('Generate Letter (WITO / Referral / Feedback)') }}
-                                        </a>
+                                        @cannot('isClerk')
+                                            <a href="javascript:void(0)" class="dispute-action-item" data-toggle="modal" data-target="#generateLetterModal">
+                                                <i class="fas fa-file-alt fa-fw text-primary"></i>
+                                                {{ __('Generate Letter (WITO / Referral / Feedback)') }}
+                                            </a>
+                                        @endcannot
                                     </div>
                                 </div>
                             </div>
@@ -1147,5 +1149,7 @@
     @include('modals.clinic-progress')
     @include('modals.change-dispute-status')
     @include('modals.provider-remarks')
-    @include('modals.generate-letter')
+    @cannot('isClerk')
+        @include('modals.generate-letter')
+    @endcannot
 @endpush

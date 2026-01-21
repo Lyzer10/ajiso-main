@@ -91,14 +91,6 @@
                         </div>
                         <div class="col-lg-6 mt-3">
                             <div class="viz-card">
-                                <div class="viz-card__header">{{ __('Monthly Income') }}</div>
-                                <div class="viz-card__body">
-                                    <div id="incomeChart" class="viz-chart"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6 mt-3">
-                            <div class="viz-card">
                                 <div class="viz-card__header">
                                     <span>{{ __('Employment Status') }}</span>
                                     <span class="viz-card__meta">{{ __('All time') }}</span>
@@ -204,18 +196,6 @@
             $ageData[] = ['category' => __($age_group->age_group), 'value' => $percent];
         }
 
-        $incomeData = [];
-        foreach ($income_groups as $income_group) {
-            $percent = 0;
-            foreach ($group_by_income as $income) {
-                if ($income_group->id === $income->income_id) {
-                    $percent = $total > 0 ? floor($income->total * 100 / $total) : 0;
-                    break;
-                }
-            }
-            $incomeData[] = ['category' => __($income_group->income), 'value' => $percent];
-        }
-
         $employmentData = [];
         foreach ($employment_statuses as $employment_status) {
             $percent = 0;
@@ -319,7 +299,6 @@
 
             buildBarChart("genderChart", @json($genderData), "beneficiary-gender");
             buildBarChart("ageGroupChart", @json($ageData), "beneficiary-age-group");
-            buildBarChart("incomeChart", @json($incomeData), "beneficiary-income");
             buildBarChart("employmentChart", @json($employmentData), "beneficiary-employment");
             buildBarChart("educationChart", @json($educationData), "beneficiary-education");
             buildBarChart("maritalChart", @json($maritalData), "beneficiary-marital");

@@ -105,6 +105,15 @@
         <div class="col-md-3 mb-3">
             <div class="card">
                 <div class="card-body">
+                    <a href="{{ route('manager.organizations.list', app()->getLocale()) }}">{{ __('Organizations') }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row text-center">
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body">
                     <a href="{{ route('manager.districts.list', app()->getLocale()) }}">{{ __('Districts') }}</a>
                 </div>
             </div>

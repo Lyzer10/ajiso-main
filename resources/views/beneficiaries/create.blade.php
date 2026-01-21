@@ -234,25 +234,27 @@
                         </div>
 
                         <div class="form-row">
-                            <div class="col-md-3 mb-3">
-                                <label class="font-weight-bold" for="registration_source">{{ __('Chanzo cha mteja') }}<sup class="text-danger">*</sup></label>
-                                <select id="registration_source" aria-describedby="selectRegistrationSource"
-                                    class="select2 select2-container--default border-input-primary @error('registration_source') is-invalid @enderror"
-                                    name="registration_source" required autocomplete="registration_source" style="width: 100%;">
-                                    <option hidden disabled selected value>{{ __('Chagua chanzo') }}</option>
-                                    <option value="office" {{ old('registration_source', 'office') === 'office' ? 'selected' : '' }}>
-                                        {{ __('Ofisi (Mteja wa kwanza)') }}
-                                    </option>
-                                    <option value="paralegal" {{ old('registration_source') === 'paralegal' ? 'selected' : '' }}>
-                                        {{ __('Paralegal') }}
-                                    </option>
-                                </select>
-                                @error('registration_source')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
+                            @cannot('isClerk')
+                                <div class="col-md-3 mb-3">
+                                    <label class="font-weight-bold" for="registration_source">{{ __('Beneficiary source') }}<sup class="text-danger">*</sup></label>
+                                    <select id="registration_source" aria-describedby="selectRegistrationSource"
+                                        class="select2 select2-container--default border-input-primary @error('registration_source') is-invalid @enderror"
+                                        name="registration_source" required autocomplete="registration_source" style="width: 100%;">
+                                        <option hidden disabled selected value>{{ __('Chagua chanzo') }}</option>
+                                        <option value="office" {{ old('registration_source', 'office') === 'office' ? 'selected' : '' }}>
+                                            {{ __('AJISO') }}
+                                        </option>
+                                        <option value="paralegal" {{ old('registration_source') === 'paralegal' ? 'selected' : '' }}>
+                                            {{ __('Paralegal') }}
+                                        </option>
+                                    </select>
+                                    @error('registration_source')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            @endcannot
                             <div class="col-md-3 mb-3">
                                 <label for="region" class="font-weight-bold">{{ __('Region') }}<sup class="text-danger">*</sup></label>
                                 <select id="region" aria-describedby="selectDegion"

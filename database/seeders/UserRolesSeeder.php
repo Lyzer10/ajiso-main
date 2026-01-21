@@ -40,8 +40,8 @@ class UserRolesSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'role_abbreviation' => 'clerk',
-                'role_name' => 'clerk / Paralegal',
+                'role_abbreviation' => 'paralegal',
+                'role_name' => 'Paralegal',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

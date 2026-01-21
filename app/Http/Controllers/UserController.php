@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use \App\Models\User;
 use App\Models\UserRole;
+use App\Models\Organization;
 use App\Models\Designation;
 use Illuminate\Support\Str;
 use \App\Traits\ImageUpload;
@@ -38,6 +39,8 @@ class UserController extends Controller
      */
     public function index()
     {
+        $beneficiaryRoleId = UserRole::where('role_abbreviation', 'beneficiary')->value('id');
+
         // Eager load all users with their roles
         $users = User::with('role:id,role_abbreviation,role_name')
             ->select(
@@ -53,31 +56,38 @@ class UserController extends Controller
                     'user_role_id'
                 ]
             )
-            ->where('user_role_id', '!=', 4)
+            ->when($beneficiaryRoleId, function ($query, $roleId) {
+                return $query->where('user_role_id', '!=', $roleId);
+            })
             ->latest()
             ->paginate(10);
 
-        //TODO : Find a better way to associate the id with the role
-        // Get super admin users count
-        $super_admin_count = User::where('user_role_id', 1)
-            ->count();
-        // Get admin users count
-        $admin_count = User::where('user_role_id', 2)
-            ->count();
+        $roleIds = UserRole::whereIn('role_abbreviation', [
+            'superadmin',
+            'admin',
+            'paralegal',
+            'staff',
+        ])->pluck('id', 'role_abbreviation');
 
-        // Get clerk users count
-        $clerk_count = User::where('user_role_id', 5)
-            ->count();
-        // Get legal aid provider users count
-        $lap_count = User::where('user_role_id', 3)
-            ->count();
+        $super_admin_count = $roleIds->get('superadmin')
+            ? User::where('user_role_id', $roleIds->get('superadmin'))->count()
+            : 0;
+        $admin_count = $roleIds->get('admin')
+            ? User::where('user_role_id', $roleIds->get('admin'))->count()
+            : 0;
+        $paralegal_count = $roleIds->get('paralegal')
+            ? User::where('user_role_id', $roleIds->get('paralegal'))->count()
+            : 0;
+        $lap_count = $roleIds->get('staff')
+            ? User::where('user_role_id', $roleIds->get('staff'))->count()
+            : 0;
 
         return view('users.list', compact(
             [
                 'users',
                 'super_admin_count',
                 'admin_count',
-                'clerk_count',
+                'paralegal_count',
                 'lap_count'
             ]
         ));
@@ -96,7 +106,10 @@ class UserController extends Controller
         // Get all the designations and bind them to the create  view
         $user_roles = UserRole::get(['id', 'role_abbreviation']);
 
-        return view('users.create', compact('designations', 'user_roles'));
+        $organizations = Organization::orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('users.create', compact('designations', 'user_roles', 'organizations'));
     }
 
     /**
@@ -114,7 +127,7 @@ class UserController extends Controller
          * @param  array  $request
          * @return \Illuminate\Contracts\Validation\Validator
          */
-        $this->validate($request, [
+        $rules = [
             'user_no' => ['required', 'string', 'max:255', 'unique:users'],
             'name' => ['required', 'string', 'min:3', 'max:255', 'unique:users'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -126,7 +139,14 @@ class UserController extends Controller
             'tel_no' => ['required', 'string', 'max:15'],
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
             'user_role' => ['required'],
-        ]);
+        ];
+
+        $role = UserRole::find($request->user_role);
+        $rules['organization_id'] = ($role && $role->role_abbreviation === 'paralegal')
+            ? ['required', 'integer', 'exists:organizations,id']
+            : ['nullable', 'integer', 'exists:organizations,id'];
+
+        $this->validate($request, $rules);
 
         /**
          * Create a new user instance for a valid registration.
@@ -147,6 +167,9 @@ class UserController extends Controller
         $user->last_name = Str::ucfirst($request->last_name);
         $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
         $user->user_role_id = $request->user_role;
+        $user->organization_id = ($role && $role->role_abbreviation === 'paralegal')
+            ? $request->organization_id
+            : null;
 
         /**
          *  Preparing Image for Upload
@@ -324,7 +347,10 @@ class UserController extends Controller
         // Get all the designations and bind them to the create  view
         $user_roles = UserRole::get(['id', 'role_abbreviation']);
 
-        return view('users.edit', compact('user', 'designations', 'user_roles'));
+        $organizations = Organization::orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('users.edit', compact('user', 'designations', 'user_roles', 'organizations'));
     }
 
     /**
@@ -507,7 +533,7 @@ class UserController extends Controller
          * @param  array  $request
          * @return \Illuminate\Contracts\Validation\Validator
          */
-        $this->validate($request, [
+        $rules = [
             'name' => ['required', 'string', 'min:3', 'max:255'],
             'email' => ['nullable', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -519,7 +545,14 @@ class UserController extends Controller
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
             'user_role' => ['required'],
             'status' => ['required'],
-        ]);
+        ];
+
+        $role = UserRole::find($request->user_role);
+        $rules['organization_id'] = ($role && $role->role_abbreviation === 'paralegal')
+            ? ['required', 'integer', 'exists:organizations,id']
+            : ['nullable', 'integer', 'exists:organizations,id'];
+
+        $this->validate($request, $rules);
 
         /**
          * Create a new user instance for a valid registration.
@@ -545,6 +578,9 @@ class UserController extends Controller
         }
         $user->user_role_id = $request->user_role;
         $user->is_active = $request->status;
+        $user->organization_id = ($role && $role->role_abbreviation === 'paralegal')
+            ? $request->organization_id
+            : null;
 
 
         /**

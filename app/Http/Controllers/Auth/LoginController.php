@@ -107,7 +107,7 @@ class LoginController extends Controller
                 return redirect()->route('staff.home');
                 break;
 
-            case 'clerk':
+            case 'paralegal':
                 return redirect()->route('clerk.home');
                 break;
 

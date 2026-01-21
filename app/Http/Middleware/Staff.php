@@ -24,7 +24,7 @@ class Staff
         elseif (Auth::user()->role->role_abbreviation  == 'staff') {
             return $next($request);
         }
-        elseif (Auth::user()->role->role_abbreviation  == 'clerk') {
+        elseif (Auth::user()->role->role_abbreviation  == 'paralegal') {
             return redirect(app()->getLocale().'/clerk/home');
         }
         elseif (Auth::user()->role->role_abbreviation  == 'beneficiary') {

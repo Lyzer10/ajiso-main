@@ -133,7 +133,7 @@
      * Scroll with offset on links with a class name .scrollto
      */
     on('click', '.scrollto', function(e) {
-        if (select(this.hash)) {
+        if (this.hash && select(this.hash)) {
         e.preventDefault()
 
         let navbar = select('#navbar')

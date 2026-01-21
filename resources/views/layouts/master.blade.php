@@ -11,7 +11,9 @@
         <title>@yield('title')</title>
         <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/icon/faviconx64.ico') }}">
 
+        <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.min.js" defer></script>
         @stack('styles')
+        @livewireStyles
     </head>
     <body>
         <!--[if lt IE 8]>
@@ -29,11 +31,19 @@
                 <div class="sidebar-header">
                     <div class="logo">
                         @canany(['isSuperAdmin','isAdmin', 'isClerk'])
-                            <h1>
-                                <a href="{{ route('admin.home', app()->getLocale()) }}">
-                                   AJISO
-                                </a>
-                            </h1>
+                            @if(auth()->user()->can('isClerk'))
+                                <h1>
+                                    <a class="logo-text" href="{{ route('admin.home', app()->getLocale()) }}">
+                                        {{ optional(auth()->user()->organization)->name ?? 'AJISO' }}
+                                    </a>
+                                </h1>
+                            @else
+                                <h1>
+                                    <a href="{{ route('admin.home', app()->getLocale()) }}">
+                                       AJISO
+                                    </a>
+                                </h1>
+                            @endif
                             <p>{{ __('Legal Aid Digital System') }}</p>
                         @elsecanany(['isStaff'])
                             <h1>
@@ -110,34 +120,32 @@
 
     {{-- Cases --}}
     @canany(['isSuperAdmin','isAdmin','isClerk'])
-        @cannot('isClerk')
-            <li class="{{ request()->routeIs('dispute.*') || request()->routeIs('disputes.*') ? 'active' : '' }}">
-                <a href="javascript:void(0)" aria-expanded="true">
-                    <i class="fas fa-balance-scale"></i>
-                    <span>{{ __('Cases') }}</span>
-                </a>
-                <ul class="collapse">
-                    <li class="{{ request()->routeIs('dispute.create.new') ? 'active' : '' }}">
-                        <a href="{{ route('dispute.create.new', app()->getLocale()) }}">
-                            <i class="fas fa-caret-right"></i>
-                            {{ __('New Dispute') }}
-                        </a>
-                    </li>
-                    <li class="{{ request()->routeIs('dispute.select.archive') ? 'active' : '' }}">
-                        <a href="{{ route('dispute.select.archive', app()->getLocale()) }}">
-                            <i class="fas fa-caret-right"></i>
-                            {{ __('Archived Dispute') }}
-                        </a>
-                    </li>
-                    <li class="{{ request()->routeIs('disputes.list') ? 'active' : '' }}">
-                        <a href="{{ route('disputes.list', app()->getLocale()) }}">
-                            <i class="fas fa-chevron-right"></i>
-                            {{ __('Disputes List') }}
-                        </a>
-                    </li>
-                </ul>
-            </li>
-        @endcannot
+        <li class="{{ request()->routeIs('dispute.*') || request()->routeIs('disputes.*') ? 'active' : '' }}">
+            <a href="javascript:void(0)" aria-expanded="true">
+                <i class="fas fa-balance-scale"></i>
+                <span>{{ __('Cases') }}</span>
+            </a>
+            <ul class="collapse">
+                <li class="{{ request()->routeIs('dispute.create.new') ? 'active' : '' }}">
+                    <a href="{{ route('dispute.create.new', app()->getLocale()) }}">
+                        <i class="fas fa-caret-right"></i>
+                        {{ __('New Dispute') }}
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('dispute.select.archive') ? 'active' : '' }}">
+                    <a href="{{ route('dispute.select.archive', app()->getLocale()) }}">
+                        <i class="fas fa-caret-right"></i>
+                        {{ __('Archived Dispute') }}
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('disputes.list') ? 'active' : '' }}">
+                    <a href="{{ route('disputes.list', app()->getLocale()) }}">
+                        <i class="fas fa-chevron-right"></i>
+                        {{ __('Disputes List') }}
+                    </a>
+                </li>
+            </ul>
+        </li>
     @endcanany
     @canany(['isStaff'])
         <li class="{{ request()->routeIs('dispute.create.new') ? 'active' : '' }}">
@@ -200,7 +208,7 @@
     @endcannot
 
     {{-- Reports --}}
-    @canany(['isSuperAdmin', 'isAdmin'])
+    @canany(['isSuperAdmin', 'isAdmin', 'isClerk'])
         <li class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-receipt"></i>
@@ -213,6 +221,14 @@
                         {{ __('General') }}
                     </a>
                 </li>
+                @canany(['isSuperAdmin', 'isAdmin'])
+                    <li class="{{ request()->routeIs('reports.summary.paralegal') ? 'active' : '' }}">
+                        <a href="{{ route('reports.summary.paralegal', app()->getLocale()) }}">
+                            <i class="fas fa-chevron-right"></i>
+                            {{ __('Paralegal Reports') }}
+                        </a>
+                    </li>
+                @endcanany
                 <li>
                     <a href="#">
                         <i class="fas fa-chevron-right"></i>
@@ -286,7 +302,7 @@
         </ul>
     </li>
 
-    {{-- System & Settings (SuperAdmin only) --}}
+    {{-- System (SuperAdmin only) --}}
     @canany(['isSuperAdmin'])
         <li class="{{ request()->routeIs('system.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
@@ -314,7 +330,10 @@
                 </li>
             </ul>
         </li>
+    @endcanany
 
+    {{-- Settings --}}
+    @canany(['isSuperAdmin', 'isAdmin'])
         <li class="{{ request()->routeIs('settings.*') || request()->routeIs('users.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-cogs"></i>
@@ -325,6 +344,12 @@
                     <a href="{{ route('settings.manager', app()->getLocale()) }}">
                         <i class="fas fa-chevron-right"></i>
                         {{ __('Entities Manager') }}
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('manager.organizations.list') ? 'active' : '' }}">
+                    <a href="{{ route('manager.organizations.list', app()->getLocale()) }}">
+                        <i class="fas fa-chevron-right"></i>
+                        {{ __('Organizations') }}
                     </a>
                 </li>
                 <li class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
@@ -540,6 +565,14 @@
         <!-- page container area end -->
         <!-- offset area start -->
         @stack('modals')
+        @livewireScripts
+        <script>
+            document.addEventListener('turbo:load', function () {
+                if (window.Livewire && typeof window.Livewire.restart === 'function') {
+                    window.Livewire.restart();
+                }
+            });
+        </script>
         @stack('scripts')
     </body>
 </html>

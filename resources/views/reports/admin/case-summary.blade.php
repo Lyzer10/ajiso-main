@@ -282,6 +282,9 @@
                 chart.legend = new am4charts.Legend();
                 chart.legend.fontSize = 12;
                 chart.legend.position = "right";
+                chart.legend.labels.template.wrap = true;
+                chart.legend.labels.template.maxWidth = 160;
+                chart.legend.labels.template.truncate = false;
                 chart.legend.valueLabels.template.text = "{value.value}";
 
                 chart.exporting.menu = new am4core.ExportMenu();
@@ -290,9 +293,15 @@
                 return chart;
             }
 
-            buildDonutChart("caseTypeChart", @json($caseTypeData), "case-type-summary", @json(__('cases')));
-            buildDonutChart("serviceTypeChart", @json($serviceTypeData), "service-type-summary", @json(__('services')));
-            buildDonutChart("disputeStatusChart", @json($statusData), "dispute-status-summary", @json(__('cases')));
+            var caseChart = buildDonutChart("caseTypeChart", @json($caseTypeData), "case-type-summary", @json(__('cases')));
+            var serviceChart = buildDonutChart("serviceTypeChart", @json($serviceTypeData), "service-type-summary", @json(__('services')));
+            var statusChart = buildDonutChart("disputeStatusChart", @json($statusData), "dispute-status-summary", @json(__('cases')));
+
+            if (serviceChart.series.values.length) {
+                serviceChart.series.values[0].labels.template.disabled = true;
+                serviceChart.series.values[0].ticks.template.disabled = true;
+                serviceChart.legend.labels.template.maxWidth = 190;
+            }
         });
     </script>
 @endpush

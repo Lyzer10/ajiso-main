@@ -79,10 +79,10 @@
                     <div class="s-report-inner pr--20 pt--30 mb-3">
                         <div class="icon"><i class="fas fa-user-friends"></i></div>
                         <div class="s-report-title d-flex justify-content-between">
-                            <h4 class="header-title mb-0">{{  __('Clerks') }}</h4>
+                            <h4 class="header-title mb-0">{{  __('Paralegals') }}</h4>
                         </div>
                         <div class="d-flex justify-content-between pb-2">
-                            <h2>{{ !is_null($clerk_count) ? $clerk_count : 0 }}</h2>
+                            <h2>{{ !is_null($paralegal_count) ? $paralegal_count : 0 }}</h2>
                         </div>
                     </div>
                 </div>

@@ -34,21 +34,46 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $total_disputes = Dispute::count();
-        $total_beneficiaries = Beneficiary::count();
-        $disputes_resolved = Dispute::where('dispute_status_id', 3)->count();
-        $total_staff = Staff::count();
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
+        $disputeBaseQuery = Dispute::query();
+        $beneficiaryBaseQuery = Beneficiary::query();
+
+        if ($organizationId) {
+            $disputeBaseQuery->whereHas('reportedBy', function ($query) use ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            });
+
+            $beneficiaryBaseQuery->whereHas('user', function ($query) use ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            });
+        }
+
+        $total_disputes = (clone $disputeBaseQuery)->count();
+        $total_beneficiaries = (clone $beneficiaryBaseQuery)->count();
+        $disputes_resolved = (clone $disputeBaseQuery)->where('dispute_status_id', 3)->count();
+        $total_staff = $organizationId
+            ? User::where('organization_id', $organizationId)
+                ->whereHas('role', function ($query) {
+                    $query->where('role_abbreviation', 'paralegal');
+                })
+                ->count()
+            : Staff::count();
 
         // Grouped counts
-        $group_by_services = Dispute::select('type_of_service_id', DB::raw('COUNT(*) as total'))
+        $group_by_services = (clone $disputeBaseQuery)->select('type_of_service_id', DB::raw('COUNT(*) as total'))
             ->groupBy('type_of_service_id')
             ->get();
 
-        $group_by_cases = Dispute::select('type_of_case_id', DB::raw('COUNT(*) as total'))
+        $group_by_cases = (clone $disputeBaseQuery)->select('type_of_case_id', DB::raw('COUNT(*) as total'))
             ->groupBy('type_of_case_id')
             ->get();
 
-        $group_by_statuses = Dispute::select('dispute_status_id', DB::raw('COUNT(*) as total'))
+        $group_by_statuses = (clone $disputeBaseQuery)->select('dispute_status_id', DB::raw('COUNT(*) as total'))
             ->groupBy('dispute_status_id')
             ->get();
 
@@ -163,5 +188,21 @@ class HomeController extends Controller
             'dispute_proceed',
             'dispute_resolved'
         ));
+    }
+
+    private function getOrganizationId()
+    {
+        $user = auth()->user();
+        if ($user && $user->role && $user->role->role_abbreviation === 'paralegal') {
+            return $user->organization_id;
+        }
+
+        return null;
+    }
+
+    private function isParalegal()
+    {
+        $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
     }
 }

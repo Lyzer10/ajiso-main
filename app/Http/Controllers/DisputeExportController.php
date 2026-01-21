@@ -70,6 +70,8 @@ class DisputeExportController extends Controller
             ])
             ->latest();
 
+        $this->scopeDisputesByOrganization($query);
+
         if ($statusId = $request->get('status')) {
             $query->where('dispute_status_id', (int) $statusId);
         }
@@ -203,5 +205,31 @@ class DisputeExportController extends Controller
     {
         @set_time_limit(300);
         @ini_set('memory_limit', '512M');
+    }
+
+    private function isParalegal()
+    {
+        $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function getOrganizationId()
+    {
+        return $this->isParalegal() ? auth()->user()->organization_id : null;
+    }
+
+    private function scopeDisputesByOrganization($query)
+    {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            abort(403, 'Organization not assigned.');
+        }
+        if (!$organizationId) {
+            return;
+        }
+
+        $query->whereHas('reportedBy', function ($q) use ($organizationId) {
+            $q->where('organization_id', $organizationId);
+        });
     }
 }

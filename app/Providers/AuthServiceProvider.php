@@ -64,7 +64,15 @@ class AuthServiceProvider extends ServiceProvider
 
         Gate::define('isClerk', function(User $user) {
 
-            return $user->role->role_abbreviation == 'clerk';
+            return $user->role->role_abbreviation == 'paralegal';
+
+        });
+
+        /* define a paralegal role */
+
+        Gate::define('isParalegal', function(User $user) {
+
+            return $user->role->role_abbreviation == 'paralegal';
 
         });
     }

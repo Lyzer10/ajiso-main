@@ -75,15 +75,29 @@
                     <div class="card">
                         <div class="seo-fact sbg4">
                             <div class="p-4 d-flex justify-content-between align-items-center">
-                                <div class="seofct-icon"><i class="fas fa-user-shield"></i>{{ __('Legal Aid Providers') }}</div>
+                                <div class="seofct-icon">
+                                    <i class="fas fa-user-shield"></i>
+                                    @can('isParalegal')
+                                        {{ __('Paralegals') }}
+                                    @else
+                                        {{ __('Legal Aid Providers') }}
+                                    @endcan
+                                </div>
                                 <h2>{{ $total_staff ?? '0' }}</h2>
                             </div>
                             <canvas id="" height="20"></canvas>
                             <div class="card-footer bg-dark-yellow text-center">
-                                <a href="{{ route('staff.list', app()->getLocale()) }}" class="small-box-footer text-white">
-                                    {{ __('More info') }} 
-                                    <i class="fas fa-arrow-circle-right"></i>
-                                </a>
+                                @can('isParalegal')
+                                    <a href="{{ route('users.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                        {{ __('More info') }}
+                                        <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
+                                @else
+                                    <a href="{{ route('staff.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                        {{ __('More info') }}
+                                        <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
+                                @endcan
                             </div>
                         </div>
                     </div>

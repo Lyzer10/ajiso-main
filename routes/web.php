@@ -170,6 +170,7 @@ Route::group([
     Route::get('/reports/summaries/disputes', [App\Http\Controllers\ReportController::class, 'disputesSummary'])->name('reports.summary.dispute');
     Route::get('/reports/summaries/beneficiaries', [App\Http\Controllers\ReportController::class, 'beneficiariesEnrollSummary'])->name('reports.summary.enrollment');
     Route::get('/reports/summaries/survey', [App\Http\Controllers\ReportController::class, 'surveySummary'])->name('reports.summary.survey');
+    Route::get('/reports/summaries/paralegals', [App\Http\Controllers\ReportController::class, 'paralegalSummary'])->name('reports.summary.paralegal');
 
     // Summaries filter
     Route::get('/reports/summaries/disputes/filter', [App\Http\Controllers\ReportController::class, 'disputesSummaryFilter'])->name('summaries.disputes.filter');
@@ -226,6 +227,15 @@ Route::group([
     Route::post('/districts', [App\Http\Controllers\DistrictController::class, 'store'])->name('manager.district.store');
     Route::put('/districts/{district}', [App\Http\Controllers\DistrictController::class, 'update'])->name('manager.district.update');
     Route::put('/districts/{district}/trash', [App\Http\Controllers\DistrictController::class, 'trash'])->name('manager.district.trash');
+
+    // Manager -> Organizations Module
+    Route::get('/manager/organizations', [App\Http\Controllers\OrganizationController::class, 'index'])->name('manager.organizations.list');
+    Route::get('/manager/organizations/districts/{district}/wards', [App\Http\Controllers\OrganizationController::class, 'getWards'])->name('manager.organizations.wards');
+    Route::get('/manager/organizations/{organization}', [App\Http\Controllers\OrganizationController::class, 'show'])->name('manager.organizations.show');
+    Route::get('/manager/organizations/{organization}/edit', [App\Http\Controllers\OrganizationController::class, 'edit'])->name('manager.organizations.edit');
+    Route::post('/manager/organizations', [App\Http\Controllers\OrganizationController::class, 'store'])->name('manager.organization.store');
+    Route::put('/manager/organizations/{organization}', [App\Http\Controllers\OrganizationController::class, 'update'])->name('manager.organization.update');
+    Route::put('/manager/organizations/{organization}/trash', [App\Http\Controllers\OrganizationController::class, 'trash'])->name('manager.organization.trash');
 
     // Manager -> Religions Module
     Route::get('/manager/religions', [App\Http\Controllers\ReligionController::class, 'index'])->name('manager.religions.list');
