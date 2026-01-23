@@ -107,27 +107,43 @@ class AssignmentRequestController extends Controller
      */
     public function create($locale, $id)
     {
+        $role = optional(auth()->user()->role)->role_abbreviation;
+        $isAdminUser = in_array($role, ['admin', 'superadmin'], true);
+
         if ($id === 'all' && !is_numeric($id)) {
 
-            // Get the authenticated staff
-            $staff = User::has('staff')
-                ->with('staff')
-                ->findOrFail(
-                    auth()->user()->id
-                )
-                ->staff->id ?? NULL;
+            if ($isAdminUser) {
+                $disputes = Dispute::has('reportedBy')
+                    ->with('reportedBy')
+                    ->latest()
+                    ->get([
+                        'id',
+                        'dispute_no',
+                        'beneficiary_id',
+                        'dispute_status_id',
+                        'reported_on'
+                    ]);
+            } else {
+                // Get the authenticated staff
+                $staff = User::has('staff')
+                    ->with('staff')
+                    ->findOrFail(
+                        auth()->user()->id
+                    )
+                    ->staff->id ?? NULL;
 
-            $disputes = Dispute::has('reportedBy')
-                ->with('reportedBy')
-                ->where('staff_id',  $staff)
-                ->latest()
-                ->get([
-                    'id',
-                    'dispute_no',
-                    'beneficiary_id',
-                    'dispute_status_id',
-                    'reported_on'
-                ]);
+                $disputes = Dispute::has('reportedBy')
+                    ->with('reportedBy')
+                    ->where('staff_id',  $staff)
+                    ->latest()
+                    ->get([
+                        'id',
+                        'dispute_no',
+                        'beneficiary_id',
+                        'dispute_status_id',
+                        'reported_on'
+                    ]);
+            }
 
             // create an empty collection to help render view logic
             $dispute = collect();
@@ -136,19 +152,26 @@ class AssignmentRequestController extends Controller
             return view('dispute-assignment.create', compact('disputes', 'dispute'));
         } else {
 
-            // Get the authenticated staff
-            $staff = User::has('staff')
-                ->with('staff')
-                ->findOrFail(
-                    auth()->user()->id
-                )
-                ->staff->id ?? NULL;
+            if ($isAdminUser) {
+                // Find dispute information by Id (no staff restriction)
+                $dispute = Dispute::has('reportedBy')
+                    ->with('reportedBy')
+                    ->findOrFail($id);
+            } else {
+                // Get the authenticated staff
+                $staff = User::has('staff')
+                    ->with('staff')
+                    ->findOrFail(
+                        auth()->user()->id
+                    )
+                    ->staff->id ?? NULL;
 
-            // Find dispute information by Id and return a edit view
-            $dispute = Dispute::has('reportedBy')
-                ->with('reportedBy')
-                ->where('staff_id',  $staff)
-                ->findOrFail($id);
+                // Find dispute information by Id and return a edit view
+                $dispute = Dispute::has('reportedBy')
+                    ->with('reportedBy')
+                    ->where('staff_id',  $staff)
+                    ->findOrFail($id);
+            }
 
             // create an empty collection to help render view logic
             $disputes = collect();
@@ -177,7 +200,13 @@ class AssignmentRequestController extends Controller
             'reason_description' => ['required', 'string', 'max:255'],
         ]);
 
-        // Get the authenticated staff
+        $role = optional(auth()->user()->role)->role_abbreviation;
+        $isAdminUser = in_array($role, ['admin', 'superadmin'], true);
+
+        // Get the dispute
+        $dispute = Dispute::findOrFail((int) $request->dispute) ?? NULL;
+
+        // Get the authenticated staff (requester)
         $staff = User::has('staff')
             ->with('staff')
             ->findOrFail(
@@ -185,8 +214,13 @@ class AssignmentRequestController extends Controller
             )
             ->staff->id ?? NULL;
 
-        // Get the dispute
-        $dispute = Dispute::findOrFail((int) $request->dispute) ?? NULL;
+        if ($isAdminUser) {
+            $staff = $dispute->staff_id ?? null;
+            if (is_null($staff)) {
+                return redirect()->back()
+                    ->withErrors('errors', 'This dispute has no assigned legal aid provider to request reassignment.');
+            }
+        }
 
         /**
          * Create a new user instance for a valid registration.
@@ -263,7 +297,7 @@ class AssignmentRequestController extends Controller
                 throw $th;
             }
 
-            return redirect()->back()
+            return redirect()->route('disputes.request.list', app()->getLocale())
                 ->with('status', 'Reassignment request sent, successfully.');
         } else {
             return redirect()->back()

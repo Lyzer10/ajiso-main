@@ -23,6 +23,8 @@ class SurveyChoiceSeeder extends Seeder
             ['choice_abbr' => 'Search', 'survey_choice' => 'Search engine (Google, Yahoo, etc.)'],
             ['choice_abbr' => 'Events', 'survey_choice' => 'Events'],
             ['choice_abbr' => 'Paralegals', 'survey_choice' => 'Referral from Legal aid providers'],
+            ['choice_abbr' => 'Advocate', 'survey_choice' => 'Referral from Advocate'],
+            ['choice_abbr' => 'Religious', 'survey_choice' => 'Religious organizations'],
             ['choice_abbr' => 'Billboards', 'survey_choice' => 'Billboard Advertisements'],
             ['choice_abbr' => 'Other', 'survey_choice' => 'Others'],
         ];

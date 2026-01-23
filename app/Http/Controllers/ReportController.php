@@ -104,6 +104,57 @@ class ReportController extends Controller
     }
 
     /**
+     * Client + case type list.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function clientCases(Request $request)
+    {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return redirect()->back()
+                ->withErrors('errors', 'Organization not assigned.');
+        }
+
+        $query = Dispute::with([
+            'reportedBy.user',
+            'typeOfCase',
+            'typeOfService',
+            'disputeStatus',
+        ])->select([
+            'id',
+            'dispute_no',
+            'reported_on',
+            'beneficiary_id',
+            'type_of_service_id',
+            'type_of_case_id',
+            'dispute_status_id',
+        ])->latest();
+
+        $this->scopeDisputesByOrganization($query, $organizationId);
+
+        if ($search = $request->get('search')) {
+            $query->whereHas('reportedBy.user', function ($q) use ($search) {
+                $like = '%' . $search . '%';
+                $q->where('first_name', 'like', $like)
+                    ->orWhere('middle_name', 'like', $like)
+                    ->orWhere('last_name', 'like', $like)
+                    ->orWhere('name', 'like', $like)
+                    ->orWhere('user_no', 'like', $like);
+            });
+        }
+
+        if ($caseTypeId = $request->get('type_of_case_id')) {
+            $query->where('type_of_case_id', $caseTypeId);
+        }
+
+        $disputes = $query->paginate(10);
+        $type_of_cases = TypeOfCase::latest()->get(['id', 'type_of_case']);
+
+        return view('reports.admin.client-cases', compact('disputes', 'type_of_cases'));
+    }
+
+    /**
      * Search the specified resource.
      *
      * @param  \Illuminate\Http\Request  $request

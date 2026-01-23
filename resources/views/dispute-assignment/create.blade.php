@@ -33,9 +33,15 @@
             <div class="card mt-5">
                 <div class="card-header">
                     <h4 class="header-title">{{ __('Dispute Reassignment Request') }}
-                        <a href="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}" class="btn btn-sm text-white light-custom-color pull-right text-white">
-                            {{ __('Back') }}
-                        </a>
+                        @canany(['isStaff', 'isClerk'])
+                            <a href="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}" class="btn btn-sm text-white light-custom-color pull-right text-white">
+                                {{ __('Back') }}
+                            </a>
+                        @elsecanany(['isSuperAdmin', 'isAdmin'])
+                            <a href="{{ route('disputes.list', app()->getLocale()) }}" class="btn btn-sm text-white light-custom-color pull-right text-white">
+                                {{ __('Back') }}
+                            </a>
+                        @endcanany
                     </h4>
                 </div>
                 <div class="card-body">
@@ -49,7 +55,7 @@
                                     class="select2 select2-container--default border-input-primary @error('dispute') is-invalid @enderror"
                                     name="dispute" required autocomplete="dispute" style="width: 100%;">
                                     <option hidden disabled selected value>{{ __('Choose dispute') }}</option>
-                                    @if ($dispute->count())
+                                    @if (isset($dispute) && $dispute && $dispute->count())
                                         <option value="{{ $dispute->id }}" selected="selected">
                                             {{ __('Dispute').' #'
                                                 .$dispute->dispute_no.' | '
@@ -61,17 +67,17 @@
                                                 .$dispute->reportedBy->last_name
                                                 }}
                                         </option>
-                                    @elseif ($disputes->count())
-                                        @foreach ($disputes as $dispute)
-                                            <option value="{{ $dispute->id }}">
+                                    @elseif (isset($disputes) && $disputes->count())
+                                        @foreach ($disputes as $disputeItem)
+                                            <option value="{{ $disputeItem->id }}">
                                                 {{ __('Dispute').' #'
-                                                    .$dispute->dispute_no.' | '
-                                                    .$dispute->reported_on.' >> '
+                                                    .$disputeItem->dispute_no.' | '
+                                                    .$disputeItem->reported_on.' >> '
                                                     .__('Beneficiary').' #'
-                                                    .$dispute->reportedBy->user_no.' | '
-                                                    .$dispute->reportedBy->first_name.' '
-                                                    .$dispute->reportedBy->middle_name.' '
-                                                    .$dispute->reportedBy->last_name
+                                                    .$disputeItem->reportedBy->user_no.' | '
+                                                    .$disputeItem->reportedBy->first_name.' '
+                                                    .$disputeItem->reportedBy->middle_name.' '
+                                                    .$disputeItem->reportedBy->last_name
                                                 }}
                                             </option>
                                         @endforeach

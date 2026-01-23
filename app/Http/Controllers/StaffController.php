@@ -89,6 +89,7 @@ class StaffController extends Controller
             'user_no' => ['required', 'string', 'max:255', 'unique:users'],
             'name' => ['required', 'string', 'min:3', 'max:255', 'unique:users'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'designation' => ['required'],
             'first_name' => ['required', 'min:3', 'string', 'max:50'],
             'middle_name' => ['nullable', 'min:3', 'max:50'],
@@ -111,7 +112,7 @@ class StaffController extends Controller
         $user->user_no = $request->user_no;
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->password = Hash::make('Alas%2021');
+        $user->password = Hash::make($request->password);
         $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
@@ -189,6 +190,14 @@ class StaffController extends Controller
 
             // Log user activity
             activity()->log('Created staff account');
+
+            try {
+                if (env('SEND_NOTIFICATIONS') == TRUE) {
+                    \Illuminate\Support\Facades\Notification::send($user, new \App\Notifications\UserCreated($user, $request->password));
+                }
+            } catch (\Throwable $th) {
+                throw $th;
+            }
 
             return redirect()->route('staff.list', app()->getLocale())
                 ->with('status', 'Staff information added, successfully.');

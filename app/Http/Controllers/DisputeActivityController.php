@@ -225,14 +225,38 @@ class DisputeActivityController extends Controller
 
         }else {
 
-
             // Get the requested status name
             $status = DisputeStatus::select(['dispute_status'])
                                     ->findOrFail($request->dispute_status);
 
+            $requestedStatusName = strtolower((string) $status->dispute_status);
+            $forceNonCompliance = false;
+
+            if ($requestedStatusName === 'continue') {
+                $reopenCount = DisputeActivity::where('dispute_id', $dispute->id)
+                    ->where('activity_type', 'status')
+                    ->where('dispute_activity', 'Dispute Continued')
+                    ->count();
+
+                if ($reopenCount >= 3) {
+                    $forcedStatus = DisputeStatus::select(['id', 'dispute_status'])
+                        ->whereRaw('LOWER(dispute_status) = ?', ['non-compliance'])
+                        ->first();
+
+                    if ($forcedStatus) {
+                        $status = $forcedStatus;
+                        $request->merge(['dispute_status' => $forcedStatus->id]);
+                        $forceNonCompliance = true;
+                    }
+                }
+            }
+
             switch ($status->dispute_status) {
                 case 'resolved':
                     $activity->dispute_activity = 'Dispute Resolved';
+                    break;
+                case 'non-compliance':
+                    $activity->dispute_activity = 'Dispute Non-compliance';
                     break;
                 case 'discontinued':
                     $activity->dispute_activity = 'Dispute Discontinued';
@@ -260,7 +284,11 @@ class DisputeActivityController extends Controller
         $curr_staff = optional(auth()->user()->staff)->id;
 
         $activity->activity_type = $request->activity_type;
-        $activity->description = $request->description ?? '';
+        $activityDescription = $request->description ?? '';
+        if (!empty($forceNonCompliance)) {
+            $activityDescription = trim($activityDescription . ' Auto-marked as non-compliance after 3 reopens.');
+        }
+        $activity->description = $activityDescription;
         $activity->dispute_id = (int) $request->dispute;
         $activity->staff_id = $curr_staff ?? NULL;
 
@@ -328,6 +356,13 @@ class DisputeActivityController extends Controller
                                     ' imefanikiwa kusuluhishwa leo tarehe '.$updated_at.
                                     '. Ahsante.';
 
+                        break;
+                    case 'Dispute Non-compliance':
+                        $message = 'Habari, '.$beneficiary_display_name.
+                                    '. AJISO inapenda kukutaarifu kuwa, kesi yako uliyo ripoti tarehe '.$reported_at.
+                                    ' yenye namba ya usajili No. '.$dispute->dispute_no.
+                                    ' imewekwa kwenye hali ya kutotii makubaliano (non-compliance) tarehe '.$updated_at.
+                                    '. Tafadhali wasiliana na mtoa huduma za kisheria kwa maelezo zaidi. Ahsante.';
                         break;
                     case 'Dispute Discontinued':
                         $message = 'Habari, '.$beneficiary_display_name.

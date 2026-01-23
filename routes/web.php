@@ -64,6 +64,11 @@ Route::group([
     Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->name('users.list');
     Route::get('/users/create', [App\Http\Controllers\UserController::class, 'create'])->name('user.create');
     Route::post('/users', [App\Http\Controllers\UserController::class, 'store'])->name('user.store');
+    Route::get('/paralegals', [App\Http\Controllers\UserController::class, 'paralegals'])->name('paralegals.list');
+    Route::get('/paralegals/create', [App\Http\Controllers\UserController::class, 'createParalegal'])->name('paralegal.create');
+    Route::get('/paralegals/export/pdf', [App\Http\Controllers\ParalegalExportController::class, 'exportListPdf'])->name('paralegals.export.pdf');
+    Route::get('/paralegals/export/excel', [App\Http\Controllers\ParalegalExportController::class, 'exportListExcel'])->name('paralegals.export.excel');
+    Route::get('/paralegals/export/csv', [App\Http\Controllers\ParalegalExportController::class, 'exportListCsv'])->name('paralegals.export.csv');
     Route::put('/users/{user}/password', [App\Http\Controllers\UserController::class, 'updatePassword'])->name('user.update.password');
     Route::get('/users/{id}/profile', [App\Http\Controllers\UserController::class, 'show'])->name('user.show');
     Route::get('/users/{id}/edit', [App\Http\Controllers\UserController::class, 'edit'])->name('user.edit');
@@ -165,6 +170,7 @@ Route::group([
     // General Previews
     Route::get('/reports/general', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.general');
     Route::get('/reports/general/filter', [App\Http\Controllers\ReportController::class, 'filter'])->name('reports.general.filter');
+    Route::get('/reports/client-cases', [App\Http\Controllers\ReportController::class, 'clientCases'])->name('reports.client.cases');
 
     // Summaries
     Route::get('/reports/summaries/disputes', [App\Http\Controllers\ReportController::class, 'disputesSummary'])->name('reports.summary.dispute');

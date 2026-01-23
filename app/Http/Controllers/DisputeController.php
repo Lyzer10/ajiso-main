@@ -1118,8 +1118,15 @@ class DisputeController extends Controller
 
         // Get all the dispute_statuses and bind them to the create  view
         $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
+        $continueStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['continue'])
+            ->value('id');
 
-        return response(view('disputes.show', compact('dispute', 'occurrences', 'dispute_statuses')));
+        return response(view('disputes.show', compact(
+            'dispute',
+            'occurrences',
+            'dispute_statuses',
+            'continueStatusId'
+        )));
     }
 
     /**

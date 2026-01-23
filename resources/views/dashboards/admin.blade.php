@@ -37,71 +37,153 @@
         <!-- seo fact area start -->
         <div class="col-lg-12">
             <div class="row">
-                <div class="col-md-4 mt-md-5 mb-3">
-                    <div class="card">
-                        <div class="seo-fact sbg1">
-                            <div class="p-4 d-flex justify-content-between align-items-center">
-                                <div class="seofct-icon"><i class="fas fa-balance-scale"></i>{{ __('Cases') }}</div>
-                                <h2>{{ $total_disputes ?? '0' }}</h2>
-                            </div>
-                            <canvas id="" height="20"></canvas>
-                            <div class="card-footer bg-dark-blue text-center">
-                                <a href="{{ route('disputes.list', app()->getLocale()) }}" class="small-box-footer text-white">
-                                    {{ __('More info') }} 
-                                    <i class="fas fa-arrow-circle-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mt-md-5 mb-3">
-                    <div class="card">
-                        <div class="seo-fact sbg2">
-                            <div class="p-4 d-flex justify-content-between align-items-center">
-                                <div class="seofct-icon"><i class="fas fa-users"></i>{{ __('Beneficiaries') }}</div>
-                                <h2>{{ $total_beneficiaries ?? '0' }}</h2>
-                            </div>
-                            <canvas id="" height="20"></canvas>
-                            <div class="card-footer bg-dark-green text-center">
-                                <a href="{{ route('beneficiaries.list', app()->getLocale()) }}" class="small-box-footer text-white">
-                                    {{ __('More info') }} 
-                                    <i class="fas fa-arrow-circle-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mt-md-5 mb-3">
-                    <div class="card">
-                        <div class="seo-fact sbg4">
-                            <div class="p-4 d-flex justify-content-between align-items-center">
-                                <div class="seofct-icon">
-                                    <i class="fas fa-user-shield"></i>
-                                    @can('isParalegal')
-                                        {{ __('Paralegals') }}
-                                    @else
-                                        {{ __('Legal Aid Providers') }}
-                                    @endcan
+                @can('isParalegal')
+                    <div class="col-md-3 mt-md-5 mb-3">
+                        <div class="card">
+                            <div class="seo-fact sbg1">
+                                <div class="p-4 d-flex justify-content-between align-items-center">
+                                    <div class="seofct-icon"><i class="fas fa-balance-scale"></i>{{ __('Cases') }}</div>
+                                    <h2>{{ $total_disputes ?? '0' }}</h2>
                                 </div>
-                                <h2>{{ $total_staff ?? '0' }}</h2>
-                            </div>
-                            <canvas id="" height="20"></canvas>
-                            <div class="card-footer bg-dark-yellow text-center">
-                                @can('isParalegal')
-                                    <a href="{{ route('users.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                <canvas id="" height="20"></canvas>
+                                <div class="card-footer bg-dark-blue text-center">
+                                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="small-box-footer text-white">
                                         {{ __('More info') }}
                                         <i class="fas fa-arrow-circle-right"></i>
                                     </a>
-                                @else
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mt-md-5 mb-3">
+                        <div class="card">
+                            <div class="seo-fact sbg4">
+                                <div class="p-4 d-flex justify-content-between align-items-center">
+                                    <div class="seofct-icon"><i class="fas fa-hourglass-half"></i>{{ __('Pending Cases') }}</div>
+                                    <h2>{{ $disputes_pending ?? '0' }}</h2>
+                                </div>
+                                <canvas id="" height="20"></canvas>
+                                <div class="card-footer bg-dark-yellow text-center">
+                                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                        {{ __('More info') }}
+                                        <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mt-md-5 mb-3">
+                        <div class="card">
+                            <div class="seo-fact sbg3">
+                                <div class="p-4 d-flex justify-content-between align-items-center">
+                                    <div class="seofct-icon"><i class="fas fa-check-circle"></i>{{ __('Resolved Cases') }}</div>
+                                    <h2>{{ $disputes_resolved ?? '0' }}</h2>
+                                </div>
+                                <canvas id="" height="20"></canvas>
+                                <div class="card-footer  text-center">
+                                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                        {{ __('More info') }}
+                                        <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mt-md-5 mb-3">
+                        <div class="card">
+                            <div class="seo-fact sbg2">
+                                <div class="p-4 d-flex justify-content-between align-items-center">
+                                    <div class="seofct-icon"><i class="fas fa-users"></i>{{ __('Beneficiaries') }}</div>
+                                    <h2>{{ $total_beneficiaries ?? '0' }}</h2>
+                                </div>
+                                <canvas id="" height="20"></canvas>
+                                <div class="card-footer bg-dark-green text-center">
+                                    <a href="{{ route('beneficiaries.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                        {{ __('More info') }}
+                                        <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="col-md-3 mt-md-5 mb-3">
+                        <div class="card">
+                            <div class="seo-fact sbg1">
+                                <div class="p-4 d-flex justify-content-between align-items-center">
+                                    <div class="seofct-icon"><i class="fas fa-balance-scale"></i>{{ __('Cases') }}</div>
+                                    <h2>{{ $total_disputes ?? '0' }}</h2>
+                                </div>
+                                <canvas id="" height="20"></canvas>
+                                <div class="card-footer bg-dark-blue text-center">
+                                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                        {{ __('More info') }}
+                                        <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mt-md-5 mb-3">
+                        <div class="card">
+                            <div class="seo-fact sbg2">
+                                <div class="p-4 d-flex justify-content-between align-items-center">
+                                    <div class="seofct-icon"><i class="fas fa-users"></i>{{ __('Beneficiaries') }}</div>
+                                    <h2>{{ $total_beneficiaries ?? '0' }}</h2>
+                                </div>
+                                <canvas id="" height="20"></canvas>
+                                <div class="card-footer bg-dark-green text-center">
+                                    <a href="{{ route('beneficiaries.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                        {{ __('More info') }}
+                                        <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mt-md-5 mb-3">
+                        <div class="card">
+                            <div class="seo-fact sbg4">
+                                <div class="p-4 d-flex justify-content-between align-items-center">
+                                    <div class="seofct-icon">
+                                        <i class="fas fa-user-shield"></i>
+                                        {{ __('Legal Aid Providers') }}
+                                    </div>
+                                    <h2>{{ $total_staff ?? '0' }}</h2>
+                                </div>
+                                <canvas id="" height="20"></canvas>
+                                <div class="card-footer bg-dark-yellow text-center">
                                     <a href="{{ route('staff.list', app()->getLocale()) }}" class="small-box-footer text-white">
                                         {{ __('More info') }}
                                         <i class="fas fa-arrow-circle-right"></i>
                                     </a>
-                                @endcan
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    @canany(['isSuperAdmin','isAdmin'])
+                        <div class="col-md-3 mt-md-5 mb-3">
+                            <div class="card">
+                                <div class="seo-fact sbg3">
+                                    <div class="p-4 d-flex justify-content-between align-items-center">
+                                        <div class="seofct-icon">
+                                            <i class="fas fa-user-friends"></i>
+                                            {{ __('Paralegals') }}
+                                        </div>
+                                        <h2>{{ $total_paralegals ?? '0' }}</h2>
+                                    </div>
+                                    <canvas id="" height="20"></canvas>
+                                    <div class="card-footer text-center">
+                                        <a href="{{ route('paralegals.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                            {{ __('More info') }}
+                                            <i class="fas fa-arrow-circle-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endcanany
+                @endcan
             </div>
         </div>
         <!-- seo fact area end -->

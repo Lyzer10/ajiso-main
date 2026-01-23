@@ -55,7 +55,14 @@ class HomeController extends Controller
 
         $total_disputes = (clone $disputeBaseQuery)->count();
         $total_beneficiaries = (clone $beneficiaryBaseQuery)->count();
-        $disputes_resolved = (clone $disputeBaseQuery)->where('dispute_status_id', 3)->count();
+        $resolvedStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['resolved'])->value('id');
+        $pendingStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['pending'])->value('id');
+        $disputes_resolved = $resolvedStatusId
+            ? (clone $disputeBaseQuery)->where('dispute_status_id', $resolvedStatusId)->count()
+            : 0;
+        $disputes_pending = $pendingStatusId
+            ? (clone $disputeBaseQuery)->where('dispute_status_id', $pendingStatusId)->count()
+            : 0;
         $total_staff = $organizationId
             ? User::where('organization_id', $organizationId)
                 ->whereHas('role', function ($query) {
@@ -63,6 +70,9 @@ class HomeController extends Controller
                 })
                 ->count()
             : Staff::count();
+        $total_paralegals = User::whereHas('role', function ($query) {
+            $query->where('role_abbreviation', 'paralegal');
+        })->count();
 
         // Grouped counts
         $group_by_services = (clone $disputeBaseQuery)->select('type_of_service_id', DB::raw('COUNT(*) as total'))
@@ -129,7 +139,9 @@ class HomeController extends Controller
         return view('dashboards.admin', compact(
             'total_disputes',
             'total_staff',
+            'total_paralegals',
             'total_beneficiaries',
+            'disputes_pending',
             'tos_data',
             'toc_data',
             'dis_data',
