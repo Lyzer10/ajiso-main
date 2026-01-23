@@ -58,6 +58,18 @@
                     <div class="dispute-profile-header">
                         <h4 class="header-title mb-0">{{ __('Dispute Profile') }}</h4>
                         <div class="dispute-profile-actions">
+                            @if (strtolower($currentStatus) === 'resolved' && !empty($continueStatusId))
+                                <button type="button" class="btn btn-sm btn-info text-white mr-2" id="reopenCase"
+                                    data-status-id="{{ $continueStatusId }}">
+                                    {{ __('Reopen Case') }}
+                                </button>
+                            @endif
+                            @canany(['isStaff', 'isClerk', 'isAdmin', 'isSuperAdmin'])
+                                <a href="{{ route('dispute.request.create', [app()->getLocale(), $dispute->id]) }}"
+                                    class="btn btn-sm btn-secondary text-white mr-2">
+                                    {{ __('Request Reassignment') }}
+                                </a>
+                            @endcanany
                             <a href="{{ route('disputes.list', app()->getLocale()) }}"
                                 class="btn btn-sm btn-primary text-white">{{ __('Disputes list') }}
                             </a>
@@ -1140,6 +1152,18 @@
                     statusModal.modal('show');
                 }
             @endif
+
+            var reopenBtn = $('#reopenCase');
+            if (reopenBtn.length) {
+                reopenBtn.on('click', function () {
+                    var statusId = $(this).data('status-id');
+                    var statusSelect = $('#dispute_status');
+                    if (statusId && statusSelect.length) {
+                        statusSelect.val(statusId).trigger('change');
+                    }
+                    $('#disputeStatusModal').modal('show');
+                });
+            }
         });
     </script>
 @endpush

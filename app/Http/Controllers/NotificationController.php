@@ -133,6 +133,21 @@ class NotificationController extends Controller
                 // Prepare the recipients
                 $recipients = $staff->map->user->filter()->values();
 
+            }elseif ($publish_to === 'allParalegals') {
+
+                $recipients = User::where('is_active', 1)
+                    ->whereHas('role', function ($query) {
+                        $query->where('role_abbreviation', 'paralegal');
+                    })
+                    ->latest()
+                    ->get(
+                        [
+                            'id', 'name', 'user_no', 'first_name',
+                            'middle_name', 'last_name', 'email',
+                            'tel_no', 'mobile_no'
+                        ]
+                    );
+
             }elseif ($publish_to === 'allBeneficiaries') {
 
                 // Get all the beneficiaries
@@ -143,6 +158,30 @@ class NotificationController extends Controller
                 
                 // Prepare the recipients
                 $recipients = $beneficiaries->map->user->filter()->values();
+
+            }elseif ($publish_to === 'allParalegalsAndBeneficiaries') {
+
+                $paralegals = User::where('is_active', 1)
+                    ->whereHas('role', function ($query) {
+                        $query->where('role_abbreviation', 'paralegal');
+                    })
+                    ->latest()
+                    ->get(
+                        [
+                            'id', 'name', 'user_no', 'first_name',
+                            'middle_name', 'last_name', 'email',
+                            'tel_no', 'mobile_no'
+                        ]
+                    );
+
+                $beneficiaries = Beneficiary::has('user')
+                    ->with('user')
+                    ->latest()
+                    ->get(['id', 'user_id']);
+
+                $beneficiaryUsers = $beneficiaries->map->user->filter();
+
+                $recipients = $paralegals->merge($beneficiaryUsers)->unique('id')->values();
 
             }elseif ($publish_to === 'targetlLegalAidProvider') {
 

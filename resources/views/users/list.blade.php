@@ -112,6 +112,15 @@
                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {{ _('Add User') }}
                     </a>
+                    @canany(['isSuperAdmin','isAdmin', 'isClerk'])
+                        <a class="btn btn-sm btn-secondary pull-right mr-2" href="{{ route('admin.home', app()->getLocale()) }}">
+                            {{ __('Back') }}
+                        </a>
+                    @elsecanany(['isStaff'])
+                        <a class="btn btn-sm btn-secondary pull-right mr-2" href="{{ route('staff.home', app()->getLocale()) }}">
+                            {{ __('Back') }}
+                        </a>
+                    @endcanany
                     <div class="dropdown-menu dropdown-menu-md-right" aria-labelledby="bd-versions">
                         <a class="dropdown-item btn-link" href="{{ route('staff.create', app()->getLocale()) }}">
                             {{ _('Legal Aid Provider') }}

@@ -137,7 +137,7 @@
                                 <label for="type_of_court"  class="font-weight-bold" >{{ __('Type of court?') }}</label>
                                 <select id="type_of_court" aria-describedby="selecttype_of_court"
                                     class="select2 select2-container--default border-input-primary @error('type_of_court') is-invalid @enderror"
-                                    name="type_of_court" required autocomplete="type_of_court" style="width: 100%;">
+                                    name="type_of_court" autocomplete="type_of_court" style="width: 100%;">
                                     <option hidden disabled selected value>{{ __('Select') }}</option>
                                     <option value="supreme court" {{ old('type_of_court') == 'supreme court' ? ' selected="selected"' : '' }}>{{ __('Supreme court') }}</option>
                                     <option value="land court" {{ old('type_of_court') == 'land court' ? ' selected="selected"' : '' }}>{{ __('Land court') }}</option>
@@ -346,7 +346,6 @@
         function toggleCourtField() {
             if ($matterSelect.val() === 'yes') {
                 $typeCourtWrapper.show();
-                $typeCourtSelect.prop('required', true);
             } else {
                 $typeCourtWrapper.hide();
                 $typeCourtSelect.prop('required', false);

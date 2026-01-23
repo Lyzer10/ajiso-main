@@ -187,6 +187,23 @@
                                 @enderror
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="col-md-4 mb-3">
+                                <label for="password" class="font-weight-bold">{{ __('Password') }}<sup class="text-danger">*</sup></label>
+                                <input id="password" type="password" pattern="[0-9a-zA-Z]{8,50}"
+                                    title="password should be 8 or more characters containing at least a number, a lowercase and uppercase letter"
+                                    class="form-control  border-primary @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
+                                @error('password')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="password-confirm" class="font-weight-bold">{{ __('Confirm Password') }}<sup class="text-danger">*</sup></label>
+                                <input id="password-confirm" type="password" class="form-control  border-primary" name="password_confirmation" required autocomplete="new-password">
+                            </div>
+                        </div>
                     </div>
                     <div class="card-footer mt-2">
                         <button class="btn text-white light-custom-color float-right" type="submit ">{{ __('Submit') }}</button>

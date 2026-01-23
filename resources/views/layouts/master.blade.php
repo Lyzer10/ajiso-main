@@ -78,7 +78,7 @@
 
     {{-- Users --}}
     @canany(['isSuperAdmin','isAdmin','isClerk'])
-        <li class="{{ request()->routeIs('staff.*') || request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('staff.*') || request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') || request()->routeIs('paralegals.*') || request()->routeIs('paralegal.create') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-user-friends"></i>
                 <span>{{ __('Users') }}</span>
@@ -89,6 +89,12 @@
                     <a href="{{ route('staff.list', app()->getLocale()) }}">
                         <i class="fas fa-chevron-right"></i>
                         {{ __('Legal Aid Providers') }}
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('paralegals.*') || request()->routeIs('paralegal.create') ? 'active' : '' }}">
+                    <a href="{{ route('paralegals.list', app()->getLocale()) }}">
+                        <i class="fas fa-chevron-right"></i>
+                        {{ __('Paralegal') }}
                     </a>
                 </li>
                 @endcannot
@@ -251,6 +257,12 @@
                             <a href="{{ route('reports.summary.survey', app()->getLocale()) }}">
                                 <i class="fas fa-caret-right"></i>
                                 {{ __('Survey Summary') }}
+                            </a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.client.cases') ? 'active' : '' }}">
+                            <a href="{{ route('reports.client.cases', app()->getLocale()) }}">
+                                <i class="fas fa-caret-right"></i>
+                                {{ __('Client Cases') }}
                             </a>
                         </li>
                     </ul>

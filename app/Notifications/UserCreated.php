@@ -15,22 +15,25 @@ class UserCreated extends Notification
     public $full_name;
     public $notification_email;
     public $notification_message;
+    public $plain_password;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct(User $user, $message = null)
+    public function __construct(User $user, $plain_password = null)
     {
         $this->full_name = $user->designation->name.' '
                             .$user->first_name.' '
                             .$user->middle_name.' '
                             .$user->last_name;
         $this->notification_email = $user->email;
+        $this->plain_password = $plain_password;
+        $passwordText = $this->plain_password ? $this->plain_password : 'ALAS%2021';
         $this->notification_message = "Hongera akaunti yako imewezeshwa.
                             Tafadhali tumia barua pepe yako na Nywila hii
-                            'ALAS%2021' ili kuingia kwenye mfumo.
+                            '{$passwordText}' ili kuingia kwenye mfumo.
                             ";
     }
 

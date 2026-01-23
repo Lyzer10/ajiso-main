@@ -94,6 +94,57 @@ class UserController extends Controller
     }
 
     /**
+     * Display a listing of paralegal users.
+     *
+     * @return \Illuminate\Contracts\Support\Renderable
+     */
+    public function paralegals()
+    {
+        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+        $search = request('search');
+        $organizationId = request('organization_id');
+
+        $users = User::with(['role:id,role_abbreviation,role_name', 'organization:id,name'])
+            ->select(
+                [
+                    'id',
+                    'name',
+                    'user_no',
+                    'first_name',
+                    'middle_name',
+                    'last_name',
+                    'email',
+                    'is_active',
+                    'user_role_id',
+                    'organization_id'
+                ]
+            )
+            ->when($paralegalRoleId, function ($query, $roleId) {
+                return $query->where('user_role_id', $roleId);
+            })
+            ->when($search, function ($query, $search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $like = '%' . $search . '%';
+                    $subQuery->where('name', 'like', $like)
+                        ->orWhere('first_name', 'like', $like)
+                        ->orWhere('middle_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('user_no', 'like', $like);
+                });
+            })
+            ->when($organizationId, function ($query, $organizationId) {
+                return $query->where('organization_id', $organizationId);
+            })
+            ->latest()
+            ->paginate(10);
+
+        $organizations = Organization::orderBy('name')->get(['id', 'name']);
+
+        return view('users.paralegals.list', compact('users', 'organizations', 'organizationId'));
+    }
+
+    /**
      * Show the form for creating a new user.
      *
      * @return \Illuminate\Http\Response
@@ -110,6 +161,21 @@ class UserController extends Controller
             ->get(['id', 'name']);
 
         return view('users.create', compact('designations', 'user_roles', 'organizations'));
+    }
+
+    /**
+     * Show the form for creating a new paralegal user.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function createParalegal()
+    {
+        $designations = Designation::get(['id', 'name']);
+        $organizations = Organization::orderBy('name')
+            ->get(['id', 'name']);
+        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+
+        return view('users.create-paralegal', compact('designations', 'organizations', 'paralegalRoleId'));
     }
 
     /**
@@ -235,12 +301,15 @@ class UserController extends Controller
              */
 
             try {
-                if (env('SEND_NOTIFICATIONS') == TRUE) {
-                    // Database & email
-                    Notification::send($user, new UserCreated($user));
-                }
+                // Database & email
+                Notification::send($user, new UserCreated($user, $request->password));
             } catch (\Throwable $th) {
                 throw $th;
+            }
+
+            if ($role && $role->role_abbreviation === 'paralegal') {
+                return redirect()->route('paralegals.list', app()->getLocale())
+                    ->with('status', 'Paralegal information added, successfully.');
             }
 
             return redirect()->route('users.list', app()->getLocale())

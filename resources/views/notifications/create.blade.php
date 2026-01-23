@@ -76,7 +76,9 @@
                                             <option hidden disabled selected value>{{ __('Choose a recipient group') }}</option>
                                             <option value="allUsers">{{ __('All Users') }}</option>
                                             <option value="allLegalAidProviders">{{ __('All Legal Aid Providers') }}</option>
+                                            <option value="allParalegals">{{ __('All Paralegals') }}</option>
                                             <option value="allBeneficiaries">{{ __('All Beneficiaries') }}</option>
+                                            <option value="allParalegalsAndBeneficiaries">{{ __('All Paralegals and Beneficiaries') }}</option>
                                             <option value="targetlLegalAidProvider">{{ __('Target Legal Aid Provider') }}</option>
                                             <option value="targetBeneficiary">{{ __('Target Beneficiary') }}</option>
                                         </select>

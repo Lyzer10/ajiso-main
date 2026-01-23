@@ -34,6 +34,18 @@
                         @elsecanany(['isSuperAdmin', 'isAdmin'])
                             {{ __('Reassignment Request list') }}
                         @endcanany
+                        @canany(['isStaff', 'isClerk'])
+                            <a href="{{ route('dispute.request.create', [app()->getLocale(), 'all']) }}" class="btn btn-sm text-white light-custom-color pull-right">
+                                <i class="fas fa-plus"></i>
+                                {{ __('Send Request') }}
+                            </a>
+                        @endcanany
+                        @canany(['isSuperAdmin', 'isAdmin', 'isClerk'])
+                            <button class="btn btn-sm btn-success pull-right" data-toggle="modal" data-target="#bulkNoticeModal">
+                                <i class="fas fa-paper-plane"></i>
+                                {{ __('Bulk Message') }}
+                            </button>
+                        @endcanany
                     </div>
                 </div>
                 <div class="card-body" style="width: 100%;">
@@ -221,4 +233,62 @@
     </script>
 
     
+@endpush
+
+@push('modals')
+    <!-- Bulk Notification modal-->
+    <div class="modal fade" id="bulkNoticeModal" tabindex="-1" aria-labelledby="bulkNoticeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkNoticeModalLabel">
+                        <i class="fas fa-paper-plane fa-fw text-info"></i>
+                        {{ __('Send Bulk Notification') }}
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('notification.store', app()->getLocale()) }}" method="POST">
+                        @csrf
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="bulk_title" class="font-weight-bold">{{ __('Notification Title') }}<sup class="text-danger">*</sup></label>
+                                    <input type="text" class="form-control border-append-primary" id="bulk_title" name="title" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="bulk_priority" class="font-weight-bold">{{ __('Priority') }}<sup class="text-danger">*</sup></label>
+                                    <select id="bulk_priority" class="form-control border-input-primary" name="priority" required>
+                                        <option hidden disabled selected value>{{ __('Choose priority') }}</option>
+                                        <option value="high">{{ __('High') }}</option>
+                                        <option value="medium">{{ __('Medium') }}</option>
+                                        <option value="low">{{ __('Low') }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="bulk_publish_to" class="font-weight-bold">{{ __('Publish To') }}<sup class="text-danger">*</sup></label>
+                                    <select id="bulk_publish_to" class="form-control border-input-primary" name="publish_to" required>
+                                        <option hidden disabled selected value>{{ __('Choose a recipient group') }}</option>
+                                        <option value="allParalegals">{{ __('All Paralegals') }}</option>
+                                        <option value="allBeneficiaries">{{ __('All Beneficiaries') }}</option>
+                                        <option value="allParalegalsAndBeneficiaries">{{ __('All Paralegals and Beneficiaries') }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="bulk_message" class="font-weight-bold">{{ __('Message') }}<sup class="text-danger">*</sup></label>
+                                    <textarea class="form-control border-text-primary" id="bulk_message" name="message" required style="width: 100%;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">{{ __('Send') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Bulk Notification modal-->
 @endpush
