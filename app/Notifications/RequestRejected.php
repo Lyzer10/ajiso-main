@@ -66,8 +66,7 @@ class RequestRejected extends Notification
     public function toArray($notifiable)
     {
         return [
-            'Re(un)assignment request on dispute '.$this->dispute_no.' was rejected.',
+            'message' => 'Re(un)assignment request on dispute '.$this->dispute_no.' was rejected.',
         ];
     }
-    //  testomg
 }

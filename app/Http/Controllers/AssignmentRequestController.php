@@ -41,7 +41,6 @@ class AssignmentRequestController extends Controller
                 'requestedBy:first_name,middle_name,last_name,user_no',
                 'dispute:id,dispute_no'
             )
-            ->where('request_status', '!=', 'rejected')
             ->select(
                 [
                     'id',
@@ -52,6 +51,7 @@ class AssignmentRequestController extends Controller
                     'created_at'
                 ]
             )
+            ->latest()
             ->paginate(10);
 
         return view('dispute-assignment.list', compact('assignment_requests'));
@@ -263,16 +263,9 @@ class AssignmentRequestController extends Controller
             if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
                 $staff_display_name = trim($staff_title . ' ' . $staff_name);
             }
-            $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
 
-            $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
-
-
-            $staff_message = 'Habari, ' . $staff_display_name .
-                ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
-                ' lenye namba ya usajili No. ' . $dispute->dispute_no . ' limepokelewa' .
-                '. Tembelea Mfumo wa ALAS kujua zaidi.' .
-                ' Ahsante.';
+            $reason = trim((string) $assignment_request->reason_description);
+            $reason_snippet = Str::limit($reason, 160, '...');
 
             //Send SMS, Email & Database notifications to legal aid provider
 
@@ -284,20 +277,59 @@ class AssignmentRequestController extends Controller
                 // SMS
 
                 if (env('SEND_NOTIFICATIONS') == TRUE) {
-                    # Notify new assigned assigned via SMS
+                    # Notify requester via SMS
+                    $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
+                    $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
                     $sms = new SmsService();
+                    $staff_message = 'Habari, ' . $staff_display_name .
+                        ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
+                        ' lenye namba ya usajili No. ' . $dispute->dispute_no . ' limepokelewa' .
+                        '. Tembelea Mfumo wa ALAS kujua zaidi.' .
+                        ' Ahsante.';
                     $sms->sendSMS($staff_recipients, $staff_message);
 
                     // Database & email 
 
-                    # Notify new assigned assigned via email & DB
+                    # Notify requester via email & DB
                     Notification::send($staff->user, new AssignmentRequestNotice($staff, $dispute, $staff_message));
+
+                    $adminUsers = User::where('is_active', 1)
+                        ->whereHas('role', function ($query) {
+                            $query->whereIn('role_abbreviation', ['admin', 'superadmin']);
+                        })
+                        ->get(['id', 'first_name', 'middle_name', 'last_name', 'email', 'tel_no', 'salutation_id']);
+
+                    $admin_message = 'Habari, ombi la kubadilishiwa shauri lenye namba ya usajili No. ' .
+                        $dispute->dispute_no . ' limetumwa na ' . $staff_display_name .
+                        '. Sababu: ' . ($reason_snippet ?: 'N/A') .
+                        '. Tafadhali ingia mfumo wa ALAS kuthibitisha ombi hili. Ahsante.';
+
+                    foreach ($adminUsers as $admin) {
+                        $admin_dest_addr = SmsService::normalizeRecipient($admin->tel_no);
+                        $admin_recipients = ['recipient_id' => 1, 'dest_addr' => $admin_dest_addr];
+                        $sms->sendSMS($admin_recipients, $admin_message);
+                    }
+
+                    if ($adminUsers->isNotEmpty()) {
+                        Notification::send($adminUsers, new AssignmentRequestNotice($staff, $dispute, $admin_message));
+                    }
                 }
             } catch (\Throwable $th) {
                 throw $th;
             }
 
-            return redirect()->route('disputes.request.list', app()->getLocale())
+            $redirectRoute = 'disputes.request.list';
+            $routeParams = ['locale' => app()->getLocale()];
+
+            if (in_array($role, ['clerk', 'paralegal', 'staff'], true)) {
+                $staffId = optional(auth()->user()->staff)->id;
+                if ($staffId) {
+                    $redirectRoute = 'disputes.request.my-list';
+                    $routeParams = ['locale' => app()->getLocale(), 'staff' => $staffId];
+                }
+            }
+
+            return redirect()->to(route($redirectRoute, $routeParams, false))
                 ->with('status', 'Reassignment request sent, successfully.');
         } else {
             return redirect()->back()
@@ -336,6 +368,11 @@ class AssignmentRequestController extends Controller
      */
     public function acceptRequest(Request $request, $locale, $id)
     {
+        $role = optional(auth()->user()->role)->role_abbreviation;
+        if (!in_array($role, ['admin', 'superadmin'], true)) {
+            return redirect()->back()
+                ->withErrors('errors', 'You are not authorized to perform this action.');
+        }
 
         /**
          * Get a validator for an incoming store request.
@@ -355,6 +392,11 @@ class AssignmentRequestController extends Controller
          */
 
         $assignment_request = AssignmentRequest::findOrFail($id);
+
+        if ($assignment_request->request_status !== 'pending') {
+            return redirect()->back()
+                ->withErrors('errors', 'This request has already been processed.');
+        }
 
         $assignment_request->request_status = $request->res;
 
@@ -419,7 +461,10 @@ class AssignmentRequestController extends Controller
                 throw $th;
             }
 
-            return redirect()->route('dispute.assign', [app()->getLocale(), $assignment_request->dispute_id])
+            return redirect()->to(route('dispute.assign', [
+                'locale' => app()->getLocale(),
+                'dispute' => $assignment_request->dispute_id,
+            ], false))
                 ->with('status', 'You accepted a reassignment request, please assign a new assignment.');
         } else {
             return redirect()->back()
@@ -436,6 +481,11 @@ class AssignmentRequestController extends Controller
      */
     public function rejectRequest(Request $request, $locale, $id)
     {
+        $role = optional(auth()->user()->role)->role_abbreviation;
+        if (!in_array($role, ['admin', 'superadmin'], true)) {
+            return redirect()->back()
+                ->withErrors('errors', 'You are not authorized to perform this action.');
+        }
         /**
          * Get a validator for an incoming store request.
          *
@@ -454,6 +504,11 @@ class AssignmentRequestController extends Controller
          */
 
         $assignment_request = AssignmentRequest::findOrFail($id);
+
+        if ($assignment_request->request_status !== 'pending') {
+            return redirect()->back()
+                ->withErrors('errors', 'This request has already been processed.');
+        }
 
         $assignment_request->request_status = $request->res;
 

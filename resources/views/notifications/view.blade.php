@@ -41,8 +41,8 @@
                 <div class="card-body mb-3">
                     @forelse($notifications as $notification)
                         <div class="alert alert-info alert-dismissible">
-                            {{ $notification->data['message'].' | '.Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}
-                            <a href="#" class="mark-as-read float-right text-secondary" data-id="{{ $notification->id }}>">
+                            {{ data_get($notification->data, 'message', __('Notification')).' | '.Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}
+                            <a href="#" class="mark-as-read float-right text-secondary" data-id="{{ $notification->id }}">
                                 {{  __('Mark as Read') }}
                             </a>
                         </div>

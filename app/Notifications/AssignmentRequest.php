@@ -25,10 +25,15 @@ class AssignmentRequest extends Notification
      */
     public function __construct(Staff $staff, Dispute $dispute, $message)
     {
-        $this->full_name = $staff->user->designation->name.' '
-                            .$staff->user->first_name.' '
-                            .$staff->user->middle_name.' '
-                            .$staff->user->last_name;
+        $title = trim((string) optional($staff->user->designation)->name);
+        $name = trim(implode(' ', array_filter([
+            $staff->user->first_name ?? '',
+            $staff->user->middle_name ?? '',
+            $staff->user->last_name ?? '',
+        ])));
+        $this->full_name = $title !== '' && strtolower($title) !== 'other'
+            ? trim($title.' '.$name)
+            : $name;
         $this->dispute_no = $dispute->dispute_no;
         $this->notification_email = $staff->user->email;
         $this->notification_message = $message;
@@ -75,7 +80,7 @@ class AssignmentRequest extends Notification
     public function toArray($notifiable)
     {
         return [
-            'message' => 'Staff with no '.$this->full_name.' sent re(un)assignment request on dispute '.$this->dispute_no,
+            'message' => $this->notification_message,
         ];
     }
 }

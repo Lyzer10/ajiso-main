@@ -123,13 +123,13 @@
                                                 @csrf
                                                 @METHOD('PUT')
                                                 <input type="hidden" name="res" value="accepted">
-                                                    <i class="fas fa-check fa-fw text-success" id="show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}"></i>
+                                                    <i class="fas fa-check fa-fw text-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}"></i>
                                             </form> /
                                             <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}">
                                                 @csrf
                                                 @METHOD('PUT')
                                                 <input type="hidden" name="res" value="rejected">
-                                                    <i class="fas fa-times fa-fw text-danger" id="show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}"></i>
+                                                    <i class="fas fa-times fa-fw text-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}"></i>
                                             </form>
                                         </td>
                                         @else
@@ -160,7 +160,7 @@
 
     {{-- Accept --}}
     <script type="text/javascript">
-        $('#show_accept').click(function(event) {
+        $(document).on('click', '.show_accept', function(event) {
 
                 var form =  $(this).closest("form");
 
@@ -197,7 +197,7 @@
 
     {{-- Reject --}}
     <script type="text/javascript">
-        $('#show_reject').click(function(event) {
+        $(document).on('click', '.show_reject', function(event) {
 
                 var form =  $(this).closest("form");
 

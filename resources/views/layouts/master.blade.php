@@ -465,10 +465,10 @@
                                         </span>
                                         <div class="nofity-list">
                                             @forelse($notifications->take(5) as $notification)
-                                                <a href="#" class="notify-item">
+                                                <a href="{{ route('notifications.list', app()->getLocale()) }}" class="notify-item">
                                                     <div class="notify-thumb"><i class="fas fa-comments btn-info"></i></div>
                                                     <div class="notify-text">
-                                                        <p>{{ $notification->data['message'] }}</p>
+                                                        <p>{{ data_get($notification->data, 'message', __('Notification')) }}</p>
                                                         <span>
                                                             {{ Carbon\Carbon::parse($notification->created_at)->diffForHumans() ?? '0';}}
                                                         </span>
