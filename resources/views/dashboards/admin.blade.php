@@ -161,28 +161,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3 mt-md-5 mb-3">
-                        <a href="{{ route('disputes.request.list', app()->getLocale()) }}" style="text-decoration: none; color: inherit;">
-                            <div class="card cursor-pointer">
-                                <div class="seo-fact sbg3">
-                                    <div class="p-4 d-flex justify-content-between align-items-center">
-                                        <div class="seofct-icon">
-                                            <i class="fas fa-exchange-alt"></i>
-                                            {{ __('Reassignment Requests') }}
-                                        </div>
-                                        <h2>{{ $pending_reassignment_requests ?? '0' }}</h2>
-                                    </div>
-                                    <canvas id="" height="20"></canvas>
-                                    <div class="card-footer bg-dark-orange text-center">
-                                        <a href="{{ route('disputes.request.list', app()->getLocale()) }}" class="small-box-footer text-white">
-                                            {{ __('More info') }}
-                                            <i class="fas fa-arrow-circle-right"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
                     @canany(['isSuperAdmin','isAdmin'])
                         <div class="col-md-3 mt-md-5 mb-3">
                             <div class="card">

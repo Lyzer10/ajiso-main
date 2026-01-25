@@ -8,7 +8,6 @@ use App\Models\Metric;
 use App\Models\Dispute;
 use App\Models\TypeOfCase;
 use App\Models\Beneficiary;
-use App\Models\AssignmentRequest;
 use Illuminate\Support\Str;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
@@ -137,13 +136,6 @@ class HomeController extends Controller
             ];
         });
 
-        // Get reassignment requests summary for admins
-        $pending_reassignment_requests = AssignmentRequest::where('request_status', 'pending')
-            ->count();
-        
-        $accepted_reassignment_requests = AssignmentRequest::where('request_status', 'accepted')
-            ->count();
-
         return view('dashboards.admin', compact(
             'total_disputes',
             'total_staff',
@@ -153,9 +145,7 @@ class HomeController extends Controller
             'tos_data',
             'toc_data',
             'dis_data',
-            'performance',
-            'pending_reassignment_requests',
-            'accepted_reassignment_requests'
+            'performance'
         ));
     }
 
