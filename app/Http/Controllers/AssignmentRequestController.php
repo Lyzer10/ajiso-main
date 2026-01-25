@@ -281,6 +281,23 @@ class AssignmentRequestController extends Controller
          * If admin is reassigning directly, update the dispute and skip request creation
          */
         if ($isAdminUser) {
+            $previousStaffId = $dispute->staff_id;
+
+            $reasonDescription = trim((string) $request->input('reason_description', ''));
+            if ($reasonDescription === '') {
+                $reasonDescription = 'Admin direct reassignment';
+            }
+
+            // Record the reassignment request for audit/history purposes
+            AssignmentRequest::create([
+                'staff_id' => $previousStaffId,
+                'dispute_id' => $dispute->id,
+                'reason_description' => $reasonDescription,
+                'target_staff_id' => $targetStaffId,
+                'requester_user_id' => $user ? $user->id : null,
+                'request_status' => 'accepted',
+            ]);
+
             // Get the new staff member
             $newStaff = Staff::with('user.designation')
                 ->findOrFail($targetStaffId);

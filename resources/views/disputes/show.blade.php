@@ -1218,18 +1218,23 @@
     </script>
     <script type="text/javascript">
         $(function () {
+            var modal = $('#reassignmentRequestModal');
+            var select2ModalOptions = modal.length
+                ? { dropdownParent: modal, width: '100%' }
+                : { width: '100%' };
+
             var targetSelect = $('#target_staff_id');
             if (targetSelect.length) {
-                targetSelect.select2();
+                targetSelect.select2(select2ModalOptions);
             }
 
             // Initialize Select2 for optional staff selection (staff/paralegal)
             var targetSelectOptional = $('#target_staff_id_optional');
             if (targetSelectOptional.length) {
-                targetSelectOptional.select2({
+                targetSelectOptional.select2($.extend({
                     placeholder: "{{ __('No preference - Let admin decide') }}",
                     allowClear: true
-                });
+                }, select2ModalOptions));
             }
 
             @if ($errors->has('reason_description') || $errors->has('target_staff_id'))

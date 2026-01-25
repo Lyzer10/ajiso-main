@@ -142,7 +142,12 @@
                                                 {{ __('N/A') }}
                                             @endif
                                         </td>
-                                        <td>{{ Carbon\Carbon::parse($assignment_request->created_at)->diffForHumans() }}</td>
+                                        @php
+                                            $requestedAt = $assignment_request->created_at ?? $assignment_request->updated_at;
+                                        @endphp
+                                        <td>
+                                            {{ $requestedAt ? $requestedAt->diffForHumans() : __('N/A') }}
+                                        </td>
                                         <td>
                                             <span class="badge
                                                 @if ( $assignment_request->request_status  === 'accepted')
