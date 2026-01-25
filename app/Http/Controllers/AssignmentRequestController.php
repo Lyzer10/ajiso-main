@@ -211,6 +211,10 @@ class AssignmentRequestController extends Controller
          * If admin is reassigning directly, update the dispute and skip request creation
          */
         if ($isAdminUser) {
+            // Get the new staff member
+            $newStaff = Staff::with('user.designation')
+                ->findOrFail($targetStaffId);
+
             // Admin reassigns directly
             $dispute->staff_id = $targetStaffId;
             $dispute->save();
@@ -218,8 +222,39 @@ class AssignmentRequestController extends Controller
             // Log activity
             activity()->log('Directly reassigned case');
 
+            // Build notification message
+            $staff_title = trim((string) optional($newStaff->user->designation)->name);
+            $staff_name = trim(implode(' ', array_filter([
+                $newStaff->user->first_name ?? '',
+                $newStaff->user->middle_name ?? '',
+                $newStaff->user->last_name ?? '',
+            ])));
+            $staff_display_name = $staff_name;
+            if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
+                $staff_display_name = trim($staff_title . ' ' . $staff_name);
+            }
+
+            $staff_message = 'Habari, ' . $staff_display_name .
+                ', AJISO inapenda kukutaarifu kuwa, shauri lenye namba ya usajili No. ' . $dispute->dispute_no . 
+                ' limekupewa. Tembelea Mfumo wa ALAS kujua zaidi.' .
+                ' Ahsante.';
+
+            // Send notifications
+            try {
+                if (env('SEND_NOTIFICATIONS') == TRUE) {
+                    $staff_dest_addr = SmsService::normalizeRecipient($newStaff->user->tel_no);
+                    $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
+                    $sms = new SmsService();
+                    $sms->sendSMS($staff_recipients, $staff_message);
+
+                    Notification::send($newStaff->user, new \App\Notifications\StaffDisputeAssigned($newStaff, $dispute, $staff_message));
+                }
+            } catch (\Throwable $th) {
+                // Log error but don't fail the reassignment
+            }
+
             return redirect()->to(route('dispute.show', [app()->getLocale(), $dispute->id], false))
-                ->with('status', 'Case reassigned successfully.');
+                ->with('status', 'Case reassigned successfully and notification sent to the assigned staff member.');
         }
 
         /**
@@ -467,29 +502,52 @@ class AssignmentRequestController extends Controller
                 // SMS
                 if (env('SEND_NOTIFICATIONS') == TRUE) {
 
-                    # Notify new assigned assigned via SMS
+                    # Notify staff who made the request via SMS
                     $sms = new SmsService();
                     $sms->sendSMS($staff_recipients, $staff_message);
 
                     // Database & email 
 
-                    # Notify new assigned assigned via email & DB
+                    # Notify staff who made the request via email & DB
                     Notification::send($staff->user, new RequestAccepted($staff, $dispute, $staff_message));
+
+                    // If there's a target staff, also notify them about the new assignment
+                    if ($assignment_request->target_staff_id) {
+                        $targetStaff = Staff::with('user.designation')
+                            ->findOrFail($assignment_request->target_staff_id);
+
+                        $target_staff_title = trim((string) optional($targetStaff->user->designation)->name);
+                        $target_staff_name = trim(implode(' ', array_filter([
+                            $targetStaff->user->first_name ?? '',
+                            $targetStaff->user->middle_name ?? '',
+                            $targetStaff->user->last_name ?? '',
+                        ])));
+                        $target_staff_display_name = $target_staff_name;
+                        if ($target_staff_title !== '' && strtolower($target_staff_title) !== 'other') {
+                            $target_staff_display_name = trim($target_staff_title . ' ' . $target_staff_name);
+                        }
+
+                        $target_staff_dest_addr = SmsService::normalizeRecipient($targetStaff->user->tel_no);
+                        $target_staff_recipients = ['recipient_id' => 1, 'dest_addr' => $target_staff_dest_addr];
+
+                        $target_staff_message = 'Habari, ' . $target_staff_display_name .
+                            ', AJISO inapenda kukutaarifu kuwa, shauri lenye namba ya usajili No. ' . $dispute->dispute_no . 
+                            ' limekupewa. Tembelea Mfumo wa ALAS kujua zaidi. Ahsante.';
+
+                        $sms->sendSMS($target_staff_recipients, $target_staff_message);
+                        Notification::send($targetStaff->user, new \App\Notifications\StaffDisputeAssigned($targetStaff, $dispute, $target_staff_message));
+
+                        // Update dispute to assign to target staff
+                        $dispute->staff_id = $assignment_request->target_staff_id;
+                        $dispute->save();
+                    }
                 }
             } catch (\Throwable $th) {
                 throw $th;
             }
 
-            $assignUrl = route('dispute.assign', [
-                'locale' => app()->getLocale(),
-                'dispute' => $assignment_request->dispute_id,
-            ], false);
-            if (!empty($assignment_request->target_staff_id)) {
-                $assignUrl .= '?preferred_staff_id=' . (int) $assignment_request->target_staff_id;
-            }
-
-            return redirect()->to($assignUrl)
-                ->with('status', 'You accepted a reassignment request, please assign a new assignment.');
+            return redirect()->to(route('disputes.request.list', app()->getLocale(), false))
+                ->with('status', 'You approved a reassignment request successfully.');
         } else {
             return redirect()->back()
                 ->withErrors('errors', 'Accepting a reassignment request failed, please try again.');

@@ -45,11 +45,13 @@
                                 <tr>
                                     <th>{{ __('Id') }}</th>
                                     <th>{{ __('Dispute No') }}</th>
+                                    <th>{{ __('Beneficiary') }}</th>
+                                    <th>{{ __('Case Status') }}</th>
                                     <th>{{ __('Reason Description') }}</th>
-                                    <th>{{ __('Staff') }}</th>
+                                    <th>{{ __('Current Staff') }}</th>
                                     <th>{{ __('Requested Assistance From') }}</th>
                                     <th>{{ __('Requested') }}</th>
-                                    <th>{{ __('Status') }}</th>
+                                    <th>{{ __('Request Status') }}</th>
                                     <th>{{ __('Action') }}</th>
                                 </tr>
                             </thead>
@@ -59,12 +61,35 @@
                                     <tr>
                                         <td>{{ '#'.$assignment_request->id }}</td>
                                         <td>
-                                            <a href="{{ route('dispute.show', [app()->getLocale(), $assignment_request->dispute_id]) }}" class="text-secondary" title="{{  __('Click to view dispute') }}">
+                                            <a href="{{ route('dispute.show', [app()->getLocale(), $assignment_request->dispute_id]) }}" class="text-secondary font-weight-bold" title="{{  __('Click to view dispute') }}">
                                                 {{ $assignment_request->dispute->dispute_no }}
                                             </a>
                                         </td>
                                         <td>
-                                            {{ __($assignment_request->reason_description) }}
+                                            @php
+                                                $beneficiary = $assignment_request->dispute->reportedBy;
+                                                $beneficiaryName = trim(implode(' ', array_filter([
+                                                    $beneficiary->first_name ?? '',
+                                                    $beneficiary->middle_name ?? '',
+                                                    $beneficiary->last_name ?? ''
+                                                ])));
+                                            @endphp
+                                            <a href="{{ route('beneficiary.show', [app()->getLocale(), $assignment_request->dispute->beneficiary_id]) }}" class="text-secondary">
+                                                {{ $beneficiaryName ?? 'N/A' }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            @php
+                                                $statusSlug = \Illuminate\Support\Str::slug($assignment_request->dispute->disputeStatus->dispute_status ?? 'pending');
+                                            @endphp
+                                            <span class="badge badge-info">
+                                                {{ $assignment_request->dispute->disputeStatus->dispute_status ?? 'N/A' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span title="{{ $assignment_request->reason_description }}">
+                                                {{ Illuminate\Support\Str::limit($assignment_request->reason_description, 50) }}
+                                            </span>
                                         </td>
                                         <td>
                                             @if (is_null($assignment_request->staff_id))
@@ -95,12 +120,14 @@
                                         </td>
                                         <td>
                                             @if ($assignment_request->targetStaff && $assignment_request->targetStaff->user)
-                                                {{ $assignment_request->targetStaff->user->first_name.' '
-                                                    .$assignment_request->targetStaff->user->middle_name.' '
-                                                    .$assignment_request->targetStaff->user->last_name
-                                                }}
+                                                <a href="{{ route('staff.show', [app()->getLocale(), $assignment_request->target_staff_id]) }}" title="{{  __('Click to view staff') }}">
+                                                    {{ $assignment_request->targetStaff->user->first_name.' '
+                                                        .$assignment_request->targetStaff->user->middle_name.' '
+                                                        .$assignment_request->targetStaff->user->last_name
+                                                    }}
+                                                </a>
                                                 @if ($assignment_request->targetStaff->center)
-                                                    {{ ' | '.$assignment_request->targetStaff->center->name }}
+                                                    <br><small>{{ $assignment_request->targetStaff->center->name }}</small>
                                                 @endif
                                             @else
                                                 {{ __('N/A') }}
@@ -108,42 +135,49 @@
                                         </td>
                                         <td>{{ Carbon\Carbon::parse($assignment_request->created_at)->diffForHumans() }}</td>
                                         <td>
-                                            {{-- TODO:Add a column color scheme in status table and compare here--}}
-                                            <span class="
+                                            <span class="badge
                                                 @if ( $assignment_request->request_status  === 'accepted')
-                                                    text-success
+                                                    badge-success
                                                 @elseif ( $assignment_request->request_status  === 'pending')
-                                                    text-warning font-italic
+                                                    badge-warning
                                                 @else
-                                                    text-danger
+                                                    badge-danger
                                                 @endif
                                             ">
                                             {{ __($assignment_request->request_status) }}
                                             </span>
                                         </td>
                                         @if ($assignment_request->request_status  === 'pending')
-                                        <td class="d-flex">
-                                            <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}">
+                                        <td class="d-flex justify-content-center">
+                                            <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" style="margin-right: 5px;">
                                                 @csrf
                                                 @METHOD('PUT')
                                                 <input type="hidden" name="res" value="accepted">
-                                                    <i class="fas fa-check fa-fw text-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}"></i>
-                                            </form> /
+                                                <i class="fas fa-check fa-fw text-success show_accept cursor-pointer" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}"></i>
+                                            </form>
                                             <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}">
                                                 @csrf
                                                 @METHOD('PUT')
                                                 <input type="hidden" name="res" value="rejected">
-                                                    <i class="fas fa-times fa-fw text-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}"></i>
+                                                <i class="fas fa-times fa-fw text-danger show_reject cursor-pointer" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}"></i>
                                             </form>
                                         </td>
                                         @else
-                                        <td>{{  __('N/A') }}</td>
+                                        <td>
+                                            @if ($assignment_request->request_status === 'accepted')
+                                                <a href="{{ route('dispute.show', [app()->getLocale(), $assignment_request->dispute_id]) }}" class="btn btn-sm btn-info text-white" title="{{ __('View case details') }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            @else
+                                                {{  __('N/A') }}
+                                            @endif
+                                        </td>
                                         @endif
                                     </tr>
                                     @endforeach
                                 @else
                                 <tr>
-                                    <td class="p-1">{{ __('No requests found') }}</td>
+                                    <td class="p-1" colspan="10">{{ __('No requests found') }}</td>
                                 </tr>
                                 @endif
                             </tbody>
