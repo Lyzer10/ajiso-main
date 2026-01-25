@@ -150,7 +150,9 @@ class AssignmentRequestController extends Controller
     public function store(Request $request)
     {
         $role = optional(auth()->user()->role)->role_abbreviation;
-        $requiresTargetStaff = $role === 'staff';
+        $isAdminUser = in_array($role, ['admin', 'superadmin'], true);
+        $requiresTargetStaff = $isAdminUser; // Admin needs to select target staff
+        $reasonIsRequired = !$isAdminUser; // Reason required only for non-admins
 
         /**
          * Get a validator for an incoming store request.
@@ -160,7 +162,12 @@ class AssignmentRequestController extends Controller
          */
         $this->validate($request, [
             'dispute' => ['required', 'integer', 'exists:disputes,id'],
-            'reason_description' => ['required', 'string', 'max:255'],
+            'reason_description' => [
+                Rule::requiredIf($reasonIsRequired),
+                'nullable',
+                'string', 
+                'max:255'
+            ],
             'target_staff_id' => [
                 Rule::requiredIf($requiresTargetStaff),
                 'nullable',
@@ -182,6 +189,7 @@ class AssignmentRequestController extends Controller
             ->staff->id ?? NULL;
 
         if ($isAdminUser) {
+            // For admin, staff is the current dispute's staff (who is requesting reassignment)
             $staff = $dispute->staff_id ?? null;
             if (is_null($staff)) {
                 return redirect()->back()
@@ -200,7 +208,22 @@ class AssignmentRequestController extends Controller
         }
 
         /**
-         * Create a new user instance for a valid registration.
+         * If admin is reassigning directly, update the dispute and skip request creation
+         */
+        if ($isAdminUser) {
+            // Admin reassigns directly
+            $dispute->staff_id = $targetStaffId;
+            $dispute->save();
+
+            // Log activity
+            activity()->log('Directly reassigned case');
+
+            return redirect()->to(route('dispute.show', [app()->getLocale(), $dispute->id], false))
+                ->with('status', 'Case reassigned successfully.');
+        }
+
+        /**
+         * Create a new assignment request for non-admin users.
          *
          * @param  array $assignment_request
          * @return \App\Models\AssignmentRequest
@@ -214,7 +237,7 @@ class AssignmentRequestController extends Controller
         $assignment_request->target_staff_id = $targetStaffId;
 
         /**
-         * Save the type to the database
+         * Save the request to the database
          */
 
         $assignment_request->save();
