@@ -155,14 +155,14 @@
                                         </td>
                                         @if ($assignment_request->request_status  === 'pending')
                                         <td>
-                                            <div class="d-flex align-items-center justify-content-center flex-wrap">
-                                                <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-flex align-items-center mr-2">
-                                                    @csrf
-                                                    @METHOD('PUT')
-                                                    <input type="hidden" name="res" value="accepted">
-                                                    @canany(['isAdmin', 'isSuperAdmin'])
-                                                        @if (isset($availableStaff) && $availableStaff->count())
-                                                            <select name="target_staff_id" class="form-control form-control-sm mr-2 select2" required style="min-width: 220px;">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                @canany(['isAdmin', 'isSuperAdmin'])
+                                                    @if (isset($availableStaff) && $availableStaff->count())
+                                                        <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-flex align-items-center w-100">
+                                                            @csrf
+                                                            @METHOD('PUT')
+                                                            <input type="hidden" name="res" value="accepted">
+                                                            <select name="target_staff_id" class="form-control form-control-sm mr-2 select2" required style="min-width: 200px; max-width: 250px;">
                                                                 <option hidden disabled {{ $assignment_request->target_staff_id ? '' : 'selected' }} value>
                                                                     {{ __('Select legal aid provider') }}
                                                                 </option>
@@ -178,20 +178,36 @@
                                                                     </option>
                                                                 @endforeach
                                                             </select>
-                                                        @endif
-                                                    @endcanany
-                                                    <button type="button" class="btn btn-sm btn-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                                <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}">
-                                                    @csrf
-                                                    @METHOD('PUT')
-                                                    <input type="hidden" name="res" value="rejected">
-                                                    <button type="button" class="btn btn-sm btn-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </form>
+                                                            <div class="d-flex align-items-center" style="gap: 5px;">
+                                                                <button type="button" class="btn btn-sm btn-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}">
+                                                                    <i class="fas fa-check"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-danger show_reject" data-request-id="{{ $assignment_request->id }}" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
+                                                                    <i class="fas fa-times"></i>
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    @endif
+                                                @else
+                                                    <div class="d-flex align-items-center" style="gap: 5px;">
+                                                        <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-inline">
+                                                            @csrf
+                                                            @METHOD('PUT')
+                                                            <input type="hidden" name="res" value="accepted">
+                                                            <button type="button" class="btn btn-sm btn-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                        </form>
+                                                        <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}" class="d-inline">
+                                                            @csrf
+                                                            @METHOD('PUT')
+                                                            <input type="hidden" name="res" value="rejected">
+                                                            <button type="button" class="btn btn-sm btn-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                @endcanany
                                             </div>
                                         </td>
                                         @else
@@ -275,7 +291,17 @@
     <script type="text/javascript">
         $(document).on('click', '.show_reject', function(event) {
 
-                var form =  $(this).closest("form");
+                var form;
+                var requestId = $(this).data("request-id");
+                
+                // If button has request-id, find the reject form by action URL
+                if (requestId) {
+                    var rejectUrl = "{{ route('dispute.request.reject', [app()->getLocale(), ':id']) }}".replace(':id', requestId);
+                    form = $('form[action="' + rejectUrl + '"]');
+                } else {
+                    // Otherwise use closest form
+                    form = $(this).closest("form");
+                }
 
                 var name = $(this).data("name");
 
