@@ -48,7 +48,7 @@
                                     <th>{{ __('Beneficiary') }}</th>
                                     <th>{{ __('Case Status') }}</th>
                                     <th>{{ __('Reason Description') }}</th>
-                                    <th>{{ __('Current Staff') }}</th>
+                                    <th>{{ __('Requested By') }}</th>
                                     <th>{{ __('Requested Assistance From') }}</th>
                                     <th>{{ __('Requested') }}</th>
                                     <th>{{ __('Request Status') }}</th>
@@ -74,9 +74,13 @@
                                                     $beneficiary->last_name ?? ''
                                                 ])));
                                             @endphp
-                                            <a href="{{ route('beneficiary.show', [app()->getLocale(), $assignment_request->dispute->beneficiary_id]) }}" class="text-secondary">
+                                            @if (!empty($assignment_request->dispute->beneficiary_id))
+                                                <a href="{{ route('beneficiary.show', [app()->getLocale(), $assignment_request->dispute->beneficiary_id]) }}" class="text-secondary">
+                                                    {{ $beneficiaryName ?? 'N/A' }}
+                                                </a>
+                                            @else
                                                 {{ $beneficiaryName ?? 'N/A' }}
-                                            </a>
+                                            @endif
                                         </td>
                                         <td>
                                             @php
@@ -92,30 +96,32 @@
                                             </span>
                                         </td>
                                         <td>
-                                            @if (is_null($assignment_request->staff_id))
+                                            @php
+                                                $requester = $assignment_request->requestedBy ?: $assignment_request->requesterUser;
+                                            @endphp
+                                            @if ($assignment_request->staff_id && $requester)
                                                 @canany(['isAdmin', 'isStaff', 'isSuperAdmin'])
-                                                    <a href="{{ route('dispute.assign', [app()->getLocale(), $assignment_request->dispute_id]) }}" class="text-danger" title="{{  __('Click to assigned legal aid provider') }}">
-                                                    {{ __('Unassigned') }}
+                                                    <a href="{{ route('staff.show', [app()->getLocale(), $assignment_request->staff_id, ]) }}" title="{{  __('Click to view legal aid provider') }}">
+                                                        {{ $requester->first_name.' '
+                                                            .$requester->middle_name.' '
+                                                            .$requester->last_name
+                                                        }}
                                                     </a>
                                                 @elsecanany(['isClerk', 'isStaff'])
-                                                    <a class="text-danger" >{{ __('Unassigned') }}</a>
+                                                    <span class="text-danger">
+                                                        {{ $requester->first_name.' '
+                                                            .$requester->middle_name.' '
+                                                            .$requester->last_name
+                                                        }}
+                                                    </span>
                                                 @endcanany
+                                            @elseif ($requester)
+                                                {{ $requester->first_name.' '
+                                                    .$requester->middle_name.' '
+                                                    .$requester->last_name
+                                                }}
                                             @else
-                                                @canany(['isAdmin', 'isStaff', 'isSuperAdmin'])
-                                                <a href="{{ route('staff.show', [app()->getLocale(), $assignment_request->staff_id, ]) }}" title="{{  __('Click to view assigned legal aid provider') }}">
-                                                    {{ $assignment_request->requestedBy->first_name.' '
-                                                        .$assignment_request->requestedBy->middle_name.' '
-                                                        .$assignment_request->requestedBy->last_name
-                                                    }}
-                                                </a>
-                                                @elsecanany(['isClerk', 'isStaff'])
-                                                        <a class="text-danger" >
-                                                            {{ $assignment_request->requestedBy->first_name.' '
-                                                                .$assignment_request->requestedBy->middle_name.' '
-                                                                .$assignment_request->requestedBy->last_name
-                                                            }}
-                                                        </a>
-                                                @endcanany
+                                                {{ __('N/A') }}
                                             @endif
                                         </td>
                                         <td>
@@ -148,19 +154,45 @@
                                             </span>
                                         </td>
                                         @if ($assignment_request->request_status  === 'pending')
-                                        <td class="d-flex justify-content-center">
-                                            <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" style="margin-right: 5px;">
-                                                @csrf
-                                                @METHOD('PUT')
-                                                <input type="hidden" name="res" value="accepted">
-                                                <i class="fas fa-check fa-fw text-success show_accept cursor-pointer" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}"></i>
-                                            </form>
-                                            <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}">
-                                                @csrf
-                                                @METHOD('PUT')
-                                                <input type="hidden" name="res" value="rejected">
-                                                <i class="fas fa-times fa-fw text-danger show_reject cursor-pointer" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}"></i>
-                                            </form>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-center flex-wrap">
+                                                <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-flex align-items-center mr-2">
+                                                    @csrf
+                                                    @METHOD('PUT')
+                                                    <input type="hidden" name="res" value="accepted">
+                                                    @canany(['isAdmin', 'isSuperAdmin'])
+                                                        @if (isset($availableStaff) && $availableStaff->count())
+                                                            <select name="target_staff_id" class="form-control form-control-sm mr-2 select2" required style="min-width: 220px;">
+                                                                <option hidden disabled {{ $assignment_request->target_staff_id ? '' : 'selected' }} value>
+                                                                    {{ __('Select legal aid provider') }}
+                                                                </option>
+                                                                @foreach ($availableStaff as $staffMember)
+                                                                    @continue($assignment_request->staff_id && (int) $staffMember->id === (int) $assignment_request->staff_id)
+                                                                    <option value="{{ $staffMember->id }}"
+                                                                        {{ (int) $assignment_request->target_staff_id === (int) $staffMember->id ? 'selected' : '' }}>
+                                                                        {{ $staffMember->user->first_name.' '
+                                                                            .$staffMember->user->middle_name.' '
+                                                                            .$staffMember->user->last_name.' | '
+                                                                            .(optional($staffMember->center)->name ?? __('N/A'))
+                                                                        }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        @endif
+                                                    @endcanany
+                                                    <button type="button" class="btn btn-sm btn-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}">
+                                                    @csrf
+                                                    @METHOD('PUT')
+                                                    <input type="hidden" name="res" value="rejected">
+                                                    <button type="button" class="btn btn-sm btn-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                         @else
                                         <td>
@@ -195,6 +227,12 @@
 
     {{-- sweetalert --}}
     <script src="{{ asset('plugins/sweetalert/sweetalert.min.js') }}"></script>
+
+    <script type="text/javascript">
+        $(function () {
+            $('.select2').select2();
+        });
+    </script>
 
     {{-- Accept --}}
     <script type="text/javascript">

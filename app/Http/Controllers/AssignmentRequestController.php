@@ -37,9 +37,10 @@ class AssignmentRequestController extends Controller
     {
 
         // Get all the requests nd bind them to the  view
-        $assignment_requests = AssignmentRequest::has('requestedBy')
+        $assignment_requests = AssignmentRequest::query()
             ->with(
                 'requestedBy:first_name,middle_name,last_name,user_no',
+                'requesterUser:id,first_name,middle_name,last_name,user_no',
                 'dispute:id,dispute_no',
                 'targetStaff.user:id,first_name,middle_name,last_name,salutation_id',
                 'targetStaff.center:id,name'
@@ -50,6 +51,7 @@ class AssignmentRequestController extends Controller
                     'dispute_id',
                     'reason_description',
                     'staff_id',
+                    'requester_user_id',
                     'target_staff_id',
                     'request_status',
                     'created_at'
@@ -58,7 +60,17 @@ class AssignmentRequestController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('dispute-assignment.list', compact('assignment_requests'));
+        $availableStaff = Staff::has('user')
+            ->with('user.designation:id,name', 'center:id,name')
+            ->whereHas('user', function ($query) {
+                $query->where('is_active', 1);
+            })
+            ->whereHas('user.role', function ($query) {
+                $query->where('role_abbreviation', 'staff');
+            })
+            ->get(['id', 'user_id', 'center_id']);
+
+        return view('dispute-assignment.list', compact('assignment_requests', 'availableStaff'));
     }
 
     /**
@@ -78,9 +90,10 @@ class AssignmentRequestController extends Controller
                 )->staff->id ?? NULL;
 
             // Get disputes requests sent by the selected staff
-            $assignment_requests = AssignmentRequest::has('requestedBy')
+            $assignment_requests = AssignmentRequest::query()
                 ->with(
                     'requestedBy:first_name,middle_name,last_name,user_no',
+                    'requesterUser:id,first_name,middle_name,last_name,user_no',
                     'dispute:id,dispute_no',
                     'targetStaff.user:id,first_name,middle_name,last_name,salutation_id',
                     'targetStaff.center:id,name'
@@ -92,6 +105,7 @@ class AssignmentRequestController extends Controller
                         'dispute_id',
                         'reason_description',
                         'staff_id',
+                        'requester_user_id',
                         'target_staff_id',
                         'request_status',
                         'created_at'
@@ -122,7 +136,52 @@ class AssignmentRequestController extends Controller
         }
 
         //return $disputes;
-        return view('dispute-assignment.view', compact('assignment_requests', 'assigned_disputes'));
+        $showAssignedCases = true;
+        return view('dispute-assignment.view', compact('assignment_requests', 'assigned_disputes', 'showAssignedCases'));
+    }
+
+    /**
+     * Display a listing of the resource for paralegal requests.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function myParalegalList()
+    {
+        $role = optional(auth()->user()->role)->role_abbreviation;
+        if ($role !== 'paralegal') {
+            return redirect()->back()
+                ->withErrors('errors', 'You are not authorized to perform this action.');
+        }
+
+        $userId = auth()->id();
+
+        $assignment_requests = AssignmentRequest::query()
+            ->with(
+                'requesterUser:id,first_name,middle_name,last_name,user_no',
+                'dispute:id,dispute_no',
+                'targetStaff.user:id,first_name,middle_name,last_name,salutation_id',
+                'targetStaff.center:id,name'
+            )
+            ->where('requester_user_id', $userId)
+            ->select(
+                [
+                    'id',
+                    'dispute_id',
+                    'reason_description',
+                    'staff_id',
+                    'requester_user_id',
+                    'target_staff_id',
+                    'request_status',
+                    'created_at'
+                ]
+            )
+            ->latest()
+            ->paginate(10, ['*'], 'requests_page');
+
+        $assigned_disputes = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+        $showAssignedCases = false;
+
+        return view('dispute-assignment.view', compact('assignment_requests', 'assigned_disputes', 'showAssignedCases'));
     }
 
     /**
@@ -149,8 +208,11 @@ class AssignmentRequestController extends Controller
      */
     public function store(Request $request)
     {
-        $role = optional(auth()->user()->role)->role_abbreviation;
+        $user = auth()->user();
+        $role = optional($user->role)->role_abbreviation;
         $isAdminUser = in_array($role, ['admin', 'superadmin'], true);
+        $isParalegalUser = $role === 'paralegal';
+        $isStaffUser = $role === 'staff';
         $requiresTargetStaff = $isAdminUser; // Admin needs to select target staff
         $reasonIsRequired = !$isAdminUser; // Reason required only for non-admins
 
@@ -180,13 +242,14 @@ class AssignmentRequestController extends Controller
         // Get the dispute
         $dispute = Dispute::findOrFail((int) $request->dispute) ?? NULL;
 
-        // Get the authenticated staff (requester)
-        $staff = User::has('staff')
-            ->with('staff')
-            ->findOrFail(
-                auth()->user()->id
-            )
-            ->staff->id ?? NULL;
+        // Get the authenticated staff (requester) if available
+        $staff = null;
+        if ($isStaffUser) {
+            $staff = User::has('staff')
+                ->with('staff')
+                ->findOrFail($user->id)
+                ->staff->id ?? null;
+        }
 
         if ($isAdminUser) {
             // For admin, staff is the current dispute's staff (who is requesting reassignment)
@@ -196,13 +259,13 @@ class AssignmentRequestController extends Controller
                     ->withErrors('errors', 'This dispute has no assigned legal aid provider to request reassignment.');
             }
         }
-        if (!$isAdminUser && !empty($dispute->staff_id) && (int) $dispute->staff_id !== (int) $staff) {
+        if ($isStaffUser && !$isAdminUser && !empty($dispute->staff_id) && (int) $dispute->staff_id !== (int) $staff) {
             return redirect()->back()
                 ->withErrors('errors', 'You are not assigned to this dispute.');
         }
 
         $targetStaffId = $request->input('target_staff_id');
-        if (!is_null($targetStaffId) && (int) $targetStaffId === (int) $staff) {
+        if (!is_null($targetStaffId) && !is_null($staff) && (int) $targetStaffId === (int) $staff) {
             return redirect()->back()
                 ->withErrors('errors', 'Please select a different legal aid provider.');
         }
@@ -270,6 +333,7 @@ class AssignmentRequestController extends Controller
         $assignment_request->dispute_id = $request->dispute;
         $assignment_request->reason_description = $request->reason_description;
         $assignment_request->target_staff_id = $targetStaffId;
+        $assignment_request->requester_user_id = $user ? $user->id : null;
 
         /**
          * Save the request to the database
@@ -286,18 +350,27 @@ class AssignmentRequestController extends Controller
             activity()->log('Sent re(un)assignment request');
 
 
-            $staff = Staff::with('user.designation')
-                ->findOrFail($assignment_request->staff_id);
-
-            $staff_title = trim((string) optional($staff->user->designation)->name);
-            $staff_name  = trim(implode(' ', array_filter([
-                $staff->user->first_name ?? '',
-                $staff->user->middle_name ?? '',
-                $staff->user->last_name ?? '',
-            ])));
-            $staff_display_name = $staff_name;
-            if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
-                $staff_display_name = trim($staff_title . ' ' . $staff_name);
+            $requesterUser = $user;
+            $staff_display_name = '';
+            if ($assignment_request->staff_id) {
+                $staff = Staff::with('user.designation')
+                    ->findOrFail($assignment_request->staff_id);
+                $requesterUser = $staff->user;
+                $staff_title = trim((string) optional($staff->user->designation)->name);
+                $staff_name  = trim(implode(' ', array_filter([
+                    $staff->user->first_name ?? '',
+                    $staff->user->middle_name ?? '',
+                    $staff->user->last_name ?? '',
+                ])));
+                $staff_display_name = $staff_title !== '' && strtolower($staff_title) !== 'other'
+                    ? trim($staff_title . ' ' . $staff_name)
+                    : $staff_name;
+            } elseif ($requesterUser) {
+                $staff_display_name = trim(implode(' ', array_filter([
+                    $requesterUser->first_name ?? '',
+                    $requesterUser->middle_name ?? '',
+                    $requesterUser->last_name ?? '',
+                ])));
             }
 
             $reason = trim((string) $assignment_request->reason_description);
@@ -331,20 +404,24 @@ class AssignmentRequestController extends Controller
 
                 if (env('SEND_NOTIFICATIONS') == TRUE) {
                     # Notify requester via SMS
-                    $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
-                    $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
+                    $staff_dest_addr = $requesterUser ? SmsService::normalizeRecipient($requesterUser->tel_no) : null;
+                    $staff_recipients = $staff_dest_addr ? ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr] : null;
                     $sms = new SmsService();
                     $staff_message = 'Habari, ' . $staff_display_name .
                         ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
                         ' lenye namba ya usajili No. ' . $dispute->dispute_no . ' limepokelewa' .
                         '. Tembelea Mfumo wa ALAS kujua zaidi.' .
                         ' Ahsante.';
-                    $sms->sendSMS($staff_recipients, $staff_message);
+                    if ($staff_recipients) {
+                        $sms->sendSMS($staff_recipients, $staff_message);
+                    }
 
                     // Database & email 
 
                     # Notify requester via email & DB
-                    Notification::send($staff->user, new AssignmentRequestNotice($staff, $dispute, $staff_message));
+                    if ($requesterUser) {
+                        Notification::send($requesterUser, new AssignmentRequestNotice($requesterUser, $dispute, $staff_message));
+                    }
 
                     $adminUsers = User::where('is_active', 1)
                         ->whereHas('role', function ($query) {
@@ -365,7 +442,9 @@ class AssignmentRequestController extends Controller
                     }
 
                     if ($adminUsers->isNotEmpty()) {
-                        Notification::send($adminUsers, new AssignmentRequestNotice($staff, $dispute, $admin_message));
+                        if ($requesterUser) {
+                            Notification::send($adminUsers, new AssignmentRequestNotice($requesterUser, $dispute, $admin_message));
+                        }
                     }
                 }
             } catch (\Throwable $th) {
@@ -435,7 +514,8 @@ class AssignmentRequestController extends Controller
          * @return \Illuminate\Contracts\Validation\Validator
          */
         $this->validate($request, [
-            'res' => ['required', 'string', 'min:3', 'max:255']
+            'res' => ['required', 'string', 'min:3', 'max:255'],
+            'target_staff_id' => ['nullable', 'integer', 'exists:staff,id'],
         ]);
 
         /**
@@ -452,7 +532,14 @@ class AssignmentRequestController extends Controller
                 ->withErrors('errors', 'This request has already been processed.');
         }
 
+        $targetStaffId = $request->input('target_staff_id') ?: $assignment_request->target_staff_id;
+        if (is_null($targetStaffId)) {
+            return redirect()->back()
+                ->withErrors('errors', 'Please select a legal aid provider to assign.');
+        }
+
         $assignment_request->request_status = $request->res;
+        $assignment_request->target_staff_id = $targetStaffId;
 
         $assignment_request->update();
 
@@ -464,27 +551,35 @@ class AssignmentRequestController extends Controller
             // Log user activity
             activity()->log('Accepted re(un)assignment request');
 
-            // Get the authenticated staff
-            $staff = Staff::with('user.designation')
-                ->findOrFail((int) $assignment_request->staff_id);
+            // Get the requester (staff or paralegal)
+            $requesterUser = null;
+            if ($assignment_request->staff_id) {
+                $staff = Staff::with('user.designation')
+                    ->findOrFail((int) $assignment_request->staff_id);
+                $requesterUser = $staff->user;
+            } elseif ($assignment_request->requester_user_id) {
+                $requesterUser = User::find($assignment_request->requester_user_id);
+            }
 
             // Get the dispute
             $dispute = Dispute::findOrFail((int) $assignment_request->dispute_id) ?? NULL;
 
             // Staff infos
-            $staff_title = trim((string) optional($staff->user->designation)->name);
-            $staff_name = trim(implode(' ', array_filter([
-                $staff->user->first_name ?? '',
-                $staff->user->middle_name ?? '',
-                $staff->user->last_name ?? '',
-            ])));
-            $staff_display_name = $staff_name;
-            if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
-                $staff_display_name = trim($staff_title . ' ' . $staff_name);
+            $staff_display_name = '';
+            if ($requesterUser) {
+                $staff_title = trim((string) optional($requesterUser->designation)->name);
+                $staff_name = trim(implode(' ', array_filter([
+                    $requesterUser->first_name ?? '',
+                    $requesterUser->middle_name ?? '',
+                    $requesterUser->last_name ?? '',
+                ])));
+                $staff_display_name = $staff_title !== '' && strtolower($staff_title) !== 'other'
+                    ? trim($staff_title . ' ' . $staff_name)
+                    : $staff_name;
             }
 
-            $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
-            $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
+            $staff_dest_addr = $requesterUser ? SmsService::normalizeRecipient($requesterUser->tel_no) : null;
+            $staff_recipients = $staff_dest_addr ? ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr] : null;
 
             $staff_message = 'Habari, ' . $staff_display_name .
                 ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
@@ -504,12 +599,16 @@ class AssignmentRequestController extends Controller
 
                     # Notify staff who made the request via SMS
                     $sms = new SmsService();
-                    $sms->sendSMS($staff_recipients, $staff_message);
+                    if ($staff_recipients) {
+                        $sms->sendSMS($staff_recipients, $staff_message);
+                    }
 
                     // Database & email 
 
                     # Notify staff who made the request via email & DB
-                    Notification::send($staff->user, new RequestAccepted($staff, $dispute, $staff_message));
+                    if ($requesterUser) {
+                        Notification::send($requesterUser, new RequestAccepted($requesterUser, $dispute, $staff_message));
+                    }
 
                     // If there's a target staff, also notify them about the new assignment
                     if ($assignment_request->target_staff_id) {
@@ -605,27 +704,35 @@ class AssignmentRequestController extends Controller
             activity()->log('Rejected re(un)assignment request');
 
 
-            // Get the authenticated staff
-            $staff = Staff::with('user.designation')
-                ->findOrFail((int) $assignment_request->staff_id);
+            // Get the requester (staff or paralegal)
+            $requesterUser = null;
+            if ($assignment_request->staff_id) {
+                $staff = Staff::with('user.designation')
+                    ->findOrFail((int) $assignment_request->staff_id);
+                $requesterUser = $staff->user;
+            } elseif ($assignment_request->requester_user_id) {
+                $requesterUser = User::find($assignment_request->requester_user_id);
+            }
 
             // Get the dispute
             $dispute = Dispute::findOrFail((int) $assignment_request->dispute_id) ?? NULL;
 
             // Staff infos
-            $staff_title = trim((string) optional($staff->user->designation)->name);
-            $staff_name = trim(implode(' ', array_filter([
-                $staff->user->first_name ?? '',
-                $staff->user->middle_name ?? '',
-                $staff->user->last_name ?? '',
-            ])));
-            $staff_display_name = $staff_name;
-            if ($staff_title !== '' && strtolower($staff_title) !== 'other') {
-                $staff_display_name = trim($staff_title . ' ' . $staff_name);
+            $staff_display_name = '';
+            if ($requesterUser) {
+                $staff_title = trim((string) optional($requesterUser->designation)->name);
+                $staff_name = trim(implode(' ', array_filter([
+                    $requesterUser->first_name ?? '',
+                    $requesterUser->middle_name ?? '',
+                    $requesterUser->last_name ?? '',
+                ])));
+                $staff_display_name = $staff_title !== '' && strtolower($staff_title) !== 'other'
+                    ? trim($staff_title . ' ' . $staff_name)
+                    : $staff_name;
             }
 
-            $staff_dest_addr = SmsService::normalizeRecipient($staff->user->tel_no);
-            $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
+            $staff_dest_addr = $requesterUser ? SmsService::normalizeRecipient($requesterUser->tel_no) : null;
+            $staff_recipients = $staff_dest_addr ? ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr] : null;
 
             $staff_message = 'Habari, ' . $staff_display_name .
                 ', AJISO inapenda kukutaarifu kuwa, ombi lako la kubadilishiwa shauri' .
@@ -645,12 +752,16 @@ class AssignmentRequestController extends Controller
 
                     # Notify new assigned assigned via SMS
                     $sms = new SmsService();
-                    $sms->sendSMS($staff_recipients, $staff_message);
+                    if ($staff_recipients) {
+                        $sms->sendSMS($staff_recipients, $staff_message);
+                    }
 
                     // Database & email 
 
                     # Notify new assigned assigned via email & DB
-                    Notification::send($staff->user, new RequestRejected($staff, $dispute, $staff_message));
+                    if ($requesterUser) {
+                        Notification::send($requesterUser, new RequestRejected($requesterUser, $dispute, $staff_message));
+                    }
                 }
             } catch (\Throwable $th) {
                 throw $th;

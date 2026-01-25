@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\Staff;
+use App\Models\User;
 use App\Models\Dispute;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
@@ -23,19 +23,19 @@ class AssignmentRequest extends Notification
      *
      * @return void
      */
-    public function __construct(Staff $staff, Dispute $dispute, $message)
+    public function __construct(User $user, Dispute $dispute, $message)
     {
-        $title = trim((string) optional($staff->user->designation)->name);
+        $title = trim((string) optional($user->designation)->name);
         $name = trim(implode(' ', array_filter([
-            $staff->user->first_name ?? '',
-            $staff->user->middle_name ?? '',
-            $staff->user->last_name ?? '',
+            $user->first_name ?? '',
+            $user->middle_name ?? '',
+            $user->last_name ?? '',
         ])));
         $this->full_name = $title !== '' && strtolower($title) !== 'other'
             ? trim($title.' '.$name)
             : $name;
         $this->dispute_no = $dispute->dispute_no;
-        $this->notification_email = $staff->user->email;
+        $this->notification_email = $user->email;
         $this->notification_message = $message;
     }
 

@@ -99,57 +99,59 @@
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="header-title clearfix">
-                        {{ __('Cases Assigned To Me') }}
+            @if (!isset($showAssignedCases) || $showAssignedCases)
+                <div class="card">
+                    <div class="card-header">
+                        <div class="header-title clearfix">
+                            {{ __('Cases Assigned To Me') }}
+                        </div>
                     </div>
-                </div>
-                <div class="card-body" style="width: 100%;">
-                    <div class="table-responsive">
-                        <table class="table table-striped progress-table text-center">
-                            <thead class="text-capitalize text-white light-custom-color">
-                                <tr>
-                                    <th>{{ __('Dispute No') }}</th>
-                                    <th>{{ __('Beneficiary') }}</th>
-                                    <th>{{ __('Reported On') }}</th>
-                                    <th>{{ __('Status') }}</th>
-                                    <th>{{ __('Action') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if ($assigned_disputes->count())
-                                    @foreach ($assigned_disputes as $dispute)
-                                        <tr>
-                                            <td>{{ $dispute->dispute_no }}</td>
-                                            <td>
-                                                {{ $dispute->reportedBy->first_name.' '
-                                                    .$dispute->reportedBy->middle_name.' '
-                                                    .$dispute->reportedBy->last_name
-                                                }}
-                                            </td>
-                                            <td>{{ Carbon\Carbon::parse($dispute->reported_on)->format('d-m-Y') }}</td>
-                                            <td>
-                                                {{ __($dispute->disputeStatus->dispute_status ?? '') }}
-                                            </td>
-                                            <td>
-                                                <a href="{{ route('dispute.show', [app()->getLocale(), $dispute->id]) }}" class="btn btn-sm btn-outline-primary">
-                                                    {{ __('View') }}
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @else
+                    <div class="card-body" style="width: 100%;">
+                        <div class="table-responsive">
+                            <table class="table table-striped progress-table text-center">
+                                <thead class="text-capitalize text-white light-custom-color">
                                     <tr>
-                                        <td class="p-1" colspan="5">{{ __('No assigned cases found') }}</td>
+                                        <th>{{ __('Dispute No') }}</th>
+                                        <th>{{ __('Beneficiary') }}</th>
+                                        <th>{{ __('Reported On') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Action') }}</th>
                                     </tr>
-                                @endif
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @if ($assigned_disputes->count())
+                                        @foreach ($assigned_disputes as $dispute)
+                                            <tr>
+                                                <td>{{ $dispute->dispute_no }}</td>
+                                                <td>
+                                                    {{ $dispute->reportedBy->first_name.' '
+                                                        .$dispute->reportedBy->middle_name.' '
+                                                        .$dispute->reportedBy->last_name
+                                                    }}
+                                                </td>
+                                                <td>{{ Carbon\Carbon::parse($dispute->reported_on)->format('d-m-Y') }}</td>
+                                                <td>
+                                                    {{ __($dispute->disputeStatus->dispute_status ?? '') }}
+                                                </td>
+                                                <td>
+                                                    <a href="{{ route('dispute.show', [app()->getLocale(), $dispute->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                        {{ __('View') }}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td class="p-1" colspan="5">{{ __('No assigned cases found') }}</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                        {{ $assigned_disputes->count() ? $assigned_disputes->links() : '' }}
                     </div>
-                    {{ $assigned_disputes->count() ? $assigned_disputes->links() : '' }}
                 </div>
-            </div>
+            @endif
         </div>
         <!-- dispute list area end -->
     </div>

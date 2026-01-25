@@ -19,6 +19,7 @@ class AssignmentRequest extends Model
         'dispute_id',
         'reason_description',
         'staff_id',
+        'requester_user_id',
         'target_staff_id',
         'request_status'
     ];
@@ -43,6 +44,11 @@ class AssignmentRequest extends Model
     public function requestedBy(){
 
         return $this->hasOneThrough(User::class, Staff::class, 'id', 'id', 'staff_id', 'user_id');
+    }
+
+    public function requesterUser()
+    {
+        return $this->belongsTo(User::class, 'requester_user_id');
     }
 
     // Get the requested target staff for reassignment

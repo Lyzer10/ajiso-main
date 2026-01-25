@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\Staff;
+use App\Models\User;
 use App\Models\Dispute;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
@@ -18,10 +18,10 @@ class RequestRejected extends Notification
      *
      * @return void
      */
-    public function __construct(Staff $staff, Dispute $dispute, $message)
+    public function __construct(User $user, Dispute $dispute, $message)
     {
         $this->dispute_no = $dispute->dispute_no;
-        $this->notification_email = $staff->user->email;
+        $this->notification_email = $user->email;
         $this->notification_message = $message;
     }
 

@@ -70,11 +70,17 @@
                                     @if ($isAdminUser)
                                         {{ __('Reassign Case') }}
                                     @elseif ($isParalegalUser)
-                                        {{ __('Reassign To AJISO Admin') }}
+                                        {{ __('Request Legal Aid Provider') }}
                                     @else
                                         {{ __('Request Legal Aid Assistance') }}
                                     @endif
                                 </button>
+                            @endif
+                            @if ($isParalegalUser)
+                                <a href="{{ route('disputes.request.my-paralegal-list', app()->getLocale()) }}"
+                                    class="btn btn-sm btn-outline-secondary mr-2">
+                                    {{ __('My Requests') }}
+                                </a>
                             @endif
                             <a href="{{ route('disputes.list', app()->getLocale()) }}"
                                 class="btn btn-sm btn-primary text-white">{{ __('Disputes list') }}
@@ -1178,7 +1184,6 @@
             if (targetSelect.length) {
                 targetSelect.select2();
             }
-
             @if ($errors->has('reason_description') || $errors->has('target_staff_id'))
                 $('#reassignmentRequestModal').modal('show');
             @endif

@@ -1188,10 +1188,11 @@ class DisputeController extends Controller
         $isAdminUser = $user && ($user->can('isAdmin') || $user->can('isSuperAdmin'));
         $currentStaffId = optional($user->staff)->id;
         
-        // Allow reassignment for staff/paralegal assigned to the case or any admin
+        // Allow reassignment for staff assigned to the case, any admin, or paralegal request for assignment
         $canRequestReassignment = (
             ($currentStaffId && (int) $dispute->staff_id === (int) $currentStaffId && ($isStaffUser || $isParalegalUser))
             || $isAdminUser
+            || $isParalegalUser
         );
         $requiresTargetStaff = $isStaffUser || $isAdminUser;
 

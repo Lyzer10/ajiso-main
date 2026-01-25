@@ -155,6 +155,7 @@ Route::group([
     // Disputes Assignment Requests Module
     Route::get('/disputes/request', [App\Http\Controllers\AssignmentRequestController::class, 'index'])->name('disputes.request.list');
     Route::get('/disputes/request/staff/{staff}', [App\Http\Controllers\AssignmentRequestController::class, 'myList'])->name('disputes.request.my-list');
+    Route::get('/disputes/request/paralegal/my', [App\Http\Controllers\AssignmentRequestController::class, 'myParalegalList'])->name('disputes.request.my-paralegal-list');
     Route::get('/disputes/request/{dispute}/create', [App\Http\Controllers\AssignmentRequestController::class, 'create'])->name('dispute.request.create');
     Route::post('/disputes/request', [App\Http\Controllers\AssignmentRequestController::class, 'store'])->name('dispute.request.store');
     Route::put('/disputes/request/accept/{req}', [App\Http\Controllers\AssignmentRequestController::class, 'acceptRequest'])->name('dispute.request.accept');

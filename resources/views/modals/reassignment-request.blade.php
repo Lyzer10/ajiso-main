@@ -6,7 +6,7 @@
                     @if ($isAdminUser)
                         {{ __('Reassign Case') }}
                     @elseif ($isParalegalUser)
-                        {{ __('Reassign To AJISO Admin') }}
+                        {{ __('Request Legal Aid Provider') }}
                     @else
                         {{ __('Request Legal Aid Assistance') }}
                     @endif
@@ -79,7 +79,7 @@
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
                                 <label for="reason_description" class="font-weight-bold">
-                                    {{ $isParalegalUser ? __('Reason for Reassignment') : __('Request Reason') }}<sup class="text-danger">*</sup>
+                                    {{ $isParalegalUser ? __('Reason for Request') : __('Request Reason') }}<sup class="text-danger">*</sup>
                                 </label>
                                 <textarea name="reason_description" id="reason_description"
                                     class="form-control border-text-primary @error('reason_description') is-invalid @enderror"
