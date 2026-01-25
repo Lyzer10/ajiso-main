@@ -166,35 +166,44 @@
                                             <div class="d-flex align-items-center justify-content-center">
                                                 @canany(['isAdmin', 'isSuperAdmin'])
                                                     @if (isset($availableStaff) && $availableStaff->count())
-                                                        <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-flex align-items-center w-100">
-                                                            @csrf
-                                                            @METHOD('PUT')
-                                                            <input type="hidden" name="res" value="accepted">
-                                                            <select name="target_staff_id" class="form-control form-control-sm mr-2 select2" required style="min-width: 200px; max-width: 250px;">
-                                                                <option hidden disabled {{ $assignment_request->target_staff_id ? '' : 'selected' }} value>
-                                                                    {{ __('Select legal aid provider') }}
-                                                                </option>
-                                                                @foreach ($availableStaff as $staffMember)
-                                                                    @continue($assignment_request->staff_id && (int) $staffMember->id === (int) $assignment_request->staff_id)
-                                                                    <option value="{{ $staffMember->id }}"
-                                                                        {{ (int) $assignment_request->target_staff_id === (int) $staffMember->id ? 'selected' : '' }}>
-                                                                        {{ $staffMember->user->first_name.' '
-                                                                            .$staffMember->user->middle_name.' '
-                                                                            .$staffMember->user->last_name.' | '
-                                                                            .(optional($staffMember->center)->name ?? __('N/A'))
-                                                                        }}
+                                                        <div class="d-flex align-items-center justify-content-center flex-wrap w-100" style="gap: 6px;">
+                                                            <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-flex align-items-center mb-0">
+                                                                @csrf
+                                                                @METHOD('PUT')
+                                                                <input type="hidden" name="res" value="accepted">
+                                                                @php
+                                                                    $selectId = 'target_staff_id_'.$assignment_request->id;
+                                                                @endphp
+                                                                <select id="{{ $selectId }}" name="target_staff_id" class="form-control form-control-sm mr-2 select2" required style="min-width: 200px; max-width: 250px;">
+                                                                    <option hidden disabled {{ $assignment_request->target_staff_id ? '' : 'selected' }} value>
+                                                                        {{ __('Select legal aid provider') }}
                                                                     </option>
-                                                                @endforeach
-                                                            </select>
-                                                            <div class="d-flex align-items-center" style="gap: 5px;">
+                                                                    @foreach ($availableStaff as $staffMember)
+                                                                        @continue($assignment_request->staff_id && (int) $staffMember->id === (int) $assignment_request->staff_id)
+                                                                        <option value="{{ $staffMember->id }}"
+                                                                            {{ (int) $assignment_request->target_staff_id === (int) $staffMember->id ? 'selected' : '' }}>
+                                                                            {{ $staffMember->user->first_name.' '
+                                                                                .$staffMember->user->middle_name.' '
+                                                                                .$staffMember->user->last_name.' | '
+                                                                                .(optional($staffMember->center)->name ?? __('N/A'))
+                                                                            }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
                                                                 <button type="button" class="btn btn-sm btn-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}">
                                                                     <i class="fas fa-check"></i>
                                                                 </button>
-                                                                <button type="button" class="btn btn-sm btn-danger show_reject" data-request-id="{{ $assignment_request->id }}" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
+                                                            </form>
+
+                                                            <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}" class="mb-0">
+                                                                @csrf
+                                                                @METHOD('PUT')
+                                                                <input type="hidden" name="res" value="rejected">
+                                                                <button type="button" class="btn btn-sm btn-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
                                                                     <i class="fas fa-times"></i>
                                                                 </button>
-                                                            </div>
-                                                        </form>
+                                                            </form>
+                                                        </div>
                                                     @endif
                                                 @else
                                                     <div class="d-flex align-items-center" style="gap: 5px;">
@@ -263,6 +272,17 @@
         $(document).on('click', '.show_accept', function(event) {
 
                 var form =  $(this).closest("form");
+                var select = form.find("select[name='target_staff_id']");
+
+                if (select.length && !select.val()) {
+                    event.preventDefault();
+                    swal({
+                        title: "{{ _('Select Legal Aid Provider') }}",
+                        text: "{{ _('Please select a legal aid provider before accepting this request.') }}",
+                        icon: "warning",
+                    });
+                    return;
+                }
 
                 var name = $(this).data("name");
 

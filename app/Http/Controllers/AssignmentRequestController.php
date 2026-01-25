@@ -587,6 +587,12 @@ class AssignmentRequestController extends Controller
 
             // Get the dispute
             $dispute = Dispute::findOrFail((int) $assignment_request->dispute_id) ?? NULL;
+            $targetStaff = Staff::with('user.designation')
+                ->findOrFail((int) $assignment_request->target_staff_id);
+
+            // Always assign the dispute to the approved target staff, even if notifications are disabled
+            $dispute->staff_id = $targetStaff->id;
+            $dispute->save();
 
             // Staff infos
             $staff_display_name = '';
@@ -636,9 +642,6 @@ class AssignmentRequestController extends Controller
 
                     // If there's a target staff, also notify them about the new assignment
                     if ($assignment_request->target_staff_id) {
-                        $targetStaff = Staff::with('user.designation')
-                            ->findOrFail($assignment_request->target_staff_id);
-
                         $target_staff_title = trim((string) optional($targetStaff->user->designation)->name);
                         $target_staff_name = trim(implode(' ', array_filter([
                             $targetStaff->user->first_name ?? '',
@@ -659,10 +662,6 @@ class AssignmentRequestController extends Controller
 
                         $sms->sendSMS($target_staff_recipients, $target_staff_message);
                         Notification::send($targetStaff->user, new \App\Notifications\StaffDisputeAssigned($targetStaff, $dispute, $target_staff_message));
-
-                        // Update dispute to assign to target staff
-                        $dispute->staff_id = $assignment_request->target_staff_id;
-                        $dispute->save();
                     }
                 }
             } catch (\Throwable $th) {
