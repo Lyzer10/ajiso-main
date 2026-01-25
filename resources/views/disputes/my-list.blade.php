@@ -132,11 +132,6 @@
                                             <a href="{{ route('dispute.show', [app()->getLocale(), $dispute->id]) }}" title="{{ __('View Dispute') }}">
                                                 <i class="fas fa-eye fa-fw text-success"></i>
                                             </a>
-                                            @canany(['isClerk', 'isStaff', 'isAdmin'])
-                                            / <a href="{{ route('dispute.request.create', [app()->getLocale(), $dispute->id]) }}" title="{{ __('Request Reassignment') }}">
-                                                <i class="fas fa-sync fa-fw text-secondary"></i>
-                                            </a>
-                                            @endcanany
                                             @can(['isSuperAdmin'])
                                                 /
                                                 <a class="link" data-toggle="modal" data-target="#confirmtrash" title="{{ __('Delete Dispute') }}">

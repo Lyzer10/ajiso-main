@@ -29,17 +29,7 @@
             <div class="card">
                 <div class="card-header">
                     <div class="header-title clearfix">
-                        @canany(['isStaff', 'isClerk'])
-                            {{ __('My Request list') }}
-                        @elsecanany(['isSuperAdmin', 'isAdmin'])
-                            {{ __('Reassignment Request list') }}
-                        @endcanany
-                        @canany(['isStaff', 'isClerk'])
-                            <a href="{{ route('dispute.request.create', [app()->getLocale(), 'all']) }}" class="btn btn-sm text-white light-custom-color pull-right">
-                                <i class="fas fa-plus"></i>
-                                {{ __('Send Request') }}
-                            </a>
-                        @endcanany
+                        {{ __('Reassignment Request list') }}
                         @canany(['isSuperAdmin', 'isAdmin', 'isClerk'])
                             <button class="btn btn-sm btn-success pull-right" data-toggle="modal" data-target="#bulkNoticeModal">
                                 <i class="fas fa-paper-plane"></i>
@@ -57,6 +47,7 @@
                                     <th>{{ __('Dispute No') }}</th>
                                     <th>{{ __('Reason Description') }}</th>
                                     <th>{{ __('Staff') }}</th>
+                                    <th>{{ __('Requested Assistance From') }}</th>
                                     <th>{{ __('Requested') }}</th>
                                     <th>{{ __('Status') }}</th>
                                     <th>{{ __('Action') }}</th>
@@ -78,7 +69,7 @@
                                         <td>
                                             @if (is_null($assignment_request->staff_id))
                                                 @canany(['isAdmin', 'isStaff', 'isSuperAdmin'])
-                                                    <a href="{{ route('dispute.assign', [app()->getLocale(), $assignment_request]) }}" class="text-danger" title="{{  __('Click to assigned legal aid provider') }}">
+                                                    <a href="{{ route('dispute.assign', [app()->getLocale(), $assignment_request->dispute_id]) }}" class="text-danger" title="{{  __('Click to assigned legal aid provider') }}">
                                                     {{ __('Unassigned') }}
                                                     </a>
                                                 @elsecanany(['isClerk', 'isStaff'])
@@ -100,6 +91,19 @@
                                                             }}
                                                         </a>
                                                 @endcanany
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($assignment_request->targetStaff && $assignment_request->targetStaff->user)
+                                                {{ $assignment_request->targetStaff->user->first_name.' '
+                                                    .$assignment_request->targetStaff->user->middle_name.' '
+                                                    .$assignment_request->targetStaff->user->last_name
+                                                }}
+                                                @if ($assignment_request->targetStaff->center)
+                                                    {{ ' | '.$assignment_request->targetStaff->center->name }}
+                                                @endif
+                                            @else
+                                                {{ __('N/A') }}
                                             @endif
                                         </td>
                                         <td>{{ Carbon\Carbon::parse($assignment_request->created_at)->diffForHumans() }}</td>

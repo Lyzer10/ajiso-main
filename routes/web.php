@@ -121,6 +121,7 @@ Route::group([
     Route::get('/disputes/export/excel', [App\Http\Controllers\DisputeExportController::class, 'exportListExcel'])->name('disputes.export.excel');
     Route::get('/disputes/export/csv', [App\Http\Controllers\DisputeExportController::class, 'exportListCsv'])->name('disputes.export.csv');
     Route::get('/disputes/staff/{staff}/list', [App\Http\Controllers\DisputeController::class, 'myList'])->name('disputes.my.list');
+    Route::get('/cases/my-cases', [App\Http\Controllers\DisputeController::class, 'myCases'])->name('cases.my-cases');
     Route::get('/disputes/create', [App\Http\Controllers\DisputeController::class, 'create'])->name('dispute.create.new');
     Route::post('/disputes', [App\Http\Controllers\DisputeController::class, 'store'])->name('dispute.store');
     Route::get('/disputes/create/{dispute}', [App\Http\Controllers\DisputeController::class, 'createArchived'])->name('dispute.create.archive');

@@ -64,12 +64,18 @@
                                     {{ __('Reopen Case') }}
                                 </button>
                             @endif
-                            @canany(['isStaff', 'isClerk', 'isAdmin', 'isSuperAdmin'])
-                                <a href="{{ route('dispute.request.create', [app()->getLocale(), $dispute->id]) }}"
-                                    class="btn btn-sm btn-secondary text-white mr-2">
-                                    {{ __('Request Reassignment') }}
-                                </a>
-                            @endcanany
+                            @if (!empty($canRequestReassignment))
+                                <button type="button" class="btn btn-sm btn-secondary text-white mr-2"
+                                    data-toggle="modal" data-target="#reassignmentRequestModal">
+                                    @if ($isAdminUser)
+                                        {{ __('Reassign Case') }}
+                                    @elseif ($isParalegalUser)
+                                        {{ __('Reassign To AJISO Admin') }}
+                                    @else
+                                        {{ __('Request Legal Aid Assistance') }}
+                                    @endif
+                                </button>
+                            @endif
                             <a href="{{ route('disputes.list', app()->getLocale()) }}"
                                 class="btn btn-sm btn-primary text-white">{{ __('Disputes list') }}
                             </a>
@@ -1166,9 +1172,24 @@
             }
         });
     </script>
+    <script type="text/javascript">
+        $(function () {
+            var targetSelect = $('#target_staff_id');
+            if (targetSelect.length) {
+                targetSelect.select2();
+            }
+
+            @if ($errors->has('reason_description') || $errors->has('target_staff_id'))
+                $('#reassignmentRequestModal').modal('show');
+            @endif
+        });
+    </script>
 @endpush
 
 @push('modals')
+    @if (!empty($canRequestReassignment))
+        @include('modals.reassignment-request')
+    @endif
     @include('modals.send-notifications')
     @include('modals.clinic-progress')
     @include('modals.change-dispute-status')

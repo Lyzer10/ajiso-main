@@ -30,6 +30,9 @@
         </div>
         <!-- Assign Disputes area start -->
         <div class="col-12">
+            @php
+                $preferredStaffId = $preferredStaffId ?? null;
+            @endphp
             <div class="card mt-5 assign-card">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h4 class="header-title mb-0">{{ __('Dispute assignment') }}</h4>
@@ -106,7 +109,8 @@
                                     <option value="null">{{ __('Unassign') }}</option>
                                     @if ($staff->count())
                                         @foreach ($staff as $staf)
-                                            <option value="{{ $staf->id }}">
+                                            <option value="{{ $staf->id }}"
+                                                {{ (string) old('staff', $preferredStaffId) === (string) $staf->id ? 'selected' : '' }}>
                                                 {{ $staf->user->first_name.' '
                                                     .$staf->user->middle_name.' '
                                                     .$staf->user->last_name.' | '

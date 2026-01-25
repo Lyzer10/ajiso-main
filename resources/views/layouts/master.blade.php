@@ -173,7 +173,7 @@
     @endunless
 
     {{-- Disputes Assignment --}}
-    @cannot('isClerk')
+    @canany(['isSuperAdmin','isAdmin','isStaff','isClerk'])
         <li class="{{ request()->routeIs('dispute.assign') || request()->routeIs('dispute.request.*') || request()->routeIs('disputes.request.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-sync"></i>
@@ -181,37 +181,29 @@
             </a>
             <ul class="collapse">
                 @canany(['isSuperAdmin','isAdmin'])
-                <li class="{{ request()->routeIs('dispute.assign') ? 'active' : '' }}">
-                    <a href="{{ route('dispute.assign', [app()->getLocale(), 'all']) }}">
-                        <i class="fas fa-chevron-right"></i>
-                        {{ __('Assign Legal Aid Provider') }}
-                    </a>
-                </li>
-                @endcanany
-                @canany(['isStaff'])
-                <li class="{{ request()->routeIs('dispute.request.create') ? 'active' : '' }}">
-                    <a href="{{ route('dispute.request.create', [app()->getLocale(), 'all']) }}">
-                        <i class="fas fa-chevron-right"></i>
-                        {{ __('Send Request') }}
-                    </a>
-                </li>
-                <li class="{{ request()->routeIs('disputes.request.my-list') ? 'active' : '' }}">
-                    <a href="{{ route('disputes.request.my-list', [app()->getLocale(), auth()->user()->staff->id]) }}">
-                        <i class="fas fa-chevron-right"></i>
-                        {{ __('My Requests') }}
-                    </a>
-                </li>
-                @elsecanany(['isSuperAdmin', 'isAdmin'])
-                <li class="{{ request()->routeIs('disputes.request.list') ? 'active' : '' }}">
-                    <a href="{{ route('disputes.request.list', app()->getLocale()) }}">
-                        <i class="fas fa-chevron-right"></i>
-                        {{ __('Requests List') }}
-                    </a>
-                </li>
+                    <li class="{{ request()->routeIs('dispute.assign') ? 'active' : '' }}">
+                        <a href="{{ route('dispute.assign', [app()->getLocale(), 'all']) }}">
+                            <i class="fas fa-chevron-right"></i>
+                            {{ __('Assign Legal Aid Provider') }}
+                        </a>
+                    </li>
+                    <li class="{{ request()->routeIs('disputes.request.list') ? 'active' : '' }}">
+                        <a href="{{ route('disputes.request.list', app()->getLocale()) }}">
+                            <i class="fas fa-chevron-right"></i>
+                            {{ __('Requests List') }}
+                        </a>
+                    </li>
+                @elsecanany(['isStaff','isClerk'])
+                    <li class="{{ request()->routeIs('disputes.request.my-list') ? 'active' : '' }}">
+                        <a href="{{ route('disputes.request.my-list', [app()->getLocale(), auth()->user()->staff->id]) }}">
+                            <i class="fas fa-chevron-right"></i>
+                            {{ __('Requests List') }}
+                        </a>
+                    </li>
                 @endcanany
             </ul>
         </li>
-    @endcannot
+    @endcanany
 
     {{-- Reports --}}
     @canany(['isSuperAdmin', 'isAdmin', 'isClerk'])

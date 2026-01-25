@@ -173,6 +173,65 @@ class DisputeController extends Controller
         return view('disputes.my-list', compact('disputes', 'status'));
     }
 
+    /**
+     * Show my assigned cases (for paralegal/legal aid provider)
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function myCases()
+    {
+        $user = auth()->user();
+        
+        // Check if user has a staff profile (legal aid provider or paralegal)
+        if (!$user->staff) {
+            return redirect()->back()->withErrors('You are not authorized to access this page.');
+        }
+
+        $staffId = $user->staff->id;
+
+        // Build the query for disputes assigned to this staff
+        $query = Dispute::with(
+            'reportedBy:id,first_name,middle_name,last_name,user_no',
+            'typeOfService:id,type_of_service',
+            'typeOfCase:id,type_of_case',
+            'disputeStatus:id,dispute_status'
+        )
+        ->where('staff_id', $staffId)
+        ->select([
+            'id',
+            'dispute_no',
+            'beneficiary_id',
+            'reported_on',
+            'type_of_service_id',
+            'type_of_case_id',
+            'dispute_status_id'
+        ])
+        ->latest();
+
+        // Apply status filter if present
+        $status = request('status');
+        if ($status === 'assigned') {
+            $query->where('dispute_status_id', 1);
+        } elseif ($status === 'proceeding') {
+            $query->where('dispute_status_id', 2);
+        } elseif ($status === 'resolved') {
+            $query->where('dispute_status_id', 3);
+        }
+
+        // Search by beneficiary name
+        if ($search = request('search')) {
+            $query->whereHas('reportedBy', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            });
+        }
+
+        $disputes = $query->paginate(10);
+        $totalCases = Dispute::where('staff_id', $staffId)->count();
+
+        return view('disputes.my-cases', compact('disputes', 'status', 'totalCases'));
+    }
 
     /**
      * Show the form for creating a new resource.
@@ -764,6 +823,8 @@ class DisputeController extends Controller
                 ->withErrors('errors', 'Organization not assigned.');
         }
 
+        $preferredStaffId = request('preferred_staff_id');
+
         if ($id === 'all' && !is_numeric($id)) {
 
             $disputesQuery = Dispute::has('reportedBy')
@@ -793,7 +854,7 @@ class DisputeController extends Controller
             $staff = Staff::has('user')->with('user', 'center')->get(['id', 'user_id', 'center_id']);
 
             // return view compacted with dispute(s) and staff info
-            return response(view('disputes.assignment', compact('disputes', 'dispute', 'staff')));
+            return response(view('disputes.assignment', compact('disputes', 'dispute', 'staff', 'preferredStaffId')));
         } else {
             // Find dispute information by Id and return a edit view
             $dispute = Dispute::has('reportedBy')
@@ -809,7 +870,7 @@ class DisputeController extends Controller
             $staff = Staff::has('user')->with('user', 'center')->get(['id', 'user_id', 'center_id']);
 
             // return view compacted with dispute(s) and staff info
-            return response(view('disputes.assignment', compact('dispute', 'disputes', 'staff')));
+            return response(view('disputes.assignment', compact('dispute', 'disputes', 'staff', 'preferredStaffId')));
         }
     }
 
@@ -1121,11 +1182,39 @@ class DisputeController extends Controller
         $continueStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['continue'])
             ->value('id');
 
+        $user = auth()->user();
+        $isStaffUser = $user && $user->can('isStaff');
+        $isParalegalUser = $user && $user->can('isClerk');
+        $isAdminUser = $user && ($user->can('isAdmin') || $user->can('isSuperAdmin'));
+        $currentStaffId = optional($user->staff)->id;
+        
+        // Allow reassignment for staff/paralegal assigned to the case or any admin
+        $canRequestReassignment = (
+            ($currentStaffId && (int) $dispute->staff_id === (int) $currentStaffId && ($isStaffUser || $isParalegalUser))
+            || $isAdminUser
+        );
+        $requiresTargetStaff = $isStaffUser;
+
+        $availableStaff = collect();
+        if ($requiresTargetStaff) {
+            $availableStaff = Staff::has('user')
+                ->with('user.designation:id,name', 'center:id,name')
+                ->whereHas('user', function ($query) {
+                    $query->where('is_active', 1);
+                })
+                ->get(['id', 'user_id', 'center_id']);
+        }
+
         return response(view('disputes.show', compact(
             'dispute',
             'occurrences',
             'dispute_statuses',
-            'continueStatusId'
+            'continueStatusId',
+            'availableStaff',
+            'canRequestReassignment',
+            'requiresTargetStaff',
+            'isParalegalUser',
+            'isAdminUser'
         )));
     }
 
