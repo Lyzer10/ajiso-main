@@ -35,6 +35,11 @@ class AssignmentRequestController extends Controller
      */
     public function index()
     {
+        $perPage = (int) request('per_page', 10);
+        if ($perPage <= 0) {
+            $perPage = 10;
+        }
+        $perPage = min($perPage, 100);
 
         // Get all the requests nd bind them to the  view
         $assignment_requests = AssignmentRequest::query()
@@ -57,8 +62,10 @@ class AssignmentRequestController extends Controller
                     'created_at'
                 ]
             )
-            ->latest()
-            ->paginate(10);
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
 
         $availableStaff = Staff::has('user')
             ->with('user.designation:id,name', 'center:id,name')

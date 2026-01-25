@@ -30,6 +30,9 @@
                 <div class="card-header">
                     <div class="header-title clearfix">
                         {{ __('Reassignment Request list') }}
+                        <div class="small text-muted mt-1">
+                            {{ __('Total Requests') }}: {{ $assignment_requests->total() }}
+                        </div>
                         @canany(['isSuperAdmin', 'isAdmin', 'isClerk'])
                             <button class="btn btn-sm btn-success pull-right" data-toggle="modal" data-target="#bulkNoticeModal">
                                 <i class="fas fa-paper-plane"></i>
