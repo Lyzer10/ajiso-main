@@ -5,6 +5,30 @@
 @endphp
 @section('title', 'AJISO | '.$title)
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('plugins/select2/css/select2.min.css') }}" />
+    <style>
+        .request-action-cell {
+            white-space: nowrap;
+        }
+        .request-action-cell .action-inline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+        .request-action-cell .action-inline form {
+            margin-bottom: 0;
+        }
+        .request-action-cell .select2-container {
+            width: 210px !important;
+            min-width: 210px !important;
+            max-width: 210px !important;
+        }
+    </style>
+@endpush
+
 @section('breadcrumb')
     <div class="breadcrumbs-area clearfix">
         <h4 class="page-title pull-left">{{ __('Disputes') }}</h4>
@@ -48,7 +72,6 @@
                                 <tr>
                                     <th>{{ __('Id') }}</th>
                                     <th>{{ __('Dispute No') }}</th>
-                                    <th>{{ __('Beneficiary') }}</th>
                                     <th>{{ __('Case Status') }}</th>
                                     <th>{{ __('Reason Description') }}</th>
                                     <th>{{ __('Requested By') }}</th>
@@ -67,23 +90,6 @@
                                             <a href="{{ route('dispute.show', [app()->getLocale(), $assignment_request->dispute_id]) }}" class="text-secondary font-weight-bold" title="{{  __('Click to view dispute') }}">
                                                 {{ $assignment_request->dispute->dispute_no }}
                                             </a>
-                                        </td>
-                                        <td>
-                                            @php
-                                                $beneficiary = $assignment_request->dispute->reportedBy;
-                                                $beneficiaryName = trim(implode(' ', array_filter([
-                                                    $beneficiary->first_name ?? '',
-                                                    $beneficiary->middle_name ?? '',
-                                                    $beneficiary->last_name ?? ''
-                                                ])));
-                                            @endphp
-                                            @if (!empty($assignment_request->dispute->beneficiary_id))
-                                                <a href="{{ route('beneficiary.show', [app()->getLocale(), $assignment_request->dispute->beneficiary_id]) }}" class="text-secondary">
-                                                    {{ $beneficiaryName ?? 'N/A' }}
-                                                </a>
-                                            @else
-                                                {{ $beneficiaryName ?? 'N/A' }}
-                                            @endif
                                         </td>
                                         <td>
                                             @php
@@ -162,11 +168,11 @@
                                             </span>
                                         </td>
                                         @if ($assignment_request->request_status  === 'pending')
-                                        <td>
-                                            <div class="d-flex align-items-center justify-content-center">
+                                        <td class="request-action-cell">
+                                            <div class="action-inline">
                                                 @canany(['isAdmin', 'isSuperAdmin'])
                                                     @if (isset($availableStaff) && $availableStaff->count())
-                                                        <div class="d-flex align-items-center justify-content-center flex-wrap w-100" style="gap: 6px;">
+                                                        <div class="action-inline">
                                                             <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-flex align-items-center mb-0">
                                                                 @csrf
                                                                 @METHOD('PUT')
@@ -174,7 +180,7 @@
                                                                 @php
                                                                     $selectId = 'target_staff_id_'.$assignment_request->id;
                                                                 @endphp
-                                                                <select id="{{ $selectId }}" name="target_staff_id" class="form-control form-control-sm mr-2 select2" required style="min-width: 200px; max-width: 250px;">
+                                                                <select id="{{ $selectId }}" name="target_staff_id" class="form-control form-control-sm mr-2 select2" required style="width: 210px;">
                                                                     <option hidden disabled {{ $assignment_request->target_staff_id ? '' : 'selected' }} value>
                                                                         {{ __('Select legal aid provider') }}
                                                                     </option>
@@ -228,7 +234,7 @@
                                             </div>
                                         </td>
                                         @else
-                                        <td>
+                                        <td class="request-action-cell">
                                             @if ($assignment_request->request_status === 'accepted')
                                                 <a href="{{ route('dispute.show', [app()->getLocale(), $assignment_request->dispute_id]) }}" class="btn btn-sm btn-info text-white" title="{{ __('View case details') }}">
                                                     <i class="fas fa-eye"></i>
@@ -242,7 +248,7 @@
                                     @endforeach
                                 @else
                                 <tr>
-                                    <td class="p-1" colspan="10">{{ __('No requests found') }}</td>
+                                    <td class="p-1" colspan="9">{{ __('No requests found') }}</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -260,10 +266,17 @@
 
     {{-- sweetalert --}}
     <script src="{{ asset('plugins/sweetalert/sweetalert.min.js') }}"></script>
+    <script src="{{ asset('plugins/select2/js/select2.min.js') }}"></script>
 
     <script type="text/javascript">
         $(function () {
-            $('.select2').select2();
+            if ($.fn.select2) {
+                $('.select2').select2({
+                    width: '210px',
+                    placeholder: "{{ __('Select legal aid provider') }}",
+                    minimumResultsForSearch: 0,
+                });
+            }
         });
     </script>
 
