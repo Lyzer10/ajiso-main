@@ -1193,7 +1193,7 @@ class DisputeController extends Controller
             ($currentStaffId && (int) $dispute->staff_id === (int) $currentStaffId && ($isStaffUser || $isParalegalUser))
             || $isAdminUser
         );
-        $requiresTargetStaff = $isStaffUser;
+        $requiresTargetStaff = $isStaffUser || $isAdminUser;
 
         $availableStaff = collect();
         if ($requiresTargetStaff) {
