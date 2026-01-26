@@ -69,6 +69,7 @@ class AssignmentRequestController extends Controller
 
         $availableStaff = Staff::has('user')
             ->with('user.designation:id,name', 'center:id,name')
+            ->where('type', 'staff')
             ->whereHas('user', function ($query) {
                 $query->where('is_active', 1);
             })
@@ -229,6 +230,10 @@ class AssignmentRequestController extends Controller
          * @param  array  $request
          * @return \Illuminate\Contracts\Validation\Validator
          */
+        $staffExistsRule = Rule::exists('staff', 'id')->where(function ($query) {
+            $query->where('type', 'staff');
+        });
+
         $this->validate($request, [
             'dispute' => ['required', 'integer', 'exists:disputes,id'],
             'reason_description' => [
@@ -241,7 +246,7 @@ class AssignmentRequestController extends Controller
                 Rule::requiredIf($requiresTargetStaff),
                 'nullable',
                 'integer',
-                'exists:staff,id',
+                $staffExistsRule,
             ],
         ]);
         $isAdminUser = in_array($role, ['admin', 'superadmin'], true);
@@ -537,9 +542,13 @@ class AssignmentRequestController extends Controller
          * @param  array  $request
          * @return \Illuminate\Contracts\Validation\Validator
          */
+        $staffExistsRule = Rule::exists('staff', 'id')->where(function ($query) {
+            $query->where('type', 'staff');
+        });
+
         $this->validate($request, [
             'res' => ['required', 'string', 'min:3', 'max:255'],
-            'target_staff_id' => ['nullable', 'integer', 'exists:staff,id'],
+            'target_staff_id' => ['nullable', 'integer', $staffExistsRule],
         ]);
 
         /**

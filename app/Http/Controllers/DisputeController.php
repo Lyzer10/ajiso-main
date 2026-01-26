@@ -1200,6 +1200,7 @@ class DisputeController extends Controller
         if ($requiresTargetStaff) {
             $availableStaff = Staff::has('user')
                 ->with('user.designation:id,name', 'center:id,name')
+                ->where('type', 'staff')
                 ->whereHas('user', function ($query) {
                     $query->where('is_active', 1);
                 })
