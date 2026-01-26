@@ -145,12 +145,77 @@ class UserController extends Controller
     }
 
     /**
+     * Display a listing of paralegal members for organization admins.
+     *
+     * @return \Illuminate\Contracts\Support\Renderable
+     */
+    public function members()
+    {
+        $currentUser = auth()->user();
+        $isParalegal = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        if (!$isParalegal || !$currentUser->can_register_staff) {
+            abort(403, 'You are not authorized to view members.');
+        }
+
+        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+        $search = request('search');
+        $organizationId = $currentUser->organization_id;
+
+        $users = User::with(['role:id,role_abbreviation,role_name', 'organization:id,name'])
+            ->select(
+                [
+                    'id',
+                    'name',
+                    'user_no',
+                    'first_name',
+                    'middle_name',
+                    'last_name',
+                    'email',
+                    'is_active',
+                    'user_role_id',
+                    'organization_id'
+                ]
+            )
+            ->when($paralegalRoleId, function ($query, $roleId) {
+                return $query->where('user_role_id', $roleId);
+            })
+            ->where('organization_id', $organizationId)
+            ->when($search, function ($query, $search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $like = '%' . $search . '%';
+                    $subQuery->where('name', 'like', $like)
+                        ->orWhere('first_name', 'like', $like)
+                        ->orWhere('middle_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('user_no', 'like', $like);
+                });
+            })
+            ->latest()
+            ->paginate(10);
+
+        $organizations = Organization::where('id', $organizationId)->get(['id', 'name']);
+        $membersMode = true;
+        $listRoute = 'members.list';
+
+        return view('users.paralegals.list', compact('users', 'organizations', 'organizationId', 'membersMode', 'listRoute'));
+    }
+
+    /**
      * Show the form for creating a new user.
      *
      * @return \Illuminate\Http\Response
      */
     public function create()
     {
+        $currentUser = auth()->user();
+        if ($currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal') {
+            if (!$currentUser->can_register_staff) {
+                abort(403, 'You are not authorized to register users.');
+            }
+            return redirect()->route('paralegal.create', app()->getLocale());
+        }
+
         // Get all the designations and bind them to the create  view
         $designations = Designation::get(['id', 'name']);
 
@@ -170,12 +235,33 @@ class UserController extends Controller
      */
     public function createParalegal()
     {
+        $currentUser = auth()->user();
+        $isParalegalCreator = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+
+        if ($isParalegalCreator && !$currentUser->can_register_staff) {
+            abort(403, 'You are not authorized to register paralegals.');
+        }
+
         $designations = Designation::get(['id', 'name']);
         $organizations = Organization::orderBy('name')
             ->get(['id', 'name']);
+        $lockedOrganization = null;
+
+        if ($isParalegalCreator) {
+            $lockedOrganization = Organization::find($currentUser->organization_id);
+            $organizations = $lockedOrganization
+                ? collect([$lockedOrganization])
+                : collect();
+        }
         $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
 
-        return view('users.create-paralegal', compact('designations', 'organizations', 'paralegalRoleId'));
+        return view('users.create-paralegal', compact(
+            'designations',
+            'organizations',
+            'paralegalRoleId',
+            'isParalegalCreator',
+            'lockedOrganization'
+        ));
     }
 
     /**
@@ -186,6 +272,11 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $currentUser = auth()->user();
+        $isParalegalCreator = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        if ($isParalegalCreator && !$currentUser->can_register_staff) {
+            abort(403, 'You are not authorized to register paralegals.');
+        }
 
         /**
          * Get a validator for an incoming store request.
@@ -208,9 +299,20 @@ class UserController extends Controller
         ];
 
         $role = UserRole::find($request->user_role);
-        $rules['organization_id'] = ($role && $role->role_abbreviation === 'paralegal')
-            ? ['required', 'integer', 'exists:organizations,id']
-            : ['nullable', 'integer', 'exists:organizations,id'];
+        $isTargetParalegal = $role && $role->role_abbreviation === 'paralegal';
+
+        if ($isParalegalCreator && !$isTargetParalegal) {
+            return redirect()->back()
+                ->withErrors('errors', 'You can only register paralegals.');
+        }
+
+        if ($isTargetParalegal && $isParalegalCreator) {
+            $rules['organization_id'] = ['nullable', 'integer', 'exists:organizations,id'];
+        } else {
+            $rules['organization_id'] = $isTargetParalegal
+                ? ['required', 'integer', 'exists:organizations,id']
+                : ['nullable', 'integer', 'exists:organizations,id'];
+        }
 
         $this->validate($request, $rules);
 
@@ -233,9 +335,31 @@ class UserController extends Controller
         $user->last_name = Str::ucfirst($request->last_name);
         $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
         $user->user_role_id = $request->user_role;
-        $user->organization_id = ($role && $role->role_abbreviation === 'paralegal')
-            ? $request->organization_id
-            : null;
+        if ($isTargetParalegal) {
+            $user->organization_id = $isParalegalCreator
+                ? $currentUser->organization_id
+                : $request->organization_id;
+        } else {
+            $user->organization_id = null;
+        }
+        
+        // Set permissions based on who is creating the paralegal
+        if ($isTargetParalegal) {
+            // Check if current user is an admin
+            $isAdmin = $currentUser && $currentUser->role && in_array($currentUser->role->role_abbreviation, ['superadmin', 'admin'], true);
+
+            if ($isAdmin) {
+                // Admin-created paralegals can access and can register other paralegals
+                $user->has_system_access = true;
+                $user->can_register_staff = true;
+                $user->added_by_admin = true;
+            } elseif ($isParalegalCreator) {
+                // Paralegal-created paralegals have no access and cannot register others
+                $user->has_system_access = false;
+                $user->can_register_staff = false;
+                $user->added_by_admin = false;
+            }
+        }
 
         /**
          *  Preparing Image for Upload
@@ -301,8 +425,14 @@ class UserController extends Controller
              */
 
             try {
-                // Database & email
-                Notification::send($user, new UserCreated($user, $request->password));
+                $shouldNotify = true;
+                if ($isTargetParalegal && $isParalegalCreator) {
+                    $shouldNotify = false;
+                }
+                if ($shouldNotify) {
+                    // Database & email
+                    Notification::send($user, new UserCreated($user, $request->password));
+                }
             } catch (\Throwable $th) {
                 throw $th;
             }

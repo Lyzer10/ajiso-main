@@ -90,6 +90,11 @@ class LoginController extends Controller
             return back()->with('status', 'The provided credentials do not match our records.');
         }
 
+        if (Auth::user()->role->role_abbreviation === 'paralegal' && !Auth::user()->has_system_access) {
+            Auth::logout();
+            return back()->with('status', 'Your account does not have access to the system.');
+        }
+
         /**
          *  Redirect user to respective dashboard
          */

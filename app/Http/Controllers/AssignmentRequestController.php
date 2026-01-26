@@ -35,6 +35,11 @@ class AssignmentRequestController extends Controller
      */
     public function index()
     {
+        // Block paralegals from accessing this page
+        if ($this->isParalegal()) {
+            abort(403, 'Paralegals do not have access to disputes assignment.');
+        }
+        
         $perPage = (int) request('per_page', 10);
         if ($perPage <= 0) {
             $perPage = 10;
@@ -216,7 +221,12 @@ class AssignmentRequestController extends Controller
      */
     public function store(Request $request)
     {
+        // Block paralegals from accessing this feature
         $user = auth()->user();
+        if ($user && $user->role && $user->role->role_abbreviation === 'paralegal') {
+            abort(403, 'Paralegals do not have access to disputes assignment.');
+        }
+        
         $role = optional($user->role)->role_abbreviation;
         $isAdminUser = in_array($role, ['admin', 'superadmin'], true);
         $isParalegalUser = $role === 'paralegal';
@@ -331,9 +341,11 @@ class AssignmentRequestController extends Controller
                 ' limekupewa. Tembelea Mfumo wa ALAS kujua zaidi.' .
                 ' Ahsante.';
 
+            $shouldSendSms = $this->shouldSendAssignmentSms($user, null, $newStaff);
+
             // Send notifications
             try {
-                if (env('SEND_NOTIFICATIONS') == TRUE) {
+                if (env('SEND_NOTIFICATIONS') == TRUE && $shouldSendSms) {
                     $staff_dest_addr = SmsService::normalizeRecipient($newStaff->user->tel_no);
                     $staff_recipients = ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr];
                     $sms = new SmsService();
@@ -428,10 +440,12 @@ class AssignmentRequestController extends Controller
              * Send sms, email & database notification
              */
 
+            $shouldSendSms = $this->shouldSendAssignmentSms($requesterUser, $targetStaff, null);
+
             try {
                 // SMS
 
-                if (env('SEND_NOTIFICATIONS') == TRUE) {
+                if (env('SEND_NOTIFICATIONS') == TRUE && $shouldSendSms) {
                     # Notify requester via SMS
                     $staff_dest_addr = $requesterUser ? SmsService::normalizeRecipient($requesterUser->tel_no) : null;
                     $staff_recipients = $staff_dest_addr ? ['recipient_id' => 1, 'dest_addr' => $staff_dest_addr] : null;
@@ -632,9 +646,11 @@ class AssignmentRequestController extends Controller
              * Send sms, email & database notification
              */
 
+            $shouldSendSms = $this->shouldSendAssignmentSms($requesterUser, $targetStaff, null);
+
             try {
                 // SMS
-                if (env('SEND_NOTIFICATIONS') == TRUE) {
+                if (env('SEND_NOTIFICATIONS') == TRUE && $shouldSendSms) {
 
                     # Notify staff who made the request via SMS
                     $sms = new SmsService();
@@ -778,9 +794,11 @@ class AssignmentRequestController extends Controller
              * Send sms, email & database notification
              */
 
+            $shouldSendSms = $this->shouldSendAssignmentSms($requesterUser, null, null);
+
             try {
                 // SMS
-                if (env('SEND_NOTIFICATIONS') == TRUE) {
+                if (env('SEND_NOTIFICATIONS') == TRUE && $shouldSendSms) {
 
                     # Notify new assigned assigned via SMS
                     $sms = new SmsService();
@@ -816,5 +834,35 @@ class AssignmentRequestController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    private function isParalegalUser($user)
+    {
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function isParalegal()
+    {
+        $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function isParalegalStaff($staff)
+    {
+        return $staff && $this->isParalegalUser($staff->user);
+    }
+
+    private function shouldSendAssignmentSms($requesterUser = null, $targetStaff = null, $assignedStaff = null)
+    {
+        if ($this->isParalegalUser(auth()->user())) {
+            return false;
+        }
+        if ($this->isParalegalUser($requesterUser)) {
+            return false;
+        }
+        if ($this->isParalegalStaff($targetStaff) || $this->isParalegalStaff($assignedStaff)) {
+            return false;
+        }
+        return true;
     }
 }

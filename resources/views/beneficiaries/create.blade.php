@@ -1,7 +1,8 @@
 @extends('layouts.base')
 
 @php
-    $title = __('Beneficiaries') 
+    $title = __('Beneficiaries');
+    $isParalegal = auth()->user()->can('isClerk');
 @endphp
 @section('title', 'AJISO | '.$title)
 
@@ -259,11 +260,11 @@
                                 <label for="region" class="font-weight-bold">{{ __('Region') }}<sup class="text-danger">*</sup></label>
                                 <select id="region" aria-describedby="selectDegion"
                                     class="select2 select2-container--default border-input-primary @error('region') is-invalid @enderror"
-                                    name="region" required autocomplete="region" style="width: 100%;">
+                                    name="region" {{ $isParalegal ? 'disabled' : 'required' }} autocomplete="region" style="width: 100%;">
                                     <option hidden disabled selected value>{{ __('Choose region') }}</option>
                                     @if ($regions->count())
                                         @foreach ($regions as $region)
-                                            <option value="{{ $region->id }}" {{ old('region') == $region->id ? ' selected="selected"' : '' }}>
+                                            <option value="{{ $region->id }}" {{ old('region', $defaultRegionId) == $region->id ? ' selected="selected"' : '' }}>
                                                 {{ __($region->region) }}
                                             </option>
                                         @endforeach
@@ -271,6 +272,9 @@
                                         <option>{{ __('No regions found') }}</option>
                                     @endif
                                 </select>
+                                @if ($isParalegal && $defaultRegionId)
+                                    <input type="hidden" name="region" value="{{ $defaultRegionId }}">
+                                @endif
                                 @error('region')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -281,11 +285,11 @@
                                 <label class="selectDistrict font-weight-bold">{{ __('District') }}<sup class="text-danger">*</sup></label>
                                 <select id="district" aria-describedby="selectDistrict"
                                     class="select2 select2-container--default border-input-primary @error('district') is-invalid @enderror"
-                                    name="district" required autocomplete="district" style="width: 100%;">
+                                    name="district" {{ $isParalegal ? 'disabled' : 'required' }} autocomplete="district" style="width: 100%;">
                                     <option hidden disabled selected value>{{ __('Choose district') }}</option>
                                     @if ($districts->count())
                                         @foreach ($districts as $district)
-                                            <option value="{{ $district->id }}" {{ old('district') == $district->id ? ' selected="selected"' : '' }}>
+                                            <option value="{{ $district->id }}" {{ old('district', $defaultDistrictId) == $district->id ? ' selected="selected"' : '' }}>
                                                 {{ __($district->district) }}
                                             </option>
                                         @endforeach
@@ -293,6 +297,9 @@
                                         <option>{{ __('No districts found') }}</option>
                                     @endif
                                 </select>
+                                @if ($isParalegal && $defaultDistrictId)
+                                    <input type="hidden" name="district" value="{{ $defaultDistrictId }}">
+                                @endif
                                 @error('district')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -347,10 +354,15 @@
 
                         <div class="form-row">
                             <div class="col-md-3 mb-3 ">
-                                <label class="surveyChoice font-weight-bold ">{{ __('How did you hear about us?') }}<sup class="text-danger ">*</sup></label>
+                                <label class="surveyChoice font-weight-bold ">
+                                    {{ __('How did you hear about us?') }}
+                                    @unless($isParalegal)
+                                        <sup class="text-danger">*</sup>
+                                    @endunless
+                                </label>
                                 <select id="survey_choice" aria-describedby="selectChoice"
                                     class="select2 select2-container--default border-input-primary @error('survey_choice') is-invalid @enderror"
-                                    name="survey_choice" required autocomplete="survey_choice" style="width: 100%;">
+                                    name="survey_choice" {{ $isParalegal ? '' : 'required' }} autocomplete="survey_choice" style="width: 100%;">
                                     <option hidden disabled selected value>{{ __('Choose survey choice') }}</option>
                                     @if ($survey_choices->count())
                                         @foreach ($survey_choices as $survey_choice)
@@ -372,10 +384,15 @@
 
                         <div class="form-row">
                             <div class="col-md-3 mb-3">
-                                <label for="tel_no" class="font-weight-bold">{{ __('Telephone No') }}<sup class="text-danger">*</sup></label>
+                                <label for="tel_no" class="font-weight-bold">
+                                    {{ __('Telephone No') }}
+                                    @unless($isParalegal)
+                                        <sup class="text-danger">*</sup>
+                                    @endunless
+                                </label>
                                 <input type="tel" id="tel_no" placeholder="{{ __('Telephone Number') }}"
                                     class="form-control border-input-primary @error('tel_no') is-invalid @enderror"
-                                    name="tel_no" value="{{ old('tel_no') }}" required autocomplete="tel_no" style="width: 100%;">
+                                    name="tel_no" value="{{ old('tel_no') }}" {{ $isParalegal ? '' : 'required' }} autocomplete="tel_no" style="width: 100%;">
                                     <small class="form-text text-muted">
                                         <i class="fas fa-exclamation-circle text-info"></i>
                                         {{ __('Format: 0712345678') }}

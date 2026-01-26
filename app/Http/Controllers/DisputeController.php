@@ -8,6 +8,8 @@ use App\Models\Staff;
 use App\Models\Dispute;
 use App\Models\TypeOfCase;
 use App\Models\Beneficiary;
+use App\Models\Organization;
+use App\Models\UserRole;
 use Illuminate\Support\Str;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
@@ -16,6 +18,7 @@ use App\Models\TypeOfService;
 use App\Models\DisputeActivity;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use App\Notifications\DisputeCreated;
 use App\Notifications\StaffDisputeAssigned;
 use App\Notifications\ClientDisputeAssigned;
@@ -47,65 +50,60 @@ class DisputeController extends Controller
                 ->withErrors('errors', 'Organization not assigned.');
         }
 
-        // Check if current user is an authenticated staff
-        if (Gate::denies('isStaff')) {
-            // Get all disputes and bind them to the index view
-            $query = Dispute::has('reportedBy')
-                ->with(
-                    'assignedTo:first_name,middle_name,last_name,user_no',
-                    'reportedBy:first_name,middle_name,last_name,user_no',
-                    'disputeStatus:id,dispute_status'
-                )
-                ->select(
-                    [
-                        'id',
-                        'dispute_no',
-                        'beneficiary_id',
-                        'staff_id',
-                        'reported_on',
-                        'dispute_status_id',
-                        'type_of_case_id'
-                    ]
-                )
-                ->latest();
+        // Get all disputes and bind them to the index view (staff can view, but not assign)
+        $query = Dispute::has('reportedBy')
+            ->with(
+                'assignedTo:first_name,middle_name,last_name,user_no',
+                'reportedBy:first_name,middle_name,last_name,user_no',
+                'disputeStatus:id,dispute_status'
+            )
+            ->select(
+                [
+                    'id',
+                    'dispute_no',
+                    'beneficiary_id',
+                    'staff_id',
+                    'reported_on',
+                    'dispute_status_id',
+                    'type_of_case_id'
+                ]
+            )
+            ->latest();
 
-            if ($organizationId) {
-                $query->whereHas('reportedBy', function ($q) use ($organizationId) {
-                    $q->where('organization_id', $organizationId);
-                });
-            }
-
-            // Filter by dispute status if provided
-            if ($statusId = request('status')) {
-                $query->where('dispute_status_id', (int) $statusId);
-            }
-
-            // Filter by case type if provided
-            if ($caseTypeId = request('case_type')) {
-                $query->where('type_of_case_id', (int) $caseTypeId);
-            }
-
-            // Filter by period if provided
-            [$periodStart, $periodEnd] = $this->resolvePeriodRange(request('period'), request('dateRange'));
-            if ($periodStart && $periodEnd) {
-                $query->whereBetween('reported_on', [$periodStart, $periodEnd]);
-            }
-
-            // Search by beneficiary name
-            if ($search = request('search')) {
-                $query->whereHas('reportedBy', function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('middle_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%");
-                });
-            }
-
-            $disputes = $query->paginate(10);
-            $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
-            $type_of_cases = TypeOfCase::get(['id', 'type_of_case']);
-        } else {
-            return response('You are not authorized to perform this action!', 403);
+        if ($organizationId) {
+            $query->whereHas('reportedBy', function ($q) use ($organizationId) {
+                $q->where('organization_id', $organizationId);
+            });
         }
+
+        // Filter by dispute status if provided
+        if ($statusId = request('status')) {
+            $query->where('dispute_status_id', (int) $statusId);
+        }
+
+        // Filter by case type if provided
+        if ($caseTypeId = request('case_type')) {
+            $query->where('type_of_case_id', (int) $caseTypeId);
+        }
+
+        // Filter by period if provided
+        [$periodStart, $periodEnd] = $this->resolvePeriodRange(request('period'), request('dateRange'));
+        if ($periodStart && $periodEnd) {
+            $query->whereBetween('reported_on', [$periodStart, $periodEnd]);
+        }
+
+        // Search by beneficiary name
+        if ($search = request('search')) {
+            $query->whereHas('reportedBy', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            });
+        }
+
+        $disputes = $query->paginate(10);
+        $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
+        $type_of_cases = TypeOfCase::get(['id', 'type_of_case']);
 
         //return $disputes;
         return response(view('disputes.list', compact('disputes', 'dispute_statuses', 'type_of_cases')));
@@ -267,10 +265,22 @@ class DisputeController extends Controller
         $type_of_cases = TypeOfCase::latest()
             ->get(['id', 'type_of_case']);
 
+        $paralegals = collect();
+        if ($this->isParalegal() && $organizationId) {
+            $paralegals = User::with('role:id,role_abbreviation')
+                ->where('organization_id', $organizationId)
+                ->whereHas('role', function ($query) {
+                    $query->where('role_abbreviation', 'paralegal');
+                })
+                ->orderBy('first_name')
+                ->get(['id', 'first_name', 'middle_name', 'last_name', 'user_no']);
+        }
+
         return response(view('disputes.create-new', compact(
             'beneficiaries',
             'type_of_services',
-            'type_of_cases'
+            'type_of_cases',
+            'paralegals'
         )));
     }
 
@@ -545,6 +555,19 @@ class DisputeController extends Controller
             'service_experience' => ['nullable', 'max:500'],
             'how_can_we_help' => ['required', 'string'],
             'defendant_names_addr' => ['nullable', 'string'],
+            'case_end_date' => ['nullable', 'date_format:m/d/Y'],
+            'paralegal_user_id' => [
+                Rule::requiredIf($this->isParalegal()),
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(function ($query) use ($organizationId) {
+                    $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+                    $query->where('organization_id', $organizationId);
+                    if ($paralegalRoleId) {
+                        $query->where('user_role_id', $paralegalRoleId);
+                    }
+                }),
+            ],
         ]);
 
         $this->ensureBeneficiaryAccess($request->beneficiary);
@@ -564,7 +587,7 @@ class DisputeController extends Controller
         $dispute->staff_id = NULL;
         $dispute->type_of_service_id = (int) $request->type_of_service;
         $dispute->type_of_case_id = (int) $request->type_of_case;
-        $dispute->dispute_status_id = 1;
+        $dispute->dispute_status_id = $this->isParalegal() ? 3 : 1;
         $dispute->matter_to_court = $request->matter_to_court;
         $dispute->problem_description = $request->problem_description;
         $dispute->where_reported = $request->where_reported;
@@ -572,6 +595,12 @@ class DisputeController extends Controller
         $dispute->how_did_they_help = $request->how_did_they_help;
         $dispute->how_can_we_help = $request->how_can_we_help;
         $dispute->defendant_names_addr = $request->defendant_names_addr;
+        if ($this->isParalegal()) {
+            $dispute->paralegal_user_id = $request->paralegal_user_id;
+        }
+        if ($request->case_end_date) {
+            $dispute->case_end_date = Carbon::parse($request->case_end_date)->format('Y-m-d');
+        }
 
         /**
          * Save the dispute to the database
@@ -634,7 +663,7 @@ class DisputeController extends Controller
                  */
 
                 try {
-                    if (env('SEND_NOTIFICATIONS') == TRUE) {
+                    if (env('SEND_NOTIFICATIONS') == TRUE && !$this->isParalegal()) {
                         // SMS
                         $sms = new SmsService();
                         $sms->sendSMS($recipients, $message);
@@ -647,8 +676,16 @@ class DisputeController extends Controller
                 }
             }
 
+            $redirectRoute = ['disputes.list', app()->getLocale()];
+            if (Gate::allows('isStaff')) {
+                $staffId = optional(auth()->user()->staff)->id;
+                if ($staffId) {
+                    $redirectRoute = ['disputes.my.list', [app()->getLocale(), $staffId]];
+                }
+            }
+
             return response(
-                redirect()->route('disputes.list', app()->getLocale())
+                redirect()->route($redirectRoute[0], $redirectRoute[1])
                     ->with('status', 'Dispute information added, successfully.')
             );
         } else {
@@ -785,7 +822,7 @@ class DisputeController extends Controller
                  * Send sms, email & database notification
                  */
                 try {
-                    if (env('SEND_NOTIFICATIONS') == TRUE) {
+                    if (env('SEND_NOTIFICATIONS') == TRUE && !$this->isParalegal()) {
                         // SMS
                         $sms = new SmsService();
                         $sms->sendSMS($recipients, $message);
@@ -798,8 +835,16 @@ class DisputeController extends Controller
                 }
             }
 
+            $redirectRoute = ['disputes.list', app()->getLocale()];
+            if (Gate::allows('isStaff')) {
+                $staffId = optional(auth()->user()->staff)->id;
+                if ($staffId) {
+                    $redirectRoute = ['disputes.my.list', [app()->getLocale(), $staffId]];
+                }
+            }
+
             return response(
-                redirect()->route('disputes.list', app()->getLocale())
+                redirect()->route($redirectRoute[0], $redirectRoute[1])
                     ->with('status', 'Dispute information added, successfully.')
             );
         } else {
@@ -1040,6 +1085,8 @@ class DisputeController extends Controller
                     ' Ahsante.';
 
 
+                $paralegalInvolved = $this->isParalegal() || $this->isParalegalUser(optional($staff_assigned)->user);
+
                 if (!is_null($dispute_last_staff) && !is_null($request->staff)) {
 
                     // Get full name of the staff
@@ -1076,9 +1123,11 @@ class DisputeController extends Controller
                      * Send sms, email & database notification
                      */
 
+                    $paralegalInvolved = $paralegalInvolved || $this->isParalegalUser(optional($last_assigned_staff)->user);
+
                     try {
                         // SMS
-                        if (env('SEND_NOTIFICATIONS') == TRUE) {
+                        if (env('SEND_NOTIFICATIONS') == TRUE && !$paralegalInvolved) {
                             // Notify Beneficiary via SMS
                             $sms = new SmsService();
                             $sms->sendSMS($recipients, $message);
@@ -1116,7 +1165,7 @@ class DisputeController extends Controller
 
                     try {
                         // SMS
-                        if (env('SEND_NOTIFICATIONS') == TRUE) {
+                        if (env('SEND_NOTIFICATIONS') == TRUE && !$paralegalInvolved) {
                             // Notify Beneficiary via SMS
                             $sms = new SmsService();
                             $sms->sendSMS($recipients, $message);
@@ -1181,6 +1230,8 @@ class DisputeController extends Controller
         $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
         $continueStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['continue'])
             ->value('id');
+        $referredStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['referred'])
+            ->value('id');
 
         $user = auth()->user();
         $isStaffUser = $user && $user->can('isStaff');
@@ -1212,6 +1263,7 @@ class DisputeController extends Controller
             'occurrences',
             'dispute_statuses',
             'continueStatusId',
+            'referredStatusId',
             'availableStaff',
             'canRequestReassignment',
             'requiresTargetStaff',
@@ -1278,6 +1330,7 @@ class DisputeController extends Controller
             'service_experience' => ['nullable', 'max:500'],
             'how_can_we_help' => ['required', 'string'],
             'defendant_names_addr' => ['nullable', 'string'],
+            'case_end_date' => ['nullable', 'date_format:m/d/Y'],
         ]);
 
         /**
@@ -1302,6 +1355,11 @@ class DisputeController extends Controller
         $dispute->how_did_they_help = $request->how_did_they_help;
         $dispute->how_can_we_help = $request->how_can_we_help;
         $dispute->defendant_names_addr = $request->defendant_names_addr;
+        
+        // Add case end date if provided
+        if ($request->case_end_date) {
+            $dispute->case_end_date = Carbon::parse($request->case_end_date)->format('Y-m-d');
+        }
 
         /**
          * Save the dispute to the database
@@ -1457,6 +1515,11 @@ class DisputeController extends Controller
     private function isParalegal()
     {
         $user = auth()->user();
+        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+    }
+
+    private function isParalegalUser($user)
+    {
         return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
     }
 

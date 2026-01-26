@@ -27,6 +27,7 @@ class Dispute extends Model
         'id',
         'dispute_no',
         'reported_on',
+        'case_end_date',
         'beneficiary_id',
         'matter_to_court',
         'type_of_court',
@@ -37,6 +38,7 @@ class Dispute extends Model
         'how_can_we_help',
         'defendant_names_addr',
         'staff_id',
+        'paralegal_user_id',
         'type_of_service_id',
         'type_of_case_id',
         'dispute_status_id',
@@ -65,6 +67,11 @@ class Dispute extends Model
     {
 
         return $this->hasOneThrough(User::class, Staff::class, 'id', 'id', 'staff_id', 'user_id');
+    }
+
+    public function paralegalUser()
+    {
+        return $this->belongsTo(User::class, 'paralegal_user_id');
     }
 
     // Get the beneficiary associated with the dispute

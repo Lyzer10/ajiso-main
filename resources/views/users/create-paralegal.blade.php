@@ -206,11 +206,11 @@
                             <label for="organization_id" class="font-weight-bold">{{ __('Organization') }}<sup class="text-danger">*</sup></label>
                             <select id="organization_id"
                                 class="select2 select2-container--default border-input-primary @error('organization_id') is-invalid @enderror"
-                                name="organization_id" required autocomplete="organization_id" style="width: 100%;">
+                                name="organization_id" {{ !empty($isParalegalCreator) ? 'disabled' : 'required' }} autocomplete="organization_id" style="width: 100%;">
                                 <option hidden disabled selected value>{{ __('Choose organization') }}</option>
                                 @if ($organizations->count())
                                     @foreach ($organizations as $organization)
-                                        <option value="{{ $organization->id }}" {{ old('organization_id') == $organization->id ? ' selected="selected"' : '' }}>
+                                        <option value="{{ $organization->id }}" {{ old('organization_id', optional($lockedOrganization)->id) == $organization->id ? ' selected="selected"' : '' }}>
                                             {{ __($organization->name) }}
                                         </option>
                                     @endforeach
@@ -218,6 +218,9 @@
                                     <option>{{ __('No organizations found') }}</option>
                                 @endif
                             </select>
+                            @if (!empty($isParalegalCreator) && !empty($lockedOrganization))
+                                <input type="hidden" name="organization_id" value="{{ $lockedOrganization->id }}">
+                            @endif
                             @error('organization_id')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

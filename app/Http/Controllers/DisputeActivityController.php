@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Notifications\UpdateDisputeStatus;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\SendClientNotification;
+use App\Notifications\CustomNotice;
 
 class DisputeActivityController extends Controller
 {
@@ -143,8 +144,11 @@ class DisputeActivityController extends Controller
              * Send sms, email & database notification
             */ 
 
+            $dispute = Dispute::findOrFail($request->dispute);
+            $shouldSendSms = $this->shouldSendSmsForDispute($dispute);
+
             try {
-                if(env('SEND_NOTIFICATIONS') == TRUE)
+                if(env('SEND_NOTIFICATIONS') == TRUE && $shouldSendSms)
                 {
                 
                     // SMS
@@ -194,6 +198,7 @@ class DisputeActivityController extends Controller
             'dispute_status' => ['required', 'string'],
             'activity_type' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'referred_to' => ['nullable', 'string', 'max:255'],
         ]);
 
         /**
@@ -205,6 +210,43 @@ class DisputeActivityController extends Controller
 
         // Getting the dispute that matches the current id
         $dispute = Dispute::findOrFail($request->dispute);
+
+        $statusDescription = $request->description;
+        $role = optional(auth()->user()->role)->role_abbreviation;
+        $isParalegalReferral = false;
+        $referredTo = null;
+        $referralReason = null;
+
+        $referredStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['referred'])->value('id');
+        if ($role === 'paralegal' && $request->filled('referred_to')) {
+            $referredTo = trim((string) $request->referred_to);
+            $referralReason = trim((string) $request->description);
+            if ($referredTo === '' || $referralReason === '') {
+                return redirect()->back()
+                    ->withErrors('errors', 'Please provide who the case is referred to and the reason for referral.');
+            }
+            if (!$referredStatusId) {
+                return redirect()->back()
+                    ->withErrors('errors', 'Referred status is not configured. Please contact admin.');
+            }
+            $request->merge(['dispute_status' => $referredStatusId]);
+            $statusDescription = 'Referred To: ' . $referredTo . '. Reason: ' . $referralReason;
+            $isParalegalReferral = true;
+        }
+        $continueStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['continue'])->value('id');
+        $isReopen = !$isParalegalReferral && $continueStatusId
+            && (int) $request->dispute_status === (int) $continueStatusId
+            && (int) $dispute->dispute_status_id !== (int) $continueStatusId;
+
+        if ($isReopen) {
+            if ($role === 'paralegal' && trim((string) $statusDescription) === '') {
+                return redirect()->back()
+                    ->withErrors('errors', 'Please provide a reason for reopening the case.');
+            }
+            if (trim((string) $statusDescription) === '') {
+                $statusDescription = 'Case reopened.';
+            }
+        }
 
         /**
          * Create a new dispute activity instance for a valid registration.
@@ -284,7 +326,7 @@ class DisputeActivityController extends Controller
         $curr_staff = optional(auth()->user()->staff)->id;
 
         $activity->activity_type = $request->activity_type;
-        $activityDescription = $request->description ?? '';
+        $activityDescription = $statusDescription ?? '';
         if (!empty($forceNonCompliance)) {
             $activityDescription = trim($activityDescription . ' Auto-marked as non-compliance after 3 reopens.');
         }
@@ -403,8 +445,10 @@ class DisputeActivityController extends Controller
                  * Send sms, email & database notification
                 */ 
 
+                $shouldSendSms = $this->shouldSendSmsForDispute($dispute);
+
                 try {
-                    if(env('SEND_NOTIFICATIONS') == TRUE)
+                    if(env('SEND_NOTIFICATIONS') == TRUE && $shouldSendSms)
                     {
                         // SMS
                         $sms = new SmsService();
@@ -423,6 +467,41 @@ class DisputeActivityController extends Controller
                     throw $th;
                 }
 
+            }
+
+            if ($isParalegalReferral) {
+                $referrerName = trim(implode(' ', array_filter([
+                    optional(auth()->user())->first_name,
+                    optional(auth()->user())->middle_name,
+                    optional(auth()->user())->last_name,
+                ])));
+                $referrerName = $referrerName !== '' ? $referrerName : (optional(auth()->user())->name ?? 'Paralegal');
+
+                $adminUsers = User::where('is_active', 1)
+                    ->whereHas('role', function ($query) {
+                        $query->whereIn('role_abbreviation', ['admin', 'superadmin']);
+                    })
+                    ->get(['id', 'email', 'tel_no', 'first_name', 'middle_name', 'last_name']);
+
+                $adminMessage = 'Case ' . $dispute->dispute_no . ' has been referred to AJISO by ' . $referrerName .
+                    '. Referred To: ' . $referredTo . '. Reason: ' . $referralReason . '.';
+
+                try {
+                    if (env('SEND_NOTIFICATIONS') == TRUE) {
+                        $sms = new SmsService();
+                        foreach ($adminUsers as $admin) {
+                            $adminDest = SmsService::normalizeRecipient($admin->tel_no);
+                            if ($adminDest) {
+                                $sms->sendSMS(['recipient_id' => 1, 'dest_addr' => $adminDest], $adminMessage);
+                            }
+                        }
+                        if ($adminUsers->isNotEmpty()) {
+                            Notification::send($adminUsers, new CustomNotice('Case Referral', 'High', $adminMessage));
+                        }
+                    }
+                } catch (\Throwable $th) {
+                    throw $th;
+                }
             }
 
             return redirect()->back()
@@ -563,7 +642,9 @@ class DisputeActivityController extends Controller
                 ->select(['id', 'user_id'])
                 ->find($dispute->beneficiary_id);
 
-            if ($beneficiary && env('SEND_NOTIFICATIONS') == TRUE) {
+            $shouldSendSms = $this->shouldSendSmsForDispute($dispute);
+
+            if ($beneficiary && env('SEND_NOTIFICATIONS') == TRUE && $shouldSendSms) {
                 $full_name = trim(implode(' ', array_filter([
                     $beneficiary->user->first_name,
                     $beneficiary->user->middle_name,
@@ -913,5 +994,21 @@ class DisputeActivityController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    private function shouldSendSmsForDispute(Dispute $dispute)
+    {
+        $user = auth()->user();
+        if ($user && optional($user->role)->role_abbreviation === 'paralegal') {
+            return false;
+        }
+
+        $dispute->loadMissing('assignedTo.user.role');
+        $assignedUser = optional(optional($dispute->assignedTo)->user);
+        if ($assignedUser && optional($assignedUser->role)->role_abbreviation === 'paralegal') {
+            return false;
+        }
+
+        return true;
     }
 }

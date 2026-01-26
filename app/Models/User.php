@@ -41,6 +41,9 @@ class User extends Authenticatable
         'is_active',
         'image',
         'organization_id',
+        'can_register_staff',
+        'has_system_access',
+        'added_by_admin',
     ];
 
     /**

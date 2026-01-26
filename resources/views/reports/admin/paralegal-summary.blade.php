@@ -40,6 +40,18 @@
                                 <span class="badge text-white light-custom-color">{{ $total_cases ?? 0 }}</span>
                             </h6>
                         </div>
+                        <div class="col-md-12 mb-2">
+                            <h6>
+                                <b>{{ __('Completed Cases') }} : </b>
+                                <span class="badge text-white light-custom-color">{{ $completedCases ?? 0 }}</span>
+                            </h6>
+                        </div>
+                        <div class="col-md-12 mb-2">
+                            <h6>
+                                <b>{{ __('Average Case Duration (Days)') }} : </b>
+                                <span class="badge text-white light-custom-color">{{ $averageCaseDuration ?? 0 }}</span>
+                            </h6>
+                        </div>
                         <div class="col-lg-6 mt-3">
                             <div class="viz-card">
                                 <div class="viz-card__header">{{ __('Case Types') }}</div>

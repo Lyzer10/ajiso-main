@@ -61,9 +61,10 @@
                     <div class="dispute-profile-header">
                         <h4 class="header-title mb-0">{{ __('Dispute Profile') }}</h4>
                         <div class="dispute-profile-actions">
-                            @if (strtolower($currentStatus) === 'resolved' && !empty($continueStatusId))
+                            @if (strtolower($currentStatus) === 'resolved' && (!empty($continueStatusId) || !empty($referredStatusId)))
                                 <button type="button" class="btn btn-sm btn-info text-white mr-2" id="reopenCase"
-                                    data-status-id="{{ $continueStatusId }}">
+                                    data-status-id="{{ $continueStatusId }}"
+                                    data-referred-status-id="{{ $referredStatusId }}">
                                     {{ __('Reopen Case') }}
                                 </button>
                             @endif
@@ -78,12 +79,6 @@
                                         {{ __('Request Legal Aid Assistance') }}
                                     @endif
                                 </button>
-                            @endif
-                            @if ($isParalegalUser)
-                                <a href="{{ route('disputes.request.my-paralegal-list', app()->getLocale()) }}"
-                                    class="btn btn-sm btn-outline-secondary mr-2">
-                                    {{ __('My Requests') }}
-                                </a>
                             @endif
                             <a href="{{ route('disputes.list', app()->getLocale()) }}"
                                 class="btn btn-sm btn-primary text-white">{{ __('Disputes list') }}
@@ -123,6 +118,13 @@
                                                         <label for="date" class="font-weight-bold">{{ __('Date Reported') }}</label>
                                                         <input type="text" readonly class="form-control  border-input-primary" id="date"
                                                             value="{{ $date }}">
+                                                    </div>
+                                                </div>
+                                                <div class="form-row">
+                                                    <div class="col-md-12 mb-3">
+                                                        <label for="case_end_date" class="font-weight-bold">{{ __('Case End Date (Case Completed)') }}</label>
+                                                        <input type="text" readonly class="form-control  border-input-primary" id="case_end_date"
+                                                            value="{{ $dispute->case_end_date ? Carbon\Carbon::parse($dispute->case_end_date)->format('d-m-Y') : 'N/A' }}">
                                                     </div>
                                                 </div>
                                                 <div class="form-row">
@@ -1203,14 +1205,59 @@
                 }
             @endif
 
-                var reopenBtn = $('#reopenCase');
+            var reopenBtn = $('#reopenCase');
+            var statusSelect = $('#dispute_status');
+            var descField = $('#status_description');
+            var descLabel = $('label[for="description"]');
+            var reopenHelp = $('#reopen-help');
+            var continueStatusId = {{ $continueStatusId ?? 'null' }};
+            var referredStatusId = {{ $referredStatusId ?? 'null' }};
+            var isParalegalUser = {{ $isParalegalUser ? 'true' : 'false' }};
+            var referralFields = $('#reopenReferralFields');
+            var referredToField = $('#referred_to');
+
+            function updateReopenRequirement() {
+                var reopenStatusId = isParalegalUser ? referredStatusId : continueStatusId;
+                var isReopen = reopenStatusId && statusSelect.val() == reopenStatusId;
+                if (isReopen && isParalegalUser) {
+                    if (referralFields.length) {
+                        referralFields.removeClass('d-none');
+                    }
+                    if (referredToField.length) {
+                        referredToField.prop('required', true);
+                    }
+                    descField.prop('required', true);
+                    descLabel.text("{{ __('Reason for Referral') }}");
+                    reopenHelp.text("{{ __('Provide who the case is referred to and the reason for referral.') }}");
+                } else {
+                    if (referralFields.length) {
+                        referralFields.addClass('d-none');
+                    }
+                    if (referredToField.length) {
+                        referredToField.prop('required', false);
+                        referredToField.val('');
+                    }
+                    descField.prop('required', false);
+                    descLabel.text("{{ __('Description') }}");
+                    reopenHelp.text("{{ __('Eg. Return for Consultation at our offices on 26th May 2022 with all documents.') }}");
+                }
+            }
+
+            if (statusSelect.length) {
+                statusSelect.on('change', updateReopenRequirement);
+            }
+
             if (reopenBtn.length) {
                 reopenBtn.on('click', function () {
                     var statusId = $(this).data('status-id');
-                    var statusSelect = $('#dispute_status');
+                    var referredId = $(this).data('referred-status-id');
+                    if (isParalegalUser && referredId) {
+                        statusId = referredId;
+                    }
                     if (statusId && statusSelect.length) {
                         statusSelect.val(statusId).trigger('change');
                     }
+                    updateReopenRequirement();
                     $('#disputeStatusModal').modal('show');
                 });
             }

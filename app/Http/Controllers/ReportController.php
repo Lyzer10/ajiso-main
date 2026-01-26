@@ -863,6 +863,22 @@ class ReportController extends Controller
             ->where('beneficiaries.registration_source', 'paralegal');
 
         $total_cases = (clone $baseQuery)->count();
+        
+        // Calculate case duration metrics
+        $casesWithDuration = (clone $baseQuery)
+            ->whereNotNull('disputes.case_end_date')
+            ->get(['disputes.reported_on', 'disputes.case_end_date']);
+        
+        $totalDays = 0;
+        $completedCases = $casesWithDuration->count();
+        
+        foreach ($casesWithDuration as $case) {
+            $reported = Carbon::parse($case->reported_on);
+            $ended = Carbon::parse($case->case_end_date);
+            $totalDays += $reported->diffInDays($ended);
+        }
+        
+        $averageCaseDuration = $completedCases > 0 ? round($totalDays / $completedCases, 1) : 0;
 
         $case_type_counts = (clone $baseQuery)
             ->whereNotNull('disputes.type_of_case_id')
@@ -914,7 +930,9 @@ class ReportController extends Controller
             'service_counts',
             'gender_counts',
             'district_counts',
-            'ward_counts'
+            'ward_counts',
+            'completedCases',
+            'averageCaseDuration'
         ));
     }
 

@@ -224,9 +224,25 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="form-row">
                             <div class="col-md-3 mb-3">
-                                <label for="type_of_service" class="font-weight-bold">{{ __('Type of Service') }}<sup class="text-danger">*</sup></label>
+                                <label for="case_end_date" class="font-weight-bold">{{ __('Case End Date (Case Completed)') }}</label>
+                                <div class="form-group">
+                                    <div class="input-group date" id="case_end_date" data-target-input="nearest">
+                                        <input type="text" id="caseEndDate"
+                                            class="form-control datetimepicker-input border-prepend-primary @error('case_end_date') is-invalid @enderror"
+                                            name="case_end_date" value="{{ $dispute->case_end_date ? Carbon\Carbon::parse($dispute->case_end_date)->format('m/d/Y') : '' }}" autocomplete="case_end_date"  data-target="#case_end_date"
+                                            data-toggle="datetimepicker"/>
+                                        <div class="input-group-append" data-target="#case_end_date">
+                                            <div class="input-group-text  border-append-primary bg-prepend-primary"><i class="fas fa-calendar"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @error('case_end_date')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
                                 <select id="type_of_service" aria-describedby="selectTos"
                                     class="select2 select2-container--default   border-input-primary @error('type_of_service') is-invalid @enderror"
                                     name="type_of_service" required autocomplete="type_of_service" style="width: 100%;">

@@ -49,12 +49,25 @@
                                 @enderror
                             </div>
                         </div>
+                        <div class="form-row d-none" id="reopenReferralFields">
+                            <div class="col-md-12 mb-3">
+                                <label for="referred_to" class="font-weight-bold">{{ __('Referred To') }}<sup class="text-danger">*</sup></label>
+                                <input id="referred_to" type="text"
+                                    class="form-control border-input-primary @error('referred_to') is-invalid @enderror"
+                                    name="referred_to" value="{{ old('referred_to') }}" autocomplete="referred_to">
+                                @error('referred_to')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
                                 <label for="description" class="font-weight-bold">{{ __('Description') }}</label>
-                                <textarea class="form-control border-text-primary @error('description') is-invalid @enderror"
+                                <textarea id="status_description" class="form-control border-text-primary @error('description') is-invalid @enderror"
                                     name="description" value="{{ old('description') }}" autocomplete="problem_description" style="width: 100%;"></textarea>
-                                    <small class="text-muted">{{ __('Eg. Return for Consultation at our offices on 26th May 2022 with all documents.') }}</small>
+                                    <small class="text-muted" id="reopen-help">{{ __('Eg. Return for Consultation at our offices on 26th May 2022 with all documents.') }}</small>
                                 @error('description')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>

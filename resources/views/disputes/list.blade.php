@@ -35,8 +35,8 @@
                 <div class="card-header">
                     <div class="header-title clearfix">
                         @canany(['isStaff'])
-                            {{ __('My Disputes list') }}
-                             <form method="GET" action="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}" class="d-flex align-items-center pull-right mb-2 dispute-filter">
+                            {{ __('Disputes list') }}
+                             <form method="GET" action="{{ route('disputes.list', [app()->getLocale()]) }}" class="d-flex align-items-center pull-right mb-2 dispute-filter">
                                 <div class="d-flex align-items-center mr-4">
                                      <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control form-control-sm me-2 border-prepend-black p-2">
                                 <button type="submit" class="btn btn-sm btn-primary">{{ __('Search') }}</button>
@@ -156,7 +156,7 @@
                 <div class="card-body"style="width: 100%;">
                     <div class="table-responsive">
                         <table class="table table-striped progress-table text-center">
-                            @canany(['isSuperAdmin', 'isAdmin', 'isClerk'])
+                            @canany(['isSuperAdmin', 'isAdmin', 'isClerk', 'isStaff'])
                             <thead class="text-capitalize text-white light-custom-color">
                                 <tr>
                                     <th>{{ __('S/N') }}</th>
@@ -188,28 +188,28 @@
                                     </td>
                                     <td>
                                         @if (is_null($dispute->staff_id))
-                                            @canany(['isAdmin', 'isStaff', 'isSuperAdmin'])
+                                            @canany(['isAdmin', 'isSuperAdmin'])
                                                 <a href="{{ route('dispute.assign', [app()->getLocale(), $dispute]) }}" class="text-danger" title="{{  __('Click to assigned legal aid provider') }}">
                                                 {{ __('Unassigned') }}
                                                 </a>
-                                            @elsecanany(['isClerk', 'isStaff'])
-                                                <a class="text-danger" >{{ __('Unassigned') }}</a>
+                                            @else
+                                                <span class="text-danger">{{ __('Unassigned') }}</span>
                                             @endcanany
                                         @else
-                                            @canany(['isAdmin', 'isStaff', 'isSuperAdmin'])
+                                            @canany(['isAdmin', 'isSuperAdmin'])
                                             <a href="{{ route('staff.show', [app()->getLocale(), $dispute->staff_id, ]) }}" title="{{  __('Click to view assigned legal aid provider') }}">
                                                 {{ $dispute->assignedTo->first_name.' '
                                                     .$dispute->assignedTo->middle_name.' '
                                                     .$dispute->assignedTo->last_name
                                                 }}
                                             </a>
-                                            @elsecanany(['isClerk', 'isStaff'])
-                                                    <a class="text-danger" >
-                                                        {{ $dispute->assignedTo->first_name.' '
-                                                            .$dispute->assignedTo->middle_name.' '
-                                                            .$dispute->assignedTo->last_name
-                                                        }}
-                                                    </a>
+                                            @else
+                                                <span class="text-dark">
+                                                    {{ $dispute->assignedTo->first_name.' '
+                                                        .$dispute->assignedTo->middle_name.' '
+                                                        .$dispute->assignedTo->last_name
+                                                    }}
+                                                </span>
                                             @endcanany
                                         @endif
                                     </td>

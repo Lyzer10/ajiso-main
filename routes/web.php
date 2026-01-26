@@ -66,6 +66,7 @@ Route::group([
     Route::post('/users', [App\Http\Controllers\UserController::class, 'store'])->name('user.store');
     Route::get('/paralegals', [App\Http\Controllers\UserController::class, 'paralegals'])->name('paralegals.list');
     Route::get('/paralegals/create', [App\Http\Controllers\UserController::class, 'createParalegal'])->name('paralegal.create');
+    Route::get('/members', [App\Http\Controllers\UserController::class, 'members'])->name('members.list');
     Route::get('/paralegals/export/pdf', [App\Http\Controllers\ParalegalExportController::class, 'exportListPdf'])->name('paralegals.export.pdf');
     Route::get('/paralegals/export/excel', [App\Http\Controllers\ParalegalExportController::class, 'exportListExcel'])->name('paralegals.export.excel');
     Route::get('/paralegals/export/csv', [App\Http\Controllers\ParalegalExportController::class, 'exportListCsv'])->name('paralegals.export.csv');

@@ -10,6 +10,7 @@ use App\Models\Religion;
 use App\Models\District;
 use App\Models\Beneficiary;
 use App\Models\Designation;
+use App\Models\Organization;
 use App\Notifications\CustomNotice;
 use Illuminate\Support\Str;
 use \App\Traits\ImageUpload;
@@ -122,13 +123,32 @@ class BeneficiaryController extends Controller
         // Get all the survey_choices and bind them to the create view
         $survey_choices = SurveyChoice::get(['id', 'survey_choice']);
 
+        $defaultRegionId = null;
+        $defaultDistrictId = null;
+        if ($this->isParalegal() && $organizationId) {
+            $org = Organization::find($organizationId);
+            if ($org) {
+                $defaultRegionId = $org->region_id;
+                $defaultDistrictId = $org->district_id;
+            }
+        }
+
         // Generate file number
         $currentYear = date('Y');
+        
+        // Get organization prefix
+        $prefix = 'AJISO';
+        if ($this->isParalegal() && $organizationId) {
+            $org = Organization::find($organizationId);
+            if ($org && $org->initials) {
+                $prefix = strtoupper($org->initials);
+            }
+        }
 
-        // Get the last beneficiary created this year
+        // Get the last beneficiary created this year with the same prefix
         $lastUser = User::where('user_role_id', 4) // only beneficiaries
             ->whereYear('created_at', $currentYear)
-            ->where('user_no', 'like', 'AJISO/' . $currentYear . '/%')
+            ->where('user_no', 'like', $prefix . '/' . $currentYear . '/%')
             ->orderBy('id', 'desc')
             ->first();
 
@@ -141,7 +161,7 @@ class BeneficiaryController extends Controller
         }
 
         // Generate file number format
-        $fileNo = 'AJISO/' . $currentYear . '/' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        $fileNo = $prefix . '/' . $currentYear . '/' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
         // Return all data to the view
         return view('beneficiaries.create', compact(
@@ -154,7 +174,9 @@ class BeneficiaryController extends Controller
             'religions',
             'marriage_forms',
             'employment_statuses',
-            'fileNo' // ✅ make sure to pass this to the view
+            'fileNo',
+            'defaultRegionId',
+            'defaultDistrictId' // ✅ make sure to pass this to the view
         ));
     }
 
@@ -195,7 +217,7 @@ class BeneficiaryController extends Controller
             'first_name' => ['required', 'min:3', 'string', 'max:50'],
             'middle_name' => ['nullable', 'string', 'max:50'],
             'last_name' => ['required', 'min:3', 'string', 'max:50'],
-            'tel_no' => ['required', 'string', 'max:15'],
+            'tel_no' => ['nullable', 'string', 'max:15'],  // Made optional - "Telephone No"
             'mobile_no' => ['nullable', 'string', 'max:15'],
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
             'gender' => ['required'],
@@ -210,7 +232,7 @@ class BeneficiaryController extends Controller
             'district' => ['required'],
             'ward' => ['nullable', 'max:255'],
             'street' => ['nullable', 'max:255'],
-            'survey_choice' => ['required'],
+            'survey_choice' => ['nullable'],  // Made optional - "How did you hear about us"
             'marital_status' => ['required'],
             'form_of_marriage' => [Rule::requiredIf($isMarried), 'nullable', 'integer', 'exists:marriage_forms,id'],
             'marriage_date' => ['max:25', 'date_format:m/d/Y', 'nullable'],
@@ -326,10 +348,20 @@ class BeneficiaryController extends Controller
 
             $beneficiary->education_level_id = $request->education_level;
             $beneficiary->address = $request->address;
-            $beneficiary->district_id = $request->district;
+            
+            // For paralegal: use organization's region and district as defaults
+            if ($this->isParalegal() && $organizationId) {
+                $org = Organization::find($organizationId);
+                if ($org) {
+                    $beneficiary->district_id = $org->district_id;
+                }
+            } else {
+                $beneficiary->district_id = $request->district;
+            }
+            
             $beneficiary->ward = $request->ward;
             $beneficiary->street = $request->street;
-            $beneficiary->survey_choice_id = $request->survey_choice;
+            $beneficiary->survey_choice_id = $request->survey_choice ?? null;
             $beneficiary->tribe_id = $request->tribe;
             $beneficiary->religion_id = $request->religion;
             $beneficiary->marital_status_id = $request->marital_status;
@@ -390,9 +422,11 @@ class BeneficiaryController extends Controller
                 if ($beneficiary->registration_source === 'office') {
                     try {
                         if (env('SEND_NOTIFICATIONS') == TRUE) {
-                            // SMS
-                            $sms = new SmsService();
-                            $sms->sendSMS($recipients, $message);
+                            if (!$this->isParalegal()) {
+                                // SMS
+                                $sms = new SmsService();
+                                $sms->sendSMS($recipients, $message);
+                            }
 
                             // Database & email
                             Notification::send($beneficiary->user, new BeneficiaryEnrolled($beneficiary, $message));

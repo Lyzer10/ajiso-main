@@ -1,7 +1,8 @@
 @extends('layouts.base')
 
 @php
-    $title = __('Disputes') 
+    $title = __('Disputes');
+    $isParalegal = auth()->user()->can('isClerk');
 @endphp
 @section('title', 'AJISO | '.$title)
 
@@ -98,6 +99,30 @@
                                         name="dispute_no" value="" aria-describedby="dispute" required>
                                 </div>
                             </div>
+                            @if ($isParalegal)
+                                <div class="col-md-3 mb-3">
+                                    <label for="paralegal_user_id" class="font-weight-bold">{{ __('Assign Paralegal') }}<sup class="text-danger">*</sup></label>
+                                    <select id="paralegal_user_id" aria-describedby="selectParalegal"
+                                        class="select2 select2-container--default border-input-primary @error('paralegal_user_id') is-invalid @enderror"
+                                        name="paralegal_user_id" required autocomplete="paralegal_user_id" style="width: 100%;">
+                                        <option hidden disabled selected value>{{ __('Choose paralegal') }}</option>
+                                        @if (!empty($paralegals) && $paralegals->count())
+                                            @foreach ($paralegals as $paralegal)
+                                                <option value="{{ $paralegal->id }}" {{ old('paralegal_user_id') == $paralegal->id ? ' selected="selected"' : '' }}>
+                                                    {{ $paralegal->user_no.' | '.$paralegal->first_name.' '.$paralegal->middle_name.' '.$paralegal->last_name }}
+                                                </option>
+                                            @endforeach
+                                        @else
+                                            <option>{{ __('No paralegals found') }}</option>
+                                        @endif
+                                    </select>
+                                    @error('paralegal_user_id')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            @endif
                             <div class="col-md-3 mb-3">
                                 <label for="reported_on" class="font-weight-bold">{{ __('Date Reported') }}<sup class="text-danger">*</sup></label>
                                 <div class="form-group">
@@ -117,22 +142,42 @@
                                     </span>
                                 @enderror
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="matter_to_court" class="font-weight-bold">{{ __('Taken the matter to court?') }}<sup class="text-danger">*</sup></label>
-                                <select id="matter_to_court" aria-describedby="selectmatter_to_court"
-                                    class="select2 select2-container--default border-input-primary @error('matter_to_court') is-invalid @enderror"
-                                    name="matter_to_court" required autocomplete="matter_to_court" style="width: 100%;">
-                                    <option hidden disabled selected value>{{ __('Choose option') }}</option>
-                                    <option value="yes" {{ old('matter_to_court') == 'yes' ? ' selected="selected"' : '' }}>{{ __('Yes') }}</option>
-                                    <option value="no" {{ old('matter_to_court') == 'no' ? ' selected="selected"' : '' }}>{{ __('No') }}</option>
-                                </select>
-                                @error('matter_to_court')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-
+                            @unless ($isParalegal)
+                                <div class="col-md-3 mb-3">
+                                    <label for="matter_to_court" class="font-weight-bold">{{ __('Taken the matter to court?') }}<sup class="text-danger">*</sup></label>
+                                    <select id="matter_to_court" aria-describedby="selectmatter_to_court"
+                                        class="select2 select2-container--default border-input-primary @error('matter_to_court') is-invalid @enderror"
+                                        name="matter_to_court" required autocomplete="matter_to_court" style="width: 100%;">
+                                        <option hidden disabled selected value>{{ __('Choose option') }}</option>
+                                        <option value="yes" {{ old('matter_to_court') == 'yes' ? ' selected="selected"' : '' }}>{{ __('Yes') }}</option>
+                                        <option value="no" {{ old('matter_to_court') == 'no' ? ' selected="selected"' : '' }}>{{ __('No') }}</option>
+                                    </select>
+                                    @error('matter_to_court')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            @endunless
+                        </div>
+                        <div class="form-row">
+                            @if ($isParalegal)
+                                <div class="col-md-3 mb-3">
+                                    <label for="matter_to_court" class="font-weight-bold">{{ __('Taken the matter to court?') }}<sup class="text-danger">*</sup></label>
+                                    <select id="matter_to_court" aria-describedby="selectmatter_to_court"
+                                        class="select2 select2-container--default border-input-primary @error('matter_to_court') is-invalid @enderror"
+                                        name="matter_to_court" required autocomplete="matter_to_court" style="width: 100%;">
+                                        <option hidden disabled selected value>{{ __('Choose option') }}</option>
+                                        <option value="yes" {{ old('matter_to_court') == 'yes' ? ' selected="selected"' : '' }}>{{ __('Yes') }}</option>
+                                        <option value="no" {{ old('matter_to_court') == 'no' ? ' selected="selected"' : '' }}>{{ __('No') }}</option>
+                                    </select>
+                                    @error('matter_to_court')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            @endif
                             <div id="type_of_court_wrapper" style="display: none;" class="col-md-3 mb-3">
                                 <label for="type_of_court"  class="font-weight-bold" >{{ __('Type of court?') }}</label>
                                 <select id="type_of_court" aria-describedby="selecttype_of_court"
@@ -268,6 +313,25 @@
                                     </span>
                                 @enderror
                             </div>
+                            @if ($isParalegal)
+                                <div class="col-md-3 mb-3">
+                                    <label for="case_end_date" class="font-weight-bold">{{ __('Case End Date (Case Completed)') }}</label>
+                                    <div class="input-group date" id="case_end_date" data-target-input="nearest">
+                                        <input type="text"
+                                            class="form-control datetimepicker-input border-prepend-primary @error('case_end_date') is-invalid @enderror"
+                                            name="case_end_date" value="{{ old('case_end_date') }}" autocomplete="case_end_date"
+                                            data-target="#case_end_date" />
+                                        <div class="input-group-append" data-target="#case_end_date" data-toggle="datetimepicker">
+                                            <div class="input-group-text border-append-primary bg-prepend-primary"><i class="fas fa-calendar"></i></div>
+                                        </div>
+                                    </div>
+                                    @error('case_end_date')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            @endif
                         </div>
                         <div class="container">
                             <p class="form-text text-muted">
@@ -303,6 +367,12 @@
                 format: 'L',
                 viewMode: 'years'
             });
+            if ($('#case_end_date').length) {
+                $('#case_end_date').datetimepicker({
+                    format: 'L',
+                    viewMode: 'years'
+                });
+            }
 
         });
     </script>

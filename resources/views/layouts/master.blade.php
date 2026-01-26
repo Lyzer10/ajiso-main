@@ -13,7 +13,7 @@
 
         <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.min.js" defer></script>
         @stack('styles')
-        @livewireStyles
+
     </head>
     <body>
         <!--[if lt IE 8]>
@@ -57,6 +57,9 @@
                 </div>
                 <div class="main-menu">
                     <div class="menu-inner">
+                        @php
+                            $staffId = optional(auth()->user()->staff)->id;
+                        @endphp
                         <nav>
                             <ul class="metismenu" id="menu">
     {{-- Dashboard --}}
@@ -78,7 +81,7 @@
 
     {{-- Users --}}
     @canany(['isSuperAdmin','isAdmin','isClerk'])
-        <li class="{{ request()->routeIs('staff.*') || request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') || request()->routeIs('paralegals.*') || request()->routeIs('paralegal.create') ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('staff.*') || request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') || request()->routeIs('paralegals.*') || request()->routeIs('paralegal.create') || request()->routeIs('members.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-user-friends"></i>
                 <span>{{ __('Users') }}</span>
@@ -98,6 +101,16 @@
                     </a>
                 </li>
                 @endcannot
+                @can('isClerk')
+                    @if (auth()->user()->can_register_staff)
+                        <li class="{{ request()->routeIs('members.*') ? 'active' : '' }}">
+                            <a href="{{ route('members.list', app()->getLocale()) }}">
+                                <i class="fas fa-chevron-right"></i>
+                                {{ __('Members') }}
+                            </a>
+                        </li>
+                    @endif
+                @endcan
                 <li class="{{ request()->routeIs('beneficiaries.*') || request()->routeIs('beneficiary.*') ? 'active' : '' }}">
                     <a href="{{ route('beneficiaries.list', app()->getLocale()) }}">
                         <i class="fas fa-chevron-right"></i>
@@ -164,16 +177,18 @@
 
     {{-- My Cases (for staff only) --}}
     @unless(auth()->user()->can('isSuperAdmin') || auth()->user()->can('isClerk'))
-        <li class="{{ request()->routeIs('disputes.my.list') ? 'active' : '' }}">
-            <a href="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}">
-                <i class="fas fa-user-shield"></i>
-                <span>{{ __('My Cases') }}</span>
-            </a>
-        </li>
+        @if($staffId)
+            <li class="{{ request()->routeIs('disputes.my.list') ? 'active' : '' }}">
+                <a href="{{ route('disputes.my.list', [app()->getLocale(), $staffId]) }}">
+                    <i class="fas fa-user-shield"></i>
+                    <span>{{ __('My Cases') }}</span>
+                </a>
+            </li>
+        @endif
     @endunless
 
     {{-- Disputes Assignment --}}
-    @canany(['isSuperAdmin','isAdmin','isStaff','isClerk'])
+    @canany(['isSuperAdmin','isAdmin','isStaff'])
         <li class="{{ request()->routeIs('dispute.assign') || request()->routeIs('dispute.request.*') || request()->routeIs('disputes.request.*') ? 'active' : '' }}">
             <a href="javascript:void(0)" aria-expanded="true">
                 <i class="fas fa-sync"></i>
@@ -194,12 +209,14 @@
                         </a>
                     </li>
                 @elsecanany(['isStaff','isClerk'])
-                    <li class="{{ request()->routeIs('disputes.request.my-list') ? 'active' : '' }}">
-                        <a href="{{ route('disputes.request.my-list', [app()->getLocale(), auth()->user()->staff->id]) }}">
-                            <i class="fas fa-chevron-right"></i>
-                            {{ __('Requests List') }}
-                        </a>
-                    </li>
+                    @if($staffId)
+                        <li class="{{ request()->routeIs('disputes.request.my-list') ? 'active' : '' }}">
+                            <a href="{{ route('disputes.request.my-list', [app()->getLocale(), $staffId]) }}">
+                                <i class="fas fa-chevron-right"></i>
+                                {{ __('Requests List') }}
+                            </a>
+                        </li>
+                    @endif
                 @endcanany
             </ul>
         </li>

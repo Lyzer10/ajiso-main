@@ -1,20 +1,22 @@
 @extends('layouts.base')
 
 @php
-    $title = __('Paralegals');
+    $membersMode = $membersMode ?? false;
+    $listRoute = $listRoute ?? 'paralegals.list';
+    $title = $membersMode ? __('Members') : __('Paralegals');
 @endphp
 @section('title', 'AJISO | '.$title)
 
 @section('breadcrumb')
     <div class="breadcrumbs-area clearfix">
-        <h4 class="page-title pull-left">{{ __('Paralegals') }}</h4>
+        <h4 class="page-title pull-left">{{ $membersMode ? __('Members') : __('Paralegals') }}</h4>
         <ul class="breadcrumbs pull-left">
             @canany(['isSuperAdmin','isAdmin', 'isClerk'])
                 <li><a href="{{ route('admin.home', app()->getLocale())}}">{{ __('Home') }}</a></li>
             @elsecanany(['isStaff'])
                 <li><a href="{{ route('staff.home', app()->getLocale())}}">{{ __('Home') }}</a></li>
             @endcanany
-            <li><span>{{ __('Paralegals List') }}</span></li>
+            <li><span>{{ $membersMode ? __('Members List') : __('Paralegals List') }}</span></li>
         </ul>
     </div>
 @endsection
@@ -49,47 +51,53 @@
         <div class="card">
             <div class="card-header">
                 <div class="header-title clearfix">
-                    {{ __('Paralegals list') }}
-                    <a class="btn btn-sm text-white light-custom-color pull-right" href="{{ route('paralegal.create', app()->getLocale()) }}">
-                        {{ __('Add Paralegal') }}
-                    </a>
-                    @php
-                        $exportParams = array_filter([
-                            'search' => request('search'),
-                            'organization_id' => request('organization_id'),
-                        ]);
-                        $exportQuery = $exportParams ? ('?' . http_build_query($exportParams)) : '';
-                    @endphp
-                    <div class="dropdown pull-right mr-2">
-                        <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-toggle="dropdown">
-                            <i class="fas fa-download fa-fw"></i>
-                            {{ __('Export') }}
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item" href="{{ route('paralegals.export.pdf', app()->getLocale()) }}{{ $exportQuery }}">
-                                <i class="fas fa-file-pdf text-danger"></i>
-                                {{ __('as pdf') }}
-                            </a>
-                            <a class="dropdown-item" href="{{ route('paralegals.export.excel', app()->getLocale()) }}{{ $exportQuery }}">
-                                <i class="fas fa-file-excel text-success"></i>
-                                {{ __('as excel') }}
-                            </a>
-                            <a class="dropdown-item" href="{{ route('paralegals.export.csv', app()->getLocale()) }}{{ $exportQuery }}">
-                                <i class="fas fa-file-csv text-warning"></i>
-                                {{ __('as csv') }}
-                            </a>
+                    {{ $membersMode ? __('Members list') : __('Paralegals list') }}
+                    @if (!auth()->user()->can('isClerk') || auth()->user()->can_register_staff)
+                        <a class="btn btn-sm text-white light-custom-color pull-right" href="{{ route('paralegal.create', app()->getLocale()) }}">
+                            {{ $membersMode ? __('Add Member') : __('Add Paralegal') }}
+                        </a>
+                    @endif
+                    @unless ($membersMode)
+                        @php
+                            $exportParams = array_filter([
+                                'search' => request('search'),
+                                'organization_id' => request('organization_id'),
+                            ]);
+                            $exportQuery = $exportParams ? ('?' . http_build_query($exportParams)) : '';
+                        @endphp
+                        <div class="dropdown pull-right mr-2">
+                            <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-toggle="dropdown">
+                                <i class="fas fa-download fa-fw"></i>
+                                {{ __('Export') }}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{{ route('paralegals.export.pdf', app()->getLocale()) }}{{ $exportQuery }}">
+                                    <i class="fas fa-file-pdf text-danger"></i>
+                                    {{ __('as pdf') }}
+                                </a>
+                                <a class="dropdown-item" href="{{ route('paralegals.export.excel', app()->getLocale()) }}{{ $exportQuery }}">
+                                    <i class="fas fa-file-excel text-success"></i>
+                                    {{ __('as excel') }}
+                                </a>
+                                <a class="dropdown-item" href="{{ route('paralegals.export.csv', app()->getLocale()) }}{{ $exportQuery }}">
+                                    <i class="fas fa-file-csv text-warning"></i>
+                                    {{ __('as csv') }}
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                    <form method="GET" action="{{ route('paralegals.list', [app()->getLocale()]) }}" class="d-flex align-items-center pull-right mb-2 mr-2">
+                    @endunless
+                    <form method="GET" action="{{ route($listRoute, [app()->getLocale()]) }}" class="d-flex align-items-center pull-right mb-2 mr-2">
                         <div class="d-flex align-items-center mr-4">
-                            <select name="organization_id" class="form-control form-control-sm select2 mr-2" style="min-width: 220px;">
-                                <option value="">{{ __('All Organizations') }}</option>
-                                @foreach ($organizations as $organization)
-                                    <option value="{{ $organization->id }}" {{ (string) $organizationId === (string) $organization->id ? 'selected' : '' }}>
-                                        {{ $organization->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            @unless ($membersMode)
+                                <select name="organization_id" class="form-control form-control-sm select2 mr-2" style="min-width: 220px;">
+                                    <option value="">{{ __('All Organizations') }}</option>
+                                    @foreach ($organizations as $organization)
+                                        <option value="{{ $organization->id }}" {{ (string) $organizationId === (string) $organization->id ? 'selected' : '' }}>
+                                            {{ $organization->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endunless
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by name') }}" class="form-control form-control-sm mr-2 border-prepend-black p-2">
                             <button type="submit" class="btn btn-sm btn-primary">{{ __('Search') }}</button>
                         </div>
@@ -153,7 +161,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td class="p-1">{{ __('No paralegals found') }}</td>
+                                <td class="p-1">{{ $membersMode ? __('No members found') : __('No paralegals found') }}</td>
                             </tr>
                         @endforelse
                         </tbody>

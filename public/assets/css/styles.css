@@ -686,8 +686,9 @@
 
 .page-title-area {
     padding: 10px 30px;
-    background: #fff;
+    background: var(--header-color);
     position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .page-title-area:before {
@@ -705,7 +706,7 @@
 .page-title {
     font-size: 16px;
     font-weight: bold;
-    color: #313b3d;
+    color: #ffffff;
     letter-spacing: 0;
     margin-right: 30px;
 }
@@ -723,7 +724,7 @@
     display: block;
     font-size: 14px;
     font-weight: 400;
-    color: var(--primary-color);
+    color: rgba(255, 255, 255, 0.9);
     letter-spacing: 0;
     margin-right: 16px;
     position: relative;
@@ -731,7 +732,7 @@
 
 .breadcrumbs li a:before {
     content: "/";
-    color: #768387;
+    color: rgba(255, 255, 255, 0.65);
     position: absolute;
     right: -13px;
     top: 0;
@@ -739,7 +740,7 @@
 
 .breadcrumbs li span {
     margin-right: 0;
-    color: #768387;
+    color: rgba(255, 255, 255, 0.75);
     text-transform: capitalize;
 }
 
