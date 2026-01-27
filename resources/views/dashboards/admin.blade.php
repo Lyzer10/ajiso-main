@@ -59,12 +59,12 @@
                         <div class="card">
                             <div class="seo-fact sbg4">
                                 <div class="p-4 d-flex justify-content-between align-items-center">
-                                    <div class="seofct-icon"><i class="fas fa-hourglass-half"></i>{{ __('Pending Cases') }}</div>
-                                    <h2>{{ $disputes_pending ?? '0' }}</h2>
+                                    <div class="seofct-icon"><i class="fas fa-users"></i>{{ __('Paralegal Members') }}</div>
+                                    <h2>{{ $total_staff ?? '0' }}</h2>
                                 </div>
                                 <canvas id="" height="20"></canvas>
                                 <div class="card-footer bg-dark-yellow text-center">
-                                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                    <a href="{{ route('members.list', app()->getLocale()) }}" class="small-box-footer text-white">
                                         {{ __('More info') }}
                                         <i class="fas fa-arrow-circle-right"></i>
                                     </a>
@@ -81,7 +81,7 @@
                                 </div>
                                 <canvas id="" height="20"></canvas>
                                 <div class="card-footer  text-center">
-                                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="small-box-footer text-white">
+                                    <a href="{{ route('disputes.list', app()->getLocale()) }}?status={{ $resolvedStatusId }}" class="small-box-footer text-white">
                                         {{ __('More info') }}
                                         <i class="fas fa-arrow-circle-right"></i>
                                     </a>

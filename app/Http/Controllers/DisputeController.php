@@ -19,6 +19,8 @@ use App\Models\DisputeActivity;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use App\Modules\Disputes\Queries\DisputeListQuery;
+use App\Modules\Disputes\Services\DisputeShowService;
 use App\Notifications\DisputeCreated;
 use App\Notifications\StaffDisputeAssigned;
 use App\Notifications\ClientDisputeAssigned;
@@ -49,60 +51,13 @@ class DisputeController extends Controller
             return redirect()->back()
                 ->withErrors('errors', 'Organization not assigned.');
         }
-
-        // Get all disputes and bind them to the index view (staff can view, but not assign)
-        $query = Dispute::has('reportedBy')
-            ->with(
-                'assignedTo:first_name,middle_name,last_name,user_no',
-                'paralegalUser:id,first_name,middle_name,last_name,user_no',
-                'reportedBy:first_name,middle_name,last_name,user_no',
-                'disputeStatus:id,dispute_status'
-            )
-            ->select(
-                [
-                    'id',
-                    'dispute_no',
-                    'beneficiary_id',
-                    'staff_id',
-                    'paralegal_user_id',
-                    'reported_on',
-                    'dispute_status_id',
-                    'type_of_case_id'
-                ]
-            )
-            ->latest();
-
-        if ($organizationId) {
-            $query->whereHas('reportedBy', function ($q) use ($organizationId) {
-                $q->where('organization_id', $organizationId);
-            });
-        }
-
-        // Filter by dispute status if provided
-        if ($statusId = request('status')) {
-            $query->where('dispute_status_id', (int) $statusId);
-        }
-
-        // Filter by case type if provided
-        if ($caseTypeId = request('case_type')) {
-            $query->where('type_of_case_id', (int) $caseTypeId);
-        }
-
-        // Filter by period if provided
+        $filters = [
+            'status' => request('status'),
+            'case_type' => request('case_type'),
+            'search' => request('search'),
+        ];
         [$periodStart, $periodEnd] = $this->resolvePeriodRange(request('period'), request('dateRange'));
-        if ($periodStart && $periodEnd) {
-            $query->whereBetween('reported_on', [$periodStart, $periodEnd]);
-        }
-
-        // Search by beneficiary name
-        if ($search = request('search')) {
-            $query->whereHas('reportedBy', function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('middle_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%");
-            });
-        }
-
+        $query = (new DisputeListQuery())->build($organizationId, $filters, $periodStart, $periodEnd);
         $disputes = $query->paginate(10);
         $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
         $type_of_cases = TypeOfCase::get(['id', 'type_of_case']);
@@ -1222,51 +1177,11 @@ class DisputeController extends Controller
 
         $this->ensureOrganizationAccess($dispute);
 
-        // TODO : Try the only() method on the above models within the show view
-        // Get how many times a dispute has been reported
-        $occurrences = Dispute::with('assignedTo', 'disputeStatus')
-            ->where('dispute_no', $dispute->dispute_no)
-            ->get(['id', 'reported_on', 'staff_id', 'dispute_status_id']);
+        $context = (new DisputeShowService())->buildContext($dispute, auth()->user());
 
-        // Get all the dispute_statuses and bind them to the create  view
-        $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
-        $continueStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['continue'])
-            ->value('id');
-        $referredStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['referred'])
-            ->value('id');
-
-        $user = auth()->user();
-        $isStaffUser = $user && $user->can('isStaff');
-        $isParalegalUser = $user && $user->can('isClerk');
-        $isAdminUser = $user && ($user->can('isAdmin') || $user->can('isSuperAdmin'));
-        $currentStaffId = optional($user->staff)->id;
-        
-        // Only admins can reassign/request assistance; legal aid users should only reopen cases
-        $canRequestReassignment = $isAdminUser;
-        $requiresTargetStaff = $isStaffUser || $isAdminUser;
-
-        $availableStaff = collect();
-        if ($requiresTargetStaff) {
-            $availableStaff = Staff::has('user')
-                ->with('user.designation:id,name', 'center:id,name')
-                ->where('type', 'staff')
-                ->whereHas('user', function ($query) {
-                    $query->where('is_active', 1);
-                })
-                ->get(['id', 'user_id', 'center_id']);
-        }
-
-        return response(view('disputes.show', compact(
-            'dispute',
-            'occurrences',
-            'dispute_statuses',
-            'continueStatusId',
-            'referredStatusId',
-            'availableStaff',
-            'canRequestReassignment',
-            'requiresTargetStaff',
-            'isParalegalUser',
-            'isAdminUser'
+        return response(view('disputes.show', array_merge(
+            ['dispute' => $dispute],
+            $context
         )));
     }
 

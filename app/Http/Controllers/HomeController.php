@@ -142,6 +142,8 @@ class HomeController extends Controller
             'total_paralegals',
             'total_beneficiaries',
             'disputes_pending',
+            'disputes_resolved',
+            'resolvedStatusId',
             'tos_data',
             'toc_data',
             'dis_data',

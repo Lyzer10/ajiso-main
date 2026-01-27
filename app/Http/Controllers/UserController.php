@@ -11,6 +11,9 @@ use App\Services\SmsService;
 use \App\Traits\ImageUpload;
 use Illuminate\Http\Request;
 use App\Notifications\UserCreated;
+use App\Modules\Users\Queries\UserListQuery;
+use App\Modules\Users\Queries\ParalegalListQuery;
+use App\Modules\Users\Services\UserCountsService;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Facade\FlareClient\Http\Response;
@@ -41,47 +44,18 @@ class UserController extends Controller
     public function index()
     {
         $beneficiaryRoleId = UserRole::where('role_abbreviation', 'beneficiary')->value('id');
+        $users = (new UserListQuery())->build($beneficiaryRoleId)->paginate(10);
 
-        // Eager load all users with their roles
-        $users = User::with('role:id,role_abbreviation,role_name')
-            ->select(
-                [
-                    'id',
-                    'name',
-                    'user_no',
-                    'first_name',
-                    'middle_name',
-                    'last_name',
-                    'email',
-                    'is_active',
-                    'user_role_id'
-                ]
-            )
-            ->when($beneficiaryRoleId, function ($query, $roleId) {
-                return $query->where('user_role_id', '!=', $roleId);
-            })
-            ->latest()
-            ->paginate(10);
-
-        $roleIds = UserRole::whereIn('role_abbreviation', [
+        $counts = (new UserCountsService())->getRoleCounts([
             'superadmin',
             'admin',
             'paralegal',
             'staff',
-        ])->pluck('id', 'role_abbreviation');
-
-        $super_admin_count = $roleIds->get('superadmin')
-            ? User::where('user_role_id', $roleIds->get('superadmin'))->count()
-            : 0;
-        $admin_count = $roleIds->get('admin')
-            ? User::where('user_role_id', $roleIds->get('admin'))->count()
-            : 0;
-        $paralegal_count = $roleIds->get('paralegal')
-            ? User::where('user_role_id', $roleIds->get('paralegal'))->count()
-            : 0;
-        $lap_count = $roleIds->get('staff')
-            ? User::where('user_role_id', $roleIds->get('staff'))->count()
-            : 0;
+        ]);
+        $super_admin_count = $counts['superadmin'];
+        $admin_count = $counts['admin'];
+        $paralegal_count = $counts['paralegal'];
+        $lap_count = $counts['staff'];
 
         return view('users.list', compact(
             [
@@ -101,43 +75,12 @@ class UserController extends Controller
      */
     public function paralegals()
     {
+        $currentUser = auth()->user();
+        $isParalegalUser = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
         $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
         $search = request('search');
-        $organizationId = request('organization_id');
-
-        $users = User::with(['role:id,role_abbreviation,role_name', 'organization:id,name'])
-            ->select(
-                [
-                    'id',
-                    'name',
-                    'user_no',
-                    'first_name',
-                    'middle_name',
-                    'last_name',
-                    'email',
-                    'is_active',
-                    'user_role_id',
-                    'organization_id'
-                ]
-            )
-            ->when($paralegalRoleId, function ($query, $roleId) {
-                return $query->where('user_role_id', $roleId);
-            })
-            ->when($search, function ($query, $search) {
-                $query->where(function ($subQuery) use ($search) {
-                    $like = '%' . $search . '%';
-                    $subQuery->where('name', 'like', $like)
-                        ->orWhere('first_name', 'like', $like)
-                        ->orWhere('middle_name', 'like', $like)
-                        ->orWhere('last_name', 'like', $like)
-                        ->orWhere('email', 'like', $like)
-                        ->orWhere('user_no', 'like', $like);
-                });
-            })
-            ->when($organizationId, function ($query, $organizationId) {
-                return $query->where('organization_id', $organizationId);
-            })
-            ->latest()
+        $organizationId = $isParalegalUser ? $currentUser->organization_id : request('organization_id');
+        $users = (new ParalegalListQuery())->build($paralegalRoleId, $search, $organizationId)
             ->paginate(10);
 
         $organizations = Organization::orderBy('name')->get(['id', 'name']);
@@ -161,38 +104,7 @@ class UserController extends Controller
         $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
         $search = request('search');
         $organizationId = $currentUser->organization_id;
-
-        $users = User::with(['role:id,role_abbreviation,role_name', 'organization:id,name'])
-            ->select(
-                [
-                    'id',
-                    'name',
-                    'user_no',
-                    'first_name',
-                    'middle_name',
-                    'last_name',
-                    'email',
-                    'is_active',
-                    'user_role_id',
-                    'organization_id'
-                ]
-            )
-            ->when($paralegalRoleId, function ($query, $roleId) {
-                return $query->where('user_role_id', $roleId);
-            })
-            ->where('organization_id', $organizationId)
-            ->when($search, function ($query, $search) {
-                $query->where(function ($subQuery) use ($search) {
-                    $like = '%' . $search . '%';
-                    $subQuery->where('name', 'like', $like)
-                        ->orWhere('first_name', 'like', $like)
-                        ->orWhere('middle_name', 'like', $like)
-                        ->orWhere('last_name', 'like', $like)
-                        ->orWhere('email', 'like', $like)
-                        ->orWhere('user_no', 'like', $like);
-                });
-            })
-            ->latest()
+        $users = (new ParalegalListQuery())->build($paralegalRoleId, $search, $organizationId)
             ->paginate(10);
 
         $organizations = Organization::where('id', $organizationId)->get(['id', 'name']);
@@ -309,6 +221,9 @@ class UserController extends Controller
 
         if ($isTargetParalegal && $isParalegalCreator) {
             $rules['organization_id'] = ['nullable', 'integer', 'exists:organizations,id'];
+            $rules['email'] = ['nullable', 'string', 'email', 'max:255', 'unique:users'];
+            $rules['tel_no'] = ['nullable', 'string', 'max:15'];
+            $rules['password'] = ['nullable', 'string', 'min:8'];
         } else {
             $rules['organization_id'] = $isTargetParalegal
                 ? ['required', 'integer', 'exists:organizations,id']
@@ -328,13 +243,21 @@ class UserController extends Controller
 
         $user->user_no = $request->user_no;
         $user->name = $request->name;
+        $generatedPassword = null;
+        if ($isTargetParalegal && $isParalegalCreator) {
+            $generatedPassword = str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+        }
+        $passwordToUse = $request->password ?: $generatedPassword;
+
         $user->email = $request->email;
-        $user->password = Hash::make($request->password);
+        $user->password = Hash::make($passwordToUse);
         $user->salutation_id = $request->designation;
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
-        $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
+        $user->tel_no = $request->tel_no
+            ? Str::replaceFirst('0', '+255', $request->tel_no)
+            : '';
         $user->user_role_id = $request->user_role;
         if ($isTargetParalegal) {
             $user->organization_id = $isParalegalCreator
@@ -428,15 +351,17 @@ class UserController extends Controller
             try {
                 if ($isTargetParalegal) {
                     if (env('SEND_NOTIFICATIONS') == TRUE) {
-                        $dest_addr = SmsService::normalizeRecipient($user->tel_no);
-                        if ($dest_addr) {
-                            $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
-                            $message = 'Habari ' . trim($user->first_name . ' ' . $user->last_name) .
-                                ', akaunti yako ya paralegal imeundwa. Tumia barua pepe: ' . $user->email .
-                                ' na nywila: ' . $request->password .
-                                ' kuingia kwenye mfumo. Ahsante.';
-                            $sms = new SmsService();
-                            $sms->sendSMS($recipients, $message);
+                        if (!$isParalegalCreator) {
+                            $dest_addr = SmsService::normalizeRecipient($user->tel_no);
+                            if ($dest_addr) {
+                                $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
+                                $message = 'Habari ' . trim($user->first_name . ' ' . $user->last_name) .
+                                    ', akaunti yako ya paralegal imeundwa. Tumia barua pepe: ' . $user->email .
+                                    ' na nywila: ' . $passwordToUse .
+                                    ' kuingia kwenye mfumo. Ahsante.';
+                                $sms = new SmsService();
+                                $sms->sendSMS($recipients, $message);
+                            }
                         }
                     }
                 } else {
@@ -454,8 +379,13 @@ class UserController extends Controller
             }
 
             if ($role && $role->role_abbreviation === 'paralegal') {
-                return redirect()->route('paralegals.list', app()->getLocale())
-                    ->with('status', 'Paralegal information added, successfully.');
+                $route = $isParalegalCreator ? 'members.list' : 'paralegals.list';
+                $statusMessage = __('Paralegal information added, successfully.');
+                if ($isParalegalCreator && $generatedPassword) {
+                    $statusMessage .= ' ' . __('Temporary password: :password', ['password' => $generatedPassword]);
+                }
+                return redirect()->route($route, app()->getLocale())
+                    ->with('status', $statusMessage);
             }
 
             return redirect()->route('users.list', app()->getLocale())

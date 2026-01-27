@@ -11,6 +11,8 @@ use App\Models\District;
 use App\Models\Beneficiary;
 use App\Models\Designation;
 use App\Models\Organization;
+use App\Modules\Beneficiaries\Queries\BeneficiaryListQuery;
+use App\Modules\Beneficiaries\Services\BeneficiaryCreateService;
 use App\Notifications\CustomNotice;
 use Illuminate\Support\Str;
 use \App\Traits\ImageUpload;
@@ -56,27 +58,7 @@ class BeneficiaryController extends Controller
     {
         $organizationId = $this->getOrganizationId();
 
-        // Build initial query
-        $query = Beneficiary::whereHas('user')
-            ->with('user')
-            ->latest();
-
-        if ($organizationId) {
-            $query->whereHas('user', function ($q) use ($organizationId) {
-                $q->where('organization_id', $organizationId);
-            });
-        }
-
-        // Apply search if request has ?search=
-        if ($search = request('search')) {
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('middle_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%");
-            });
-        }
-
-        // Execute query + pagination
+        $query = (new BeneficiaryListQuery())->build($organizationId, request('search'));
         $beneficiaries = $query->paginate(10);
 
         return view('beneficiaries.list', compact('beneficiaries'));
@@ -95,98 +77,8 @@ class BeneficiaryController extends Controller
             return redirect()->back()
                 ->withErrors('errors', 'Organization not assigned.');
         }
-
-        // Get all the marital_statuses and bind them to the create view
-        $marital_statuses = MaritalStatus::get(['id', 'marital_status']);
-
-        // Get all the districts and bind them to the create view
-        $districts = District::get(['id', 'district', 'region_id']);
-
-        // Get all the regions and bind them to the create view
-        $regions = Region::get(['id', 'region']);
-
-        // Get all the education_levels and bind them to the create view
-        $education_levels = EducationLevel::get(['id', 'education_level']);
-
-        // Get all the tribes and bind them to the create view
-        $tribes = Tribe::get(['id', 'tribe']);
-
-        // Get all the religions and bind them to the create view
-        $religions = Religion::get(['id', 'religion']);
-
-        // Get all the marriage_forms and bind them to the create view
-        $marriage_forms = MarriageForm::get(['id', 'marriage_form']);
-
-        // Get all the employment_statuses and bind them to the create view
-        $employment_statuses = EmploymentStatus::get(['id', 'employment_status']);
-
-        // Get all the survey_choices and bind them to the create view
-        $survey_choices = SurveyChoice::get(['id', 'survey_choice']);
-
-        $defaultRegionId = null;
-        $defaultDistrictId = null;
-        if ($this->isParalegal() && $organizationId) {
-            $org = Organization::find($organizationId);
-            if ($org) {
-                $defaultRegionId = $org->region_id;
-                $defaultDistrictId = $org->district_id;
-            }
-        }
-
-        // Generate file number
-        $currentYear = date('Y');
-        
-        // Get organization prefix
-        $prefix = 'AJISO';
-        if ($this->isParalegal() && $organizationId) {
-            $org = Organization::find($organizationId);
-            if ($org) {
-                $initials = $this->getOrganizationInitials($org->name);
-                if ($initials !== '') {
-                    $prefix = $initials;
-                }
-            }
-        }
-
-        // Get the last beneficiary created this year with the same prefix
-        $lastUserQuery = User::where('user_role_id', 4) // only beneficiaries
-            ->whereYear('created_at', $currentYear)
-            ->where('user_no', 'like', $prefix . '/' . $currentYear . '/%');
-
-        if ($this->isParalegal() && $organizationId) {
-            $lastUserQuery->where('organization_id', $organizationId);
-        }
-
-        $lastUser = $lastUserQuery
-            ->orderBy('id', 'desc')
-            ->first();
-
-        // Determine next sequence number
-        $nextNumber = 1; // default if no record this year
-
-        if ($lastUser && $lastUser->user_no) {
-            $lastNumber = (int) Str::afterLast($lastUser->user_no, '/');
-            $nextNumber = $lastNumber + 1;
-        }
-
-        // Generate file number format
-        $fileNo = $prefix . '/' . $currentYear . '/' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-
-        // Return all data to the view
-        return view('beneficiaries.create', compact(
-            'marital_statuses',
-            'regions',
-            'districts',
-            'education_levels',
-            'survey_choices',
-            'tribes',
-            'religions',
-            'marriage_forms',
-            'employment_statuses',
-            'fileNo',
-            'defaultRegionId',
-            'defaultDistrictId' // ✅ make sure to pass this to the view
-        ));
+        $data = (new BeneficiaryCreateService())->buildFormData($organizationId, $this->isParalegal());
+        return view('beneficiaries.create', $data);
     }
 
 
@@ -843,35 +735,6 @@ class BeneficiaryController extends Controller
         return $this->isParalegal() ? auth()->user()->organization_id : null;
     }
 
-    private function getOrganizationInitials($name)
-    {
-        $name = trim((string) $name);
-        if ($name === '') {
-            return '';
-        }
-
-        $parts = preg_split('/[^A-Za-z0-9]+/', $name, -1, PREG_SPLIT_NO_EMPTY);
-        if (!$parts) {
-            return '';
-        }
-
-        $initials = '';
-        foreach ($parts as $part) {
-            $initials .= Str::upper(Str::substr($part, 0, 1));
-        }
-
-        // Ensure at least 3 letters by falling back to the first 3 chars of the name
-        if (Str::length($initials) >= 3) {
-            return $initials;
-        }
-
-        $cleanName = preg_replace('/[^A-Za-z0-9]/', '', $name);
-        if ($cleanName === '' || $cleanName === null) {
-            return $initials;
-        }
-
-        return Str::upper(Str::substr($cleanName, 0, 3));
-    }
 
     private function ensureOrganizationAccess(Beneficiary $beneficiary)
     {

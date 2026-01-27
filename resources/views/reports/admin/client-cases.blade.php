@@ -62,7 +62,7 @@
                             <tbody>
                                 @forelse ($disputes as $dispute)
                                     @php
-                                        $client = $dispute->reportedBy->user ?? null;
+                                        $client = $dispute->reportedBy ?? null;
                                         $clientName = $client
                                             ? trim($client->first_name.' '.$client->middle_name.' '.$client->last_name)
                                             : 'N/A';

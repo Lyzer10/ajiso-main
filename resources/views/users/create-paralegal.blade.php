@@ -53,7 +53,7 @@
         <div class="card mt-5">
             <div class="card-header">
                 <h4 class="header-title">{{ __('Add Paralegal') }}
-                    <a href="{{ route('paralegals.list', app()->getLocale()) }}" class="btn btn-sm btn-secondary pull-right text-white">{{ __('Back to Paralegals') }}</a>
+                    <a href="{{ route(!empty($isParalegalCreator) ? 'members.list' : 'paralegals.list', app()->getLocale()) }}" class="btn btn-sm btn-secondary pull-right text-white">{{ __('Back to Paralegals') }}</a>
                 </h4>
             </div>
             <div class="card-body">
@@ -147,10 +147,10 @@
                     </div>
                     <div class="form-row">
                         <div class="col-md-4 mb-3">
-                            <label for="validationCustom01" class="font-weight-bold">{{ __('Email Address') }}<sup class="text-danger">*</sup></label>
+                            <label for="validationCustom01" class="font-weight-bold">{{ __('Email Address') }}@if (empty($isParalegalCreator))<sup class="text-danger">*</sup>@endif</label>
                             <input type="email"  id="email" placeholder="Email Address"
                                 class="form-control  border-input-primary @error('email') is-invalid @enderror"
-                                name="email" value="{{ old('email') }}" required autocomplete="email">
+                                name="email" value="{{ old('email') }}" {{ empty($isParalegalCreator) ? 'required' : '' }} autocomplete="email">
                             @error('email')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -158,10 +158,10 @@
                             @enderror
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="tel_no" class="font-weight-bold">{{ __('Telephone No') }}<sup class="text-danger">*</sup></label>
+                            <label for="tel_no" class="font-weight-bold">{{ __('Telephone No') }}@if (empty($isParalegalCreator))<sup class="text-danger">*</sup>@endif</label>
                             <input type="tel" id="tel_no" placeholder="Telephone number"
                                 class="form-control  border-input-primary @error('tel_no') is-invalid @enderror"
-                                name="tel_no" value="{{ old('tel_no') }}" required autocomplete="tel_no" style="width: 100%;">
+                                name="tel_no" value="{{ old('tel_no') }}" {{ empty($isParalegalCreator) ? 'required' : '' }} autocomplete="tel_no" style="width: 100%;">
                                 <small class="form-text text-muted"> <i class="fas fa-exclamation-circle text-info"></i> {{ __('Format: 0712345678') }}</small>
                             @error('tel_no')
                                 <span class="invalid-feedback" role="alert">
@@ -187,21 +187,30 @@
                         </div>
                     </div>
                     <div class="form-row">
-                        <div class="col-md-4 mb-3">
-                            <label for="password" class="font-weight-bold">{{ __('Password') }}<sup class="text-danger">*</sup></label>
-                            <input id="password" type="password" pattern="[0-9a-zA-Z]{8,50}"
-                                title="password should be 8 or more characters containing at least a number, a lowercase and uppercase letter"
-                                class="form-control  border-primary @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
-                            @error('password')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="password-confirm" class="font-weight-bold">{{ __('Confirm Password') }}<sup class="text-danger">*</sup></label>
-                            <input id="password-confirm" type="password" class="form-control  border-primary" name="password_confirmation" required autocomplete="new-password">
-                        </div>
+                        @if (empty($isParalegalCreator))
+                            <div class="col-md-4 mb-3">
+                                <label for="password" class="font-weight-bold">{{ __('Password') }}<sup class="text-danger">*</sup></label>
+                                <input id="password" type="password" pattern="[0-9a-zA-Z]{8,50}"
+                                    title="password should be 8 or more characters containing at least a number, a lowercase and uppercase letter"
+                                    class="form-control  border-primary @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
+                                @error('password')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="password-confirm" class="font-weight-bold">{{ __('Confirm Password') }}<sup class="text-danger">*</sup></label>
+                                <input id="password-confirm" type="password" class="form-control  border-primary" name="password_confirmation" required autocomplete="new-password">
+                            </div>
+                        @else
+                            <div class="col-md-8 mb-3">
+                                <label class="font-weight-bold">{{ __('Password') }}</label>
+                                <div class="form-control border-primary bg-light text-muted">
+                                    {{ __('Password will be generated automatically.') }}
+                                </div>
+                            </div>
+                        @endif
                         <div class="col-md-4 mb-3">
                             <label for="organization_id" class="font-weight-bold">{{ __('Organization') }}<sup class="text-danger">*</sup></label>
                             <select id="organization_id"
