@@ -43,15 +43,21 @@ class UserController extends Controller
      */
     public function index()
     {
+        $currentUser = auth()->user();
+        $isParalegalUser = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        if ($isParalegalUser) {
+            return redirect()->route('members.list', app()->getLocale());
+        }
         $beneficiaryRoleId = UserRole::where('role_abbreviation', 'beneficiary')->value('id');
-        $users = (new UserListQuery())->build($beneficiaryRoleId)->paginate(10);
+        $organizationId = $isParalegalUser ? $currentUser->organization_id : null;
+        $users = (new UserListQuery())->build($beneficiaryRoleId, $organizationId)->paginate(10);
 
         $counts = (new UserCountsService())->getRoleCounts([
             'superadmin',
             'admin',
             'paralegal',
             'staff',
-        ]);
+        ], $organizationId);
         $super_admin_count = $counts['superadmin'];
         $admin_count = $counts['admin'];
         $paralegal_count = $counts['paralegal'];

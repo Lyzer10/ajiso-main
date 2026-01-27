@@ -113,7 +113,9 @@
                                 <th>{{ __('Username') }}</th>
                                 <th>{{ __('Full Name') }}</th>
                                 <th>{{ __('Email') }}</th>
-                                <th>{{ __('Organization') }}</th>
+                                @unless ($membersMode)
+                                    <th>{{ __('Organization') }}</th>
+                                @endunless
                                 <th>{{ __('Status') }}</th>
                                 <th colspan="2">{{ __('Action') }}</th>
                             </tr>
@@ -133,7 +135,9 @@
                                     {{ ' '.$user->last_name }}
                                 </td>
                                 <td>{{ $user->email ?? 'N/A' }}</td>
-                                <td>{{ $user->organization->name ?? 'N/A' }}</td>
+                                @unless ($membersMode)
+                                    <td>{{ $user->organization->name ?? 'N/A' }}</td>
+                                @endunless
                                 <td>
                                     @if ((bool) $user->is_active === true)
                                     <span class="p-1 {{ 'badge badge-success' }}">

@@ -7,7 +7,7 @@ use App\Models\UserRole;
 
 class UserCountsService
 {
-    public function getRoleCounts(array $roleAbbreviations): array
+    public function getRoleCounts(array $roleAbbreviations, ?int $organizationId): array
     {
         $roleIds = UserRole::whereIn('role_abbreviation', $roleAbbreviations)
             ->pluck('id', 'role_abbreviation');
@@ -15,7 +15,15 @@ class UserCountsService
         $counts = [];
         foreach ($roleAbbreviations as $abbr) {
             $roleId = $roleIds->get($abbr);
-            $counts[$abbr] = $roleId ? User::where('user_role_id', $roleId)->count() : 0;
+            if (!$roleId) {
+                $counts[$abbr] = 0;
+                continue;
+            }
+            $query = User::where('user_role_id', $roleId);
+            if ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            }
+            $counts[$abbr] = $query->count();
         }
 
         return $counts;
