@@ -165,8 +165,21 @@ class BeneficiaryController extends Controller
         $user->first_name = Str::ucfirst($request->first_name);
         $user->middle_name = Str::ucfirst($request->middle_name);
         $user->last_name = Str::ucfirst($request->last_name);
-        $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
-        $user->mobile_no = Str::replaceFirst('0', '+255', $request->mobile_no);
+        if ($request->tel_no === '0000000000') {
+            $user->tel_no = '0000000000';
+        } elseif (!empty($request->tel_no)) {
+            $user->tel_no = Str::replaceFirst('0', '+255', $request->tel_no);
+        } else {
+            $user->tel_no = null;
+        }
+
+        if ($request->mobile_no === '0000000000') {
+            $user->mobile_no = '0000000000';
+        } elseif (!empty($request->mobile_no)) {
+            $user->mobile_no = Str::replaceFirst('0', '+255', $request->mobile_no);
+        } else {
+            $user->mobile_no = null;
+        }
         $user->user_role_id = '4';
         $user->organization_id = $this->isParalegal() ? $organizationId : null;
 

@@ -55,6 +55,10 @@ class SmsService
             return null;
         }
 
+        if ($digits === '0000000000') {
+            return null;
+        }
+
         if (strpos($digits, '0') === 0) {
             $digits = '255' . substr($digits, 1);
         } elseif (strpos($digits, '255') !== 0 && strlen($digits) === 9) {

@@ -443,9 +443,6 @@ class UserController extends Controller
                     $routeParams['organization_id'] = $redirectOrganizationId;
                 }
                 $statusMessage = __('Paralegal information added, successfully.');
-                if ($isParalegalCreator && $generatedPassword) {
-                    $statusMessage .= ' ' . __('Temporary password: :password', ['password' => $generatedPassword]);
-                }
                 return redirect()->route($route, $routeParams)
                     ->with('status', $statusMessage);
             }
