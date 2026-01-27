@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ParalegalListQuery
 {
-    public function build(?int $paralegalRoleId, ?string $search, ?int $organizationId): Builder
+    public function build(?array $paralegalRoleIds, ?string $search, ?int $organizationId): Builder
     {
         $query = User::with(['role:id,role_abbreviation,role_name', 'organization:id,name'])
             ->select(
@@ -24,8 +24,8 @@ class ParalegalListQuery
                     'organization_id'
                 ]
             )
-            ->when($paralegalRoleId, function ($query, $roleId) {
-                return $query->where('user_role_id', $roleId);
+            ->when($paralegalRoleIds, function ($query, $roleIds) {
+                return $query->whereIn('user_role_id', $roleIds);
             })
             ->when($organizationId, function ($query, $organizationId) {
                 return $query->where('organization_id', $organizationId);

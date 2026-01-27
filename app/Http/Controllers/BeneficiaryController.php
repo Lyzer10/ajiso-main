@@ -293,6 +293,12 @@ class BeneficiaryController extends Controller
                 // Log user activity
                 activity()->log('Created beneficiary account');
 
+                $creatorRoleAbbreviation = auth()->user() && auth()->user()->role
+                    ? auth()->user()->role->role_abbreviation
+                    : null;
+                $isParalegalCreatorForSms = $creatorRoleAbbreviation
+                    && in_array($creatorRoleAbbreviation, ['paralegal', 'clerk'], true);
+
                 // Send SMS to beneficiary
                 $dest_addr = SmsService::normalizeRecipient($user->tel_no);
                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
@@ -323,7 +329,7 @@ class BeneficiaryController extends Controller
                 if ($beneficiary->registration_source === 'office') {
                     try {
                         if (env('SEND_NOTIFICATIONS') == TRUE) {
-                            if (!$this->isParalegal()) {
+                            if (!$isParalegalCreatorForSms) {
                                 // SMS
                                 $sms = new SmsService();
                                 $sms->sendSMS($recipients, $message);

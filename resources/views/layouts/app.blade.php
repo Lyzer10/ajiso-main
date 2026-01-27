@@ -107,9 +107,9 @@
                     </a>
                     <ul>
                         <li>
-                            <a href="{{ route(Route::currentRouteName(), 'en') }}">{{ __('English') }}</a></li>
+                            <a href="{{ route(Route::currentRouteName(), 'en') }}?set_lang=1">{{ __('English') }}</a></li>
                         <li>
-                            <a href="{{ route(Route::currentRouteName(), 'sw') }}">{{ __('Swahili') }}</a></li>
+                            <a href="{{ route(Route::currentRouteName(), 'sw') }}?set_lang=1">{{ __('Swahili') }}</a></li>
                     </ul>
                 </li>
             </ul>

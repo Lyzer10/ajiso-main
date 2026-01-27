@@ -59,6 +59,7 @@ Route::group([
 
     // Logout
     Route::post('/logout', [App\Http\Controllers\Auth\LogoutController::class, 'index'])->name('logout');
+    Route::get('/logout', [App\Http\Controllers\Auth\LogoutController::class, 'index'])->name('logout.get');
 
     // Users Module
     Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->name('users.list');

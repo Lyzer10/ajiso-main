@@ -1,7 +1,11 @@
 @extends('layouts.base')
 
 @php
-    $title = __('Users') 
+    $title = __('Users');
+    $lockOrganization = $lockOrganization ?? false;
+    $redirectOrganizationId = $redirectOrganizationId ?? null;
+    $defaultDesignationId = $defaultDesignationId ?? null;
+    $lockDesignation = !empty($isParalegalCreator);
 @endphp
 @section('title', 'LAIS | '.$title)
 
@@ -91,11 +95,11 @@
                             <label class="selectDesignation font-weight-bold">{{ __('Designation / Title') }}<sup class="text-danger">*</sup></label>
                             <select id="designation" aria-describedby="selectDesignation"
                                 class="select2 select2-container--default border-input-primary @error('designation') is-invalid @enderror"
-                                name="designation" required autocomplete="designation" style="width: 100%;">
-                                <option hidden disabled selected value>{{ __('Choose designation') }}</option>
+                                name="designation" {{ $lockDesignation ? 'disabled' : 'required' }} autocomplete="designation" style="width: 100%;">
+                                <option hidden disabled {{ empty($defaultDesignationId) ? 'selected' : '' }} value>{{ __('Choose designation') }}</option>
                                 @if ($designations->count())
                                     @foreach ($designations as $designation)
-                                        <option value="{{ $designation->id }}">
+                                        <option value="{{ $designation->id }}" {{ (string) old('designation', $defaultDesignationId) === (string) $designation->id ? ' selected="selected"' : '' }}>
                                             {{ __($designation->name) }}
                                         </option>
                                     @endforeach
@@ -103,6 +107,9 @@
                                     <option>{{ __('No designations found') }}</option>
                                 @endif
                             </select>
+                            @if ($lockDesignation && !empty($defaultDesignationId))
+                                <input type="hidden" name="designation" value="{{ $defaultDesignationId }}">
+                            @endif
                             @error('designation')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -215,7 +222,7 @@
                             <label for="organization_id" class="font-weight-bold">{{ __('Organization') }}<sup class="text-danger">*</sup></label>
                             <select id="organization_id"
                                 class="select2 select2-container--default border-input-primary @error('organization_id') is-invalid @enderror"
-                                name="organization_id" {{ !empty($isParalegalCreator) ? 'disabled' : 'required' }} autocomplete="organization_id" style="width: 100%;">
+                                name="organization_id" {{ $lockOrganization ? 'disabled' : 'required' }} autocomplete="organization_id" style="width: 100%;">
                                 <option hidden disabled selected value>{{ __('Choose organization') }}</option>
                                 @if ($organizations->count())
                                     @foreach ($organizations as $organization)
@@ -227,8 +234,11 @@
                                     <option>{{ __('No organizations found') }}</option>
                                 @endif
                             </select>
-                            @if (!empty($isParalegalCreator) && !empty($lockedOrganization))
+                            @if ($lockOrganization && !empty($lockedOrganization))
                                 <input type="hidden" name="organization_id" value="{{ $lockedOrganization->id }}">
+                                @if (empty($isParalegalCreator) && !empty($redirectOrganizationId))
+                                    <input type="hidden" name="redirect_organization_id" value="{{ $redirectOrganizationId }}">
+                                @endif
                             @endif
                             @error('organization_id')
                                 <span class="invalid-feedback" role="alert">

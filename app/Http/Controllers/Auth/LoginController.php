@@ -101,23 +101,38 @@ class LoginController extends Controller
 
         switch (Auth::user()->role->role_abbreviation) {
             case 'superadmin':
-                return redirect()->route('admin.super.home');
+                session(['locale' => 'en']);
+                session()->forget('locale_user_set');
+                app()->setLocale('en');
+                return redirect()->route('admin.super.home', 'en');
                 break;
 
             case 'admin':
-                return redirect()->route('admin.home');
+                session(['locale' => 'en']);
+                session()->forget('locale_user_set');
+                app()->setLocale('en');
+                return redirect()->route('admin.home', 'en');
                 break;
 
             case 'staff':
-                return redirect()->route('staff.home');
+                session(['locale' => 'en']);
+                session()->forget('locale_user_set');
+                app()->setLocale('en');
+                return redirect()->route('staff.home', 'en');
                 break;
 
             case 'paralegal':
-                return redirect()->route('clerk.home');
+                session(['locale' => 'sw']);
+                session()->forget('locale_user_set');
+                app()->setLocale('sw');
+                return redirect()->route('clerk.home', 'sw');
                 break;
 
             case 'beneficiary':
-                return redirect()->route('beneficiary.home');
+                session(['locale' => 'en']);
+                session()->forget('locale_user_set');
+                app()->setLocale('en');
+                return redirect()->route('beneficiary.home', 'en');
                 break;
 
             default:

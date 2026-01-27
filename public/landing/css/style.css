@@ -411,6 +411,7 @@ h6 {
 }
 .navbar-mobile .dropdown ul a {
     padding: 10px 20px;
+    color: var(--primary-color, #0498c0);
 }
 .navbar-mobile .dropdown ul a i {
     font-size: 12px;

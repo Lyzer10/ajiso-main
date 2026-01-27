@@ -430,17 +430,17 @@
                                     </a>
                                     <div class="dropdown-menu dropdown-menu-md-right p-0">
                                         @canany(['isSuperAdmin','isAdmin', 'isClerk'])
-                                            <a href="{{ route('admin.home', 'en') }}" class="dropdown-item active">
+                                            <a href="{{ route('admin.home', 'en') }}?set_lang=1" class="dropdown-item active">
                                                 <i class="flag-icon flag-icon-us mr-2"></i>{{ __('English') }}
                                             </a>
-                                            <a href="{{ route('admin.home', 'sw') }}" class="dropdown-item">
+                                            <a href="{{ route('admin.home', 'sw') }}?set_lang=1" class="dropdown-item">
                                                 <i class="flag-icon flag-icon-tz mr-2"></i>{{ __('Swahili') }}
                                             </a>
                                         @elsecanany(['isStaff'])
-                                            <a href="{{ route('staff.home', 'en') }}" class="dropdown-item active">
+                                            <a href="{{ route('staff.home', 'en') }}?set_lang=1" class="dropdown-item active">
                                                 <i class="flag-icon flag-icon-us mr-2"></i>{{ __('English') }}
                                             </a>
-                                            <a href="{{ route('staff.home', 'sw') }}" class="dropdown-item">
+                                            <a href="{{ route('staff.home', 'sw') }}?set_lang=1" class="dropdown-item">
                                                 <i class="flag-icon flag-icon-tz mr-2"></i>{{ __('Swahili') }}
                                             </a>
                                         @endcanany

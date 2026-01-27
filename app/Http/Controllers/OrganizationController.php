@@ -6,6 +6,7 @@ use App\Models\District;
 use App\Models\Organization;
 use App\Models\Region;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Http\Request;
 
 class OrganizationController extends Controller
@@ -127,6 +128,22 @@ class OrganizationController extends Controller
 
         if ($organization) {
             activity()->log('Created organization');
+
+            $currentUser = auth()->user();
+            $roleAbbreviation = $currentUser ? optional($currentUser->role)->role_abbreviation : null;
+            if (!$roleAbbreviation && $currentUser && $currentUser->user_role_id) {
+                $roleAbbreviation = UserRole::where('id', $currentUser->user_role_id)->value('role_abbreviation');
+            }
+            $isAdminUser = $roleAbbreviation && in_array($roleAbbreviation, ['superadmin', 'admin'], true);
+
+            if ($isAdminUser) {
+                return redirect()->route('paralegal.create', [
+                    app()->getLocale(),
+                    'organization_id' => $organization->id,
+                ])
+                    ->with('status', 'Organization information added. Please add a paralegal for this organization.')
+                    ->with('paralegal_organization_id', $organization->id);
+            }
 
             return redirect()->back()
                 ->with('status', 'Organization information added');

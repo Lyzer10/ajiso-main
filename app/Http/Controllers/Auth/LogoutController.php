@@ -15,14 +15,14 @@ class LogoutController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index($locale = null)
     {
-        auth()->Auth::logout();        
+        Auth::logout();
 
         /**
          * Redirect user to landing page
          */
-        return redirect()->route('/');
+        return redirect()->route('home', $locale ?? app()->getLocale());
 
     }
 }

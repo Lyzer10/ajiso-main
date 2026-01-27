@@ -83,10 +83,14 @@ class UserController extends Controller
     {
         $currentUser = auth()->user();
         $isParalegalUser = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
-        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+        $paralegalRoleIds = UserRole::whereIn('role_abbreviation', ['paralegal', 'clerk'])
+            ->pluck('id')
+            ->filter()
+            ->values()
+            ->all();
         $search = request('search');
         $organizationId = $isParalegalUser ? $currentUser->organization_id : request('organization_id');
-        $users = (new ParalegalListQuery())->build($paralegalRoleId, $search, $organizationId)
+        $users = (new ParalegalListQuery())->build($paralegalRoleIds ?: null, $search, $organizationId)
             ->paginate(10);
 
         $organizations = Organization::orderBy('name')->get(['id', 'name']);
@@ -107,10 +111,14 @@ class UserController extends Controller
             abort(403, 'You are not authorized to view members.');
         }
 
-        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+        $paralegalRoleIds = UserRole::whereIn('role_abbreviation', ['paralegal', 'clerk'])
+            ->pluck('id')
+            ->filter()
+            ->values()
+            ->all();
         $search = request('search');
         $organizationId = $currentUser->organization_id;
-        $users = (new ParalegalListQuery())->build($paralegalRoleId, $search, $organizationId)
+        $users = (new ParalegalListQuery())->build($paralegalRoleIds ?: null, $search, $organizationId)
             ->paginate(10);
 
         $organizations = Organization::where('id', $organizationId)->get(['id', 'name']);
@@ -156,21 +164,51 @@ class UserController extends Controller
     {
         $currentUser = auth()->user();
         $isParalegalCreator = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        $roleAbbreviation = $currentUser ? optional($currentUser->role)->role_abbreviation : null;
+        if (!$roleAbbreviation && $currentUser && $currentUser->user_role_id) {
+            $roleAbbreviation = UserRole::where('id', $currentUser->user_role_id)->value('role_abbreviation');
+        }
+        $isAdminUser = $roleAbbreviation && in_array($roleAbbreviation, ['superadmin', 'admin'], true);
 
         if ($isParalegalCreator && !$currentUser->can_register_staff) {
             abort(403, 'You are not authorized to register paralegals.');
         }
 
-        $designations = Designation::get(['id', 'name']);
+        $paralegalDesignation = Designation::whereRaw('LOWER(name) = ?', ['paralegal'])->first();
+        if (!$paralegalDesignation) {
+            $paralegalDesignation = Designation::create([
+                'name' => 'Paralegal',
+                'abbr' => 'PARA',
+            ]);
+        }
+        $designations = Designation::orderBy('name')->get(['id', 'name']);
         $organizations = Organization::orderBy('name')
             ->get(['id', 'name']);
         $lockedOrganization = null;
+        $lockOrganization = false;
+        $redirectOrganizationId = null;
+        $defaultDesignationId = ($isAdminUser || $isParalegalCreator) && $paralegalDesignation
+            ? $paralegalDesignation->id
+            : null;
 
         if ($isParalegalCreator) {
             $lockedOrganization = Organization::find($currentUser->organization_id);
-            $organizations = $lockedOrganization
-                ? collect([$lockedOrganization])
-                : collect();
+            if ($lockedOrganization) {
+                $organizations = collect([$lockedOrganization]);
+                $lockOrganization = true;
+            } else {
+                $organizations = collect();
+            }
+        } elseif ($isAdminUser) {
+            $organizationId = request('organization_id') ?: session('paralegal_organization_id');
+            if ($organizationId) {
+                $lockedOrganization = Organization::find($organizationId);
+                if ($lockedOrganization) {
+                    $organizations = collect([$lockedOrganization]);
+                    $lockOrganization = true;
+                    $redirectOrganizationId = $lockedOrganization->id;
+                }
+            }
         }
         $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
 
@@ -179,7 +217,10 @@ class UserController extends Controller
             'organizations',
             'paralegalRoleId',
             'isParalegalCreator',
-            'lockedOrganization'
+            'lockedOrganization',
+            'lockOrganization',
+            'redirectOrganizationId',
+            'defaultDesignationId'
         ));
     }
 
@@ -193,8 +234,19 @@ class UserController extends Controller
     {
         $currentUser = auth()->user();
         $isParalegalCreator = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        $roleAbbreviation = $currentUser ? optional($currentUser->role)->role_abbreviation : null;
+        if (!$roleAbbreviation && $currentUser && $currentUser->user_role_id) {
+            $roleAbbreviation = UserRole::where('id', $currentUser->user_role_id)->value('role_abbreviation');
+        }
+        $isAdminUser = $roleAbbreviation && in_array($roleAbbreviation, ['superadmin', 'admin'], true);
+        $isParalegalCreatorForSms = $roleAbbreviation && in_array($roleAbbreviation, ['paralegal', 'clerk'], true);
         if ($isParalegalCreator && !$currentUser->can_register_staff) {
             abort(403, 'You are not authorized to register paralegals.');
+        }
+
+        $redirectOrganizationId = $request->input('redirect_organization_id');
+        if ($isAdminUser && $redirectOrganizationId) {
+            $request->merge(['organization_id' => $redirectOrganizationId]);
         }
 
         /**
@@ -357,7 +409,7 @@ class UserController extends Controller
             try {
                 if ($isTargetParalegal) {
                     if (env('SEND_NOTIFICATIONS') == TRUE) {
-                        if (!$isParalegalCreator) {
+                        if (!$isParalegalCreatorForSms) {
                             $dest_addr = SmsService::normalizeRecipient($user->tel_no);
                             if ($dest_addr) {
                                 $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
@@ -386,11 +438,15 @@ class UserController extends Controller
 
             if ($role && $role->role_abbreviation === 'paralegal') {
                 $route = $isParalegalCreator ? 'members.list' : 'paralegals.list';
+                $routeParams = ['locale' => app()->getLocale()];
+                if (!$isParalegalCreator && $isAdminUser && $redirectOrganizationId) {
+                    $routeParams['organization_id'] = $redirectOrganizationId;
+                }
                 $statusMessage = __('Paralegal information added, successfully.');
                 if ($isParalegalCreator && $generatedPassword) {
                     $statusMessage .= ' ' . __('Temporary password: :password', ['password' => $generatedPassword]);
                 }
-                return redirect()->route($route, app()->getLocale())
+                return redirect()->route($route, $routeParams)
                     ->with('status', $statusMessage);
             }
 

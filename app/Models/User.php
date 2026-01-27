@@ -96,6 +96,12 @@ class User extends Authenticatable
         return $this->hasOne(Staff::class);
     }
 
+    // Get the beneficiary associated with the user
+    public function beneficiary()
+    {
+        return $this->hasOne(Beneficiary::class);
+    }
+
     // Get disputes assigned to the user role staff
     public function staffDisputes()
     {

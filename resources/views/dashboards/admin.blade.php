@@ -240,11 +240,6 @@
     <script src="{{ asset('plugins/amcharts/4/charts.js') }}"></script>
     <script src="{{ asset('plugins/amcharts/4/themes/animated.js') }}"></script>
 
-    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
-    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
-    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
-
-
     {{-- Graphs --}}
 
     {{-- Case Types --}}
@@ -453,7 +448,7 @@
         chart.numberFormatter.numberFormat = "#,###";
 
         var title = chart.titles.create();
-        title.text = {{ __('performance.title') }};
+        title.text = "{{ $performance['title'] ?? '' }}";
         title.fontSize = 16;
         title.marginBottom = 20;
 

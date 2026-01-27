@@ -99,7 +99,7 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $performance = [
-            'title' => $metrics->metricMeasure->metric_measure,
+            'title' => __($metrics->metricMeasure->metric_measure),
             'milestone' => $metrics->metric_limit,
             'value' => match ($metrics->metricMeasure->metric_measure) {
                 'Disputes Registered' => $total_disputes,
@@ -113,7 +113,7 @@ class HomeController extends Controller
         $tos_data = $type_of_services->map(function ($service) use ($group_by_services) {
             $match = $group_by_services->firstWhere('type_of_service_id', $service->id);
             return [
-                'service' => $service->type_of_service,
+                'service' => __($service->type_of_service),
                 'frequency' => $match ? floor($match->total) : 0
             ];
         });
@@ -122,7 +122,7 @@ class HomeController extends Controller
         $toc_data = $type_of_cases->map(function ($case) use ($group_by_cases) {
             $match = $group_by_cases->firstWhere('type_of_case_id', $case->id);
             return [
-                'case' => $case->type_of_case,
+                'case' => __($case->type_of_case),
                 'frequency' => $match ? floor($match->total) : 0
             ];
         });
@@ -131,7 +131,7 @@ class HomeController extends Controller
         $dis_data = $dispute_statuses->map(function ($status) use ($group_by_statuses) {
             $match = $group_by_statuses->firstWhere('dispute_status_id', $status->id);
             return [
-                'status' => $status->dispute_status,
+                'status' => __($status->dispute_status),
                 'frequency' => $match ? floor($match->total) : 0
             ];
         });
