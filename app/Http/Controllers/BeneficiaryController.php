@@ -860,7 +860,17 @@ class BeneficiaryController extends Controller
             $initials .= Str::upper(Str::substr($part, 0, 1));
         }
 
-        return $initials;
+        // Ensure at least 3 letters by falling back to the first 3 chars of the name
+        if (Str::length($initials) >= 3) {
+            return $initials;
+        }
+
+        $cleanName = preg_replace('/[^A-Za-z0-9]/', '', $name);
+        if ($cleanName === '' || $cleanName === null) {
+            return $initials;
+        }
+
+        return Str::upper(Str::substr($cleanName, 0, 3));
     }
 
     private function ensureOrganizationAccess(Beneficiary $beneficiary)
