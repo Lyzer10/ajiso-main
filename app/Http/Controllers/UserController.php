@@ -7,6 +7,7 @@ use App\Models\UserRole;
 use App\Models\Organization;
 use App\Models\Designation;
 use Illuminate\Support\Str;
+use App\Services\SmsService;
 use \App\Traits\ImageUpload;
 use Illuminate\Http\Request;
 use App\Notifications\UserCreated;
@@ -425,13 +426,28 @@ class UserController extends Controller
              */
 
             try {
-                $shouldNotify = true;
-                if ($isTargetParalegal && $isParalegalCreator) {
-                    $shouldNotify = false;
-                }
-                if ($shouldNotify) {
-                    // Database & email
-                    Notification::send($user, new UserCreated($user, $request->password));
+                if ($isTargetParalegal) {
+                    if (env('SEND_NOTIFICATIONS') == TRUE) {
+                        $dest_addr = SmsService::normalizeRecipient($user->tel_no);
+                        if ($dest_addr) {
+                            $recipients = ['recipient_id' => 1, 'dest_addr' => $dest_addr];
+                            $message = 'Habari ' . trim($user->first_name . ' ' . $user->last_name) .
+                                ', akaunti yako ya paralegal imeundwa. Tumia barua pepe: ' . $user->email .
+                                ' na nywila: ' . $request->password .
+                                ' kuingia kwenye mfumo. Ahsante.';
+                            $sms = new SmsService();
+                            $sms->sendSMS($recipients, $message);
+                        }
+                    }
+                } else {
+                    $shouldNotify = true;
+                    if ($isParalegalCreator) {
+                        $shouldNotify = false;
+                    }
+                    if ($shouldNotify) {
+                        // Database & email
+                        Notification::send($user, new UserCreated($user, $request->password));
+                    }
                 }
             } catch (\Throwable $th) {
                 throw $th;

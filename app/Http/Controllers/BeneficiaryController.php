@@ -140,15 +140,24 @@ class BeneficiaryController extends Controller
         $prefix = 'AJISO';
         if ($this->isParalegal() && $organizationId) {
             $org = Organization::find($organizationId);
-            if ($org && $org->initials) {
-                $prefix = strtoupper($org->initials);
+            if ($org) {
+                $initials = $this->getOrganizationInitials($org->name);
+                if ($initials !== '') {
+                    $prefix = $initials;
+                }
             }
         }
 
         // Get the last beneficiary created this year with the same prefix
-        $lastUser = User::where('user_role_id', 4) // only beneficiaries
+        $lastUserQuery = User::where('user_role_id', 4) // only beneficiaries
             ->whereYear('created_at', $currentYear)
-            ->where('user_no', 'like', $prefix . '/' . $currentYear . '/%')
+            ->where('user_no', 'like', $prefix . '/' . $currentYear . '/%');
+
+        if ($this->isParalegal() && $organizationId) {
+            $lastUserQuery->where('organization_id', $organizationId);
+        }
+
+        $lastUser = $lastUserQuery
             ->orderBy('id', 'desc')
             ->first();
 
@@ -832,6 +841,26 @@ class BeneficiaryController extends Controller
     private function getOrganizationId()
     {
         return $this->isParalegal() ? auth()->user()->organization_id : null;
+    }
+
+    private function getOrganizationInitials($name)
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return '';
+        }
+
+        $parts = preg_split('/[^A-Za-z0-9]+/', $name, -1, PREG_SPLIT_NO_EMPTY);
+        if (!$parts) {
+            return '';
+        }
+
+        $initials = '';
+        foreach ($parts as $part) {
+            $initials .= Str::upper(Str::substr($part, 0, 1));
+        }
+
+        return $initials;
     }
 
     private function ensureOrganizationAccess(Beneficiary $beneficiary)

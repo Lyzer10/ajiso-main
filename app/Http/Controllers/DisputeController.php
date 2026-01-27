@@ -54,6 +54,7 @@ class DisputeController extends Controller
         $query = Dispute::has('reportedBy')
             ->with(
                 'assignedTo:first_name,middle_name,last_name,user_no',
+                'paralegalUser:id,first_name,middle_name,last_name,user_no',
                 'reportedBy:first_name,middle_name,last_name,user_no',
                 'disputeStatus:id,dispute_status'
             )
@@ -63,6 +64,7 @@ class DisputeController extends Controller
                     'dispute_no',
                     'beneficiary_id',
                     'staff_id',
+                    'paralegal_user_id',
                     'reported_on',
                     'dispute_status_id',
                     'type_of_case_id'
@@ -1239,12 +1241,8 @@ class DisputeController extends Controller
         $isAdminUser = $user && ($user->can('isAdmin') || $user->can('isSuperAdmin'));
         $currentStaffId = optional($user->staff)->id;
         
-        // Allow reassignment for staff assigned to the case, any admin, or paralegal request for assignment
-        $canRequestReassignment = (
-            ($currentStaffId && (int) $dispute->staff_id === (int) $currentStaffId && ($isStaffUser || $isParalegalUser))
-            || $isAdminUser
-            || $isParalegalUser
-        );
+        // Only admins can reassign/request assistance; legal aid users should only reopen cases
+        $canRequestReassignment = $isAdminUser;
         $requiresTargetStaff = $isStaffUser || $isAdminUser;
 
         $availableStaff = collect();

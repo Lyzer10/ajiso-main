@@ -162,7 +162,7 @@
                                     <th>{{ __('S/N') }}</th>
                                     <th>{{ __('Dispute No') }}</th>
                                     <th>{{ __('Beneficiary') }}</th>
-                                    <th>{{ __('Legal Aid Provider') }}</th>
+                                    <th>{{ __('Legal Aid Provider / Paralegal') }}</th>
                                     <th>{{ __('Reported') }}</th>
                                     <th>{{ __('Dispute Status') }}</th>
                                     <th>{{ __('Action') }}</th>
@@ -187,7 +187,11 @@
                                         </a>
                                     </td>
                                     <td>
-                                        @if (is_null($dispute->staff_id))
+                                        @php
+                                            $paralegalUser = $dispute->paralegalUser;
+                                            $assignedUser = $paralegalUser ?: $dispute->assignedTo;
+                                        @endphp
+                                        @if (is_null($dispute->staff_id) && is_null($dispute->paralegal_user_id))
                                             @canany(['isAdmin', 'isSuperAdmin'])
                                                 <a href="{{ route('dispute.assign', [app()->getLocale(), $dispute]) }}" class="text-danger" title="{{  __('Click to assigned legal aid provider') }}">
                                                 {{ __('Unassigned') }}
@@ -196,21 +200,39 @@
                                                 <span class="text-danger">{{ __('Unassigned') }}</span>
                                             @endcanany
                                         @else
-                                            @canany(['isAdmin', 'isSuperAdmin'])
-                                            <a href="{{ route('staff.show', [app()->getLocale(), $dispute->staff_id, ]) }}" title="{{  __('Click to view assigned legal aid provider') }}">
-                                                {{ $dispute->assignedTo->first_name.' '
-                                                    .$dispute->assignedTo->middle_name.' '
-                                                    .$dispute->assignedTo->last_name
-                                                }}
-                                            </a>
+                                            @if ($paralegalUser)
+                                                @canany(['isAdmin', 'isSuperAdmin'])
+                                                    <a href="{{ route('user.show', [app()->getLocale(), $paralegalUser->id]) }}" title="{{ __('Click to view paralegal') }}">
+                                                        {{ __('Paralegal') }}: {{ $paralegalUser->first_name.' '
+                                                            .$paralegalUser->middle_name.' '
+                                                            .$paralegalUser->last_name
+                                                        }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-dark">
+                                                        {{ __('Paralegal') }}: {{ $paralegalUser->first_name.' '
+                                                            .$paralegalUser->middle_name.' '
+                                                            .$paralegalUser->last_name
+                                                        }}
+                                                    </span>
+                                                @endcanany
                                             @else
-                                                <span class="text-dark">
+                                                @canany(['isAdmin', 'isSuperAdmin'])
+                                                <a href="{{ route('staff.show', [app()->getLocale(), $dispute->staff_id, ]) }}" title="{{  __('Click to view assigned legal aid provider') }}">
                                                     {{ $dispute->assignedTo->first_name.' '
                                                         .$dispute->assignedTo->middle_name.' '
                                                         .$dispute->assignedTo->last_name
                                                     }}
-                                                </span>
-                                            @endcanany
+                                                </a>
+                                                @else
+                                                    <span class="text-dark">
+                                                        {{ $dispute->assignedTo->first_name.' '
+                                                            .$dispute->assignedTo->middle_name.' '
+                                                            .$dispute->assignedTo->last_name
+                                                        }}
+                                                    </span>
+                                                @endcanany
+                                            @endif
                                         @endif
                                     </td>
                                     <td>{{ Carbon\Carbon::parse($dispute->reported_on)->diffForHumans() }}</td>
