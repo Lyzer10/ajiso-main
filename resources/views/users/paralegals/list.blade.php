@@ -4,11 +4,16 @@
     $membersMode = $membersMode ?? false;
     $listRoute = $listRoute ?? 'paralegals.list';
     $title = $membersMode ? __('Members') : __('Paralegals');
+    $organizationName = $organizationName ?? request('organization_name');
+    if (!empty($organizationId)) {
+        $organizationName = null;
+    }
     $exportQuery = '';
     if (! $membersMode) {
         $exportParams = array_filter([
             'search' => request('search'),
             'organization_id' => request('organization_id'),
+            'organization_name' => $organizationName,
         ]);
         $exportQuery = $exportParams ? ('?' . http_build_query($exportParams)) : '';
     }
@@ -98,6 +103,7 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <input type="text" name="organization_name" value="{{ $organizationName }}" placeholder="{{ __('Organization name') }}" class="form-control form-control-sm mr-2 border-prepend-black p-2">
                             @endunless
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by name') }}" class="form-control form-control-sm mr-2 border-prepend-black p-2">
                             <button type="submit" class="btn btn-sm btn-primary">{{ __('Search') }}</button>
@@ -118,6 +124,8 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <label class="paralegals-mobile-label">{{ __('Organization name') }}</label>
+                            <input type="text" name="organization_name" value="{{ $organizationName }}" class="form-control" placeholder="{{ __('Type organization name') }}">
                         @endunless
                         <label class="paralegals-mobile-label">{{ __('Search by name') }}</label>
                         <div class="input-group">
@@ -297,6 +305,7 @@
     @include('modals.confirm-trash')
     <script>
         const searchInputs = document.querySelectorAll('input[name="search"]');
+        const organizationNameInputs = document.querySelectorAll('input[name="organization_name"]');
         const organizationSelects = document.querySelectorAll('select[name="organization_id"]');
 
         searchInputs.forEach((input) => {
@@ -307,8 +316,20 @@
             });
         });
 
+        organizationNameInputs.forEach((input) => {
+            input.addEventListener('input', function () {
+                if (this.value === "") {
+                    this.form.submit();
+                }
+            });
+        });
+
         organizationSelects.forEach((select) => {
             select.addEventListener('change', function () {
+                const orgNameInput = this.form ? this.form.querySelector('input[name="organization_name"]') : null;
+                if (orgNameInput) {
+                    orgNameInput.value = '';
+                }
                 this.form.submit();
             });
         });

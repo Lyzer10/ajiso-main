@@ -94,12 +94,18 @@ class UserController extends Controller
             ->all();
         $search = request('search');
         $organizationId = $isParalegalUser ? $currentUser->organization_id : request('organization_id');
-        $users = (new ParalegalListQuery())->build($paralegalRoleIds ?: null, $search, $organizationId)
+        $organizationName = $organizationId ? null : request('organization_name');
+        $users = (new ParalegalListQuery())->build(
+            $paralegalRoleIds ?: null,
+            $search,
+            $organizationId,
+            $organizationName
+        )
             ->paginate(10);
 
         $organizations = Organization::orderBy('name')->get(['id', 'name']);
 
-        return view('users.paralegals.list', compact('users', 'organizations', 'organizationId'));
+        return view('users.paralegals.list', compact('users', 'organizations', 'organizationId', 'organizationName'));
     }
 
     /**
@@ -124,14 +130,23 @@ class UserController extends Controller
             ->all();
         $search = request('search');
         $organizationId = $currentUser->organization_id;
-        $users = (new ParalegalListQuery())->build($paralegalRoleIds ?: null, $search, $organizationId)
+        $organizationName = $organizationId ? null : request('organization_name');
+        $users = (new ParalegalListQuery())->build(
+            $paralegalRoleIds ?: null,
+            $search,
+            $organizationId,
+            $organizationName
+        )
             ->paginate(10);
 
         $organizations = Organization::where('id', $organizationId)->get(['id', 'name']);
         $membersMode = true;
         $listRoute = 'members.list';
 
-        return view('users.paralegals.list', compact('users', 'organizations', 'organizationId', 'membersMode', 'listRoute'));
+        return view(
+            'users.paralegals.list',
+            compact('users', 'organizations', 'organizationId', 'organizationName', 'membersMode', 'listRoute')
+        );
     }
 
     /**

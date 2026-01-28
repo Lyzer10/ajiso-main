@@ -26,6 +26,8 @@ class ParalegalExportController extends Controller
         $organizationName = null;
         if ($organizationId = $request->get('organization_id')) {
             $organizationName = Organization::where('id', $organizationId)->value('name');
+        } elseif ($request->filled('organization_name')) {
+            $organizationName = $request->get('organization_name');
         }
 
         $pdf = PDF::loadView('exports.paralegals-list', [
@@ -98,6 +100,11 @@ class ParalegalExportController extends Controller
 
         if ($organizationId = $request->get('organization_id')) {
             $query->where('organization_id', $organizationId);
+        } elseif ($organizationName = trim((string) $request->get('organization_name'))) {
+            $like = '%' . $organizationName . '%';
+            $query->whereHas('organization', function ($orgQuery) use ($like) {
+                $orgQuery->where('name', 'like', $like);
+            });
         }
 
         return $query;

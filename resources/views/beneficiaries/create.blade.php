@@ -385,14 +385,11 @@
                         <div class="form-row">
                             <div class="col-md-3 mb-3">
                                 <label for="tel_no" class="font-weight-bold">
-                                    {{ __('Telephone No') }}
-                                    @unless($isParalegal)
-                                        <sup class="text-danger">*</sup>
-                                    @endunless
+                                    {{ __('Telephone No') }}<sup class="text-danger">*</sup>
                                 </label>
                                 <input type="tel" id="tel_no" placeholder="{{ __('Telephone Number') }}"
                                     class="form-control border-input-primary @error('tel_no') is-invalid @enderror"
-                                    name="tel_no" value="{{ old('tel_no') }}" {{ $isParalegal ? '' : 'required' }} autocomplete="tel_no" style="width: 100%;">
+                                    name="tel_no" value="{{ old('tel_no') }}" required autocomplete="tel_no" style="width: 100%;">
                                     <small class="form-text text-muted">
                                         <i class="fas fa-exclamation-circle text-info"></i>
                                         {{ __('Format: 0712345678') }}

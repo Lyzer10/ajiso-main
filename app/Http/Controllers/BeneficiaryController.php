@@ -141,7 +141,7 @@ class BeneficiaryController extends Controller
             'first_name' => ['required', 'min:3', 'string', 'max:50'],
             'middle_name' => ['nullable', 'string', 'max:50'],
             'last_name' => ['required', 'min:3', 'string', 'max:50'],
-            'tel_no' => ['nullable', 'string', 'max:15'],  // Made optional - "Telephone No"
+            'tel_no' => ['required', 'string', 'max:15'],
             'mobile_no' => ['nullable', 'string', 'max:15'],
             'image' => ['image', 'nullable', 'mimes:jpg,png,jpeg,gif,svg', 'max:2048'],
             'gender' => ['required'],

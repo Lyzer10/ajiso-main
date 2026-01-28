@@ -80,7 +80,7 @@
 
                          <form method="GET" action="{{ route('beneficiaries.list', [app()->getLocale()]) }}" class="d-flex align-items-center pull-right mb-2">
                             <div class="d-flex align-items-center mr-4">
-                                 <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control form-control-sm me-2 border-prepend-black p-2">
+                                 <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by name') }}" class="form-control form-control-sm me-2 border-prepend-black p-2">
                             <button type="submit" class="btn btn-sm btn-primary">{{ __('Search') }}</button>
                             </div>
                         </form>
@@ -94,7 +94,7 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                             </div>
-                            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="{{ __('Search by name or file number...') }}">
+                            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="{{ __('Search by name...') }}">
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">
                             <i class="fas fa-search mr-1"></i>
@@ -184,7 +184,7 @@
                     </div>
                     @if ($beneficiaries->count())
                         <div class="beneficiaries-mobile-pagination">
-                            {{ $beneficiaries->links() }}
+                            {{ $beneficiaries->appends(request()->query())->links() }}
                         </div>
                     @endif
                 </div>
@@ -260,7 +260,7 @@
                             @endif
                             </tbody>
                         </table>
-                        {{ $beneficiaries->count() ? $beneficiaries->links() : ''}}
+                        {{ $beneficiaries->count() ? $beneficiaries->appends(request()->query())->links() : ''}}
                     </div>
                 </div>
             </div>
