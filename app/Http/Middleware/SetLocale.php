@@ -20,13 +20,16 @@ class SetLocale
         $allowedLocales = ['en', 'sw'];
         $user = $request->user();
         $roleAbbreviation = $user ? optional($user->role)->role_abbreviation : null;
+        $staffType = $user ? strtolower((string) optional($user->staff)->type) : null;
+        $isParalegalUser = in_array($roleAbbreviation, ['paralegal', 'clerk'], true)
+            || ($roleAbbreviation === 'staff' && $staffType === 'paralegal');
         $explicitSwitch = $request->query('set_lang') === '1';
 
         if ($explicitSwitch && $locale && in_array($locale, $allowedLocales, true)) {
             session(['locale_user_set' => true]);
         }
 
-        if (in_array($roleAbbreviation, ['paralegal', 'clerk'], true)) {
+        if ($isParalegalUser) {
             $userChosenLocale = session('locale_user_set', false);
             if (!$userChosenLocale && $locale !== 'sw') {
                 if (!$request->isMethod('get') && !$request->isMethod('head')) {
@@ -55,7 +58,7 @@ class SetLocale
         } elseif (session()->has('locale')) {
             app()->setLocale(session()->get('locale'));
         } else {
-            $defaultLocale = in_array($roleAbbreviation, ['paralegal', 'clerk'], true) ? 'sw' : 'en';
+            $defaultLocale = $isParalegalUser ? 'sw' : 'en';
             session(['locale' => $defaultLocale]);
             app()->setLocale($defaultLocale);
         }

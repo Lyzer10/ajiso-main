@@ -90,8 +90,13 @@ class LoginController extends Controller
             return back()->with('status', 'The provided credentials do not match our records.');
         }
 
-        if (in_array(Auth::user()->role->role_abbreviation, ['paralegal', 'clerk'], true)
-            && !Auth::user()->has_system_access) {
+        $user = Auth::user();
+        $roleAbbreviation = optional($user->role)->role_abbreviation;
+        $staffType = strtolower((string) optional($user->staff)->type);
+        $isLegacyParalegal = $roleAbbreviation === 'staff' && $staffType === 'paralegal';
+
+        if (in_array($roleAbbreviation, ['paralegal', 'clerk'], true)
+            && !$user->has_system_access) {
             Auth::logout();
             return back()->with('status', 'Your account does not have access to the system.');
         }
@@ -100,7 +105,7 @@ class LoginController extends Controller
          *  Redirect user to respective dashboard
          */
 
-        switch (Auth::user()->role->role_abbreviation) {
+        switch ($roleAbbreviation) {
             case 'superadmin':
                 session(['locale' => 'en']);
                 session()->forget('locale_user_set');
@@ -116,6 +121,12 @@ class LoginController extends Controller
                 break;
 
             case 'staff':
+                if ($isLegacyParalegal) {
+                    session(['locale' => 'sw']);
+                    session()->forget('locale_user_set');
+                    app()->setLocale('sw');
+                    return redirect()->route('staff.home', 'sw');
+                }
                 session(['locale' => 'en']);
                 session()->forget('locale_user_set');
                 app()->setLocale('en');
