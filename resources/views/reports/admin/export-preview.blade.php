@@ -82,9 +82,19 @@
                             </a>
                         </td>
                         <td>
-                            @if (is_null($dispute->staff_id))
+                            @php
+                                $paralegalUser = $dispute->paralegalUser;
+                            @endphp
+                            @if (is_null($dispute->staff_id) && is_null($dispute->paralegal_user_id))
                                 <a style="color: red;">
                                     {{ __('Unassigned') }}
+                                </a>
+                            @elseif ($paralegalUser)
+                                <a style="color: blue;">
+                                    {{ __('Paralegal') }}: {{ $paralegalUser->first_name.' '
+                                        .$paralegalUser->middle_name.' '
+                                        .$paralegalUser->last_name
+                                    }}
                                 </a>
                             @else
                                 <a style="color: blue;">
@@ -125,4 +135,3 @@
             </small>
         </div>
     @endif
-

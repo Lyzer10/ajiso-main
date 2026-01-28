@@ -1172,6 +1172,7 @@ class DisputeController extends Controller
         //Find dispute information by Id and return a profile view
         $dispute = Dispute::with(
             'assignedTo',
+            'paralegalUser',
             'reportedBy',
             'disputeStatus',
             'counselingSheets',

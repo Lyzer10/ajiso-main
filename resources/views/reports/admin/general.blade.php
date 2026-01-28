@@ -338,8 +338,15 @@
                                     $dispute->reportedBy->last_name ?? ''
                                 ])));
                                 $providerName = null;
-                                if (is_null($dispute->staff_id)) {
+                                $paralegalUser = $dispute->paralegalUser;
+                                if (is_null($dispute->staff_id) && is_null($dispute->paralegal_user_id)) {
                                     $providerName = __('Unassigned');
+                                } elseif ($paralegalUser) {
+                                    $providerName = __('Paralegal') . ': ' . trim(implode(' ', array_filter([
+                                        $paralegalUser->first_name ?? '',
+                                        $paralegalUser->middle_name ?? '',
+                                        $paralegalUser->last_name ?? ''
+                                    ])));
                                 } else {
                                     $providerName = trim(implode(' ', array_filter([
                                         $dispute->assignedTo->first_name ?? '',
@@ -364,7 +371,7 @@
                                 </div>
                                 <div class="report-dispute-card__row">
                                     <span>{{ __('Provider') }}</span>
-                                    <span class="{{ is_null($dispute->staff_id) ? 'text-danger' : '' }}">{{ $providerName }}</span>
+                                    <span class="{{ is_null($dispute->staff_id) && is_null($dispute->paralegal_user_id) ? 'text-danger' : '' }}">{{ $providerName }}</span>
                                 </div>
                                 <div class="report-dispute-card__row">
                                     <span>{{ __('Reported') }}</span>
@@ -408,9 +415,19 @@
                                         </a>
                                     </td>
                                     <td>
-                                        @if (is_null($dispute->staff_id))
+                                        @php
+                                            $paralegalUser = $dispute->paralegalUser;
+                                        @endphp
+                                        @if (is_null($dispute->staff_id) && is_null($dispute->paralegal_user_id))
                                             <a href="{{ route('dispute.assign', [app()->getLocale(), $dispute]) }}" class="text-danger" title="{{  __('Click to assigned legal aid provider') }}">
                                                 {{ __('Unassigned') }}
+                                            </a>
+                                        @elseif ($paralegalUser)
+                                            <a href="{{ route('user.show', [app()->getLocale(), $paralegalUser->id]) }}" title="{{ __('Click to view paralegal') }}">
+                                                {{ __('Paralegal') }}: {{ $paralegalUser->first_name.' '
+                                                    .$paralegalUser->middle_name.' '
+                                                    .$paralegalUser->last_name
+                                                }}
                                             </a>
                                         @else
                                             <a href="{{ route('staff.show', [app()->getLocale(), $dispute->staff_id]) }}" title="{{  __('Click to view assigned legal aid provider') }}">

@@ -186,15 +186,29 @@
                                                     <div class="col-md-12 mb-3">
                                                         <label for="staff"
                                                             class="font-weight-bold">{{ __('Legal Aid Provider') }}</label>
+                                                        @php
+                                                            $providerName = __('Unassigned');
+                                                            if ($dispute->paralegalUser) {
+                                                                $providerName = __('Paralegal') . ': ' . trim(implode(' ', array_filter([
+                                                                    $dispute->paralegalUser->first_name ?? '',
+                                                                    $dispute->paralegalUser->middle_name ?? '',
+                                                                    $dispute->paralegalUser->last_name ?? ''
+                                                                ])));
+                                                            } elseif (!is_null($dispute->staff_id) && $dispute->assignedTo) {
+                                                                $providerName = trim(implode(' ', array_filter([
+                                                                    optional($dispute->assignedTo->designation)->name ?? '',
+                                                                    $dispute->assignedTo->first_name ?? '',
+                                                                    $dispute->assignedTo->middle_name ?? '',
+                                                                    $dispute->assignedTo->last_name ?? ''
+                                                                ])));
+                                                                $providerLocation = optional(optional($dispute->staff)->center)->location;
+                                                                if ($providerLocation) {
+                                                                    $providerName .= ' | ' . $providerLocation;
+                                                                }
+                                                            }
+                                                        @endphp
                                                         <input type="text" readonly class="form-control  border-input-primary"
-                                                            id="staff" value="@if (is_null($dispute->staff_id)){{ __('Unassigned') }}
-                                                            @else{{
-                                                                                $dispute->assignedTo->designation->name . ' '
-                                                                                . $dispute->assignedTo->first_name . ' '
-                                                                                . $dispute->assignedTo->middle_name . ' '
-                                                                                . $dispute->assignedTo->last_name . ' | '
-                                                                                . $dispute->staff->center->location
-                                                                            }}@endif">
+                                                            id="staff" value="{{ $providerName }}">
                                                     </div>
                                                 </div>
                                                 <div class="form-row">
@@ -318,7 +332,10 @@
                                                                                 </span>
                                                                             </td>
                                                                             <td>
-                                                                                @if (is_null($occurrence->staff_id))
+                                                                                @php
+                                                                                    $occurrenceParalegal = $occurrence->paralegalUser;
+                                                                                @endphp
+                                                                                @if (is_null($occurrence->staff_id) && is_null($occurrence->paralegal_user_id))
                                                                                     @canany(['isSuperAdmin', 'isAdmin'])
                                                                                         <a href="{{ route('dispute.assign', [app()->getLocale(), $occurrence->id]) }}"
                                                                                             class="text-danger"
@@ -329,6 +346,23 @@
                                                                                         <a class="text-danger">
                                                                                             {{ __('Unassigned') }}
                                                                                         </a>
+                                                                                    @endcanany
+                                                                                @elseif ($occurrenceParalegal)
+                                                                                    @canany(['isSuperAdmin', 'isAdmin'])
+                                                                                        <a href="{{ route('user.show', [app()->getLocale(), $occurrenceParalegal->id]) }}"
+                                                                                            title="{{ __('Click to view paralegal') }}">
+                                                                                            {{ __('Paralegal') }}: {{ $occurrenceParalegal->first_name . ' '
+                                                                                                . $occurrenceParalegal->middle_name . ' '
+                                                                                                . $occurrenceParalegal->last_name
+                                                                                            }}
+                                                                                        </a>
+                                                                                    @else
+                                                                                        <span class="text-dark">
+                                                                                            {{ __('Paralegal') }}: {{ $occurrenceParalegal->first_name . ' '
+                                                                                                . $occurrenceParalegal->middle_name . ' '
+                                                                                                . $occurrenceParalegal->last_name
+                                                                                            }}
+                                                                                        </span>
                                                                                     @endcanany
                                                                                 @else
                                                                                                                         <a href="{{ route('staff.show', [app()->getLocale(), $occurrence->staff_id]) }}"

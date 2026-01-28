@@ -58,12 +58,13 @@ class DisputeExportController extends Controller
     private function buildListQuery(Request $request)
     {
         $query = Dispute::has('reportedBy')
-            ->with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfCase')
+            ->with('assignedTo', 'paralegalUser', 'reportedBy', 'disputeStatus', 'typeOfCase')
             ->select([
                 'id',
                 'dispute_no',
                 'beneficiary_id',
                 'staff_id',
+                'paralegal_user_id',
                 'reported_on',
                 'type_of_case_id',
                 'dispute_status_id',
@@ -106,13 +107,22 @@ class DisputeExportController extends Controller
                 optional($dispute->reportedBy)->last_name,
             ])));
 
-            $staff = $dispute->staff_id
-                ? trim(implode(' ', array_filter([
-                    optional($dispute->assignedTo)->first_name,
-                    optional($dispute->assignedTo)->middle_name,
-                    optional($dispute->assignedTo)->last_name,
-                ])))
-                : 'Unassigned';
+            $paralegalUser = $dispute->paralegalUser;
+            if ($paralegalUser) {
+                $staff = 'Paralegal: ' . trim(implode(' ', array_filter([
+                    $paralegalUser->first_name ?? '',
+                    $paralegalUser->middle_name ?? '',
+                    $paralegalUser->last_name ?? '',
+                ])));
+            } else {
+                $staff = $dispute->staff_id
+                    ? trim(implode(' ', array_filter([
+                        optional($dispute->assignedTo)->first_name,
+                        optional($dispute->assignedTo)->middle_name,
+                        optional($dispute->assignedTo)->last_name,
+                    ])))
+                    : 'Unassigned';
+            }
 
             $rows[] = [
                 $index + 1,

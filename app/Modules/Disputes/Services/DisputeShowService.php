@@ -10,9 +10,9 @@ class DisputeShowService
 {
     public function buildContext(Dispute $dispute, $user): array
     {
-        $occurrences = Dispute::with('assignedTo', 'disputeStatus')
+        $occurrences = Dispute::with('assignedTo', 'paralegalUser', 'disputeStatus')
             ->where('dispute_no', $dispute->dispute_no)
-            ->get(['id', 'reported_on', 'staff_id', 'dispute_status_id']);
+            ->get(['id', 'reported_on', 'staff_id', 'paralegal_user_id', 'dispute_status_id']);
 
         $dispute_statuses = DisputeStatus::get(['id', 'dispute_status']);
         $continueStatusId = DisputeStatus::whereRaw('LOWER(dispute_status) = ?', ['continue'])

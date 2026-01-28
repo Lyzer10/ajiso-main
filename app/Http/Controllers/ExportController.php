@@ -28,10 +28,11 @@ class ExportController extends Controller
     public function fetchDisputes($input)
     {
         $disputes = Dispute::with('assignedTo:first_name,middle_name,last_name',
+                                    'paralegalUser:id,first_name,middle_name,last_name',
                                     'reportedBy:first_name,middle_name,last_name',
                                     'disputeStatus', 'typeOfService','typeOfCase')
                             ->select(['id', 'dispute_no', 'reported_on', 'beneficiary_id', 'staff_id',
-                                        'type_of_service_id','type_of_case_id', 'dispute_status_id',
+                                        'paralegal_user_id', 'type_of_service_id','type_of_case_id', 'dispute_status_id',
                             ])
                             ->whereIn('id', $input)
                             ->latest()
@@ -44,18 +45,27 @@ class ExportController extends Controller
     {
         foreach ($disputes_list as $disputes) {
 
-            $collection[] = collect(
-                                    [
-                                        '#'.$disputes->id,
-                                        $disputes->dispute_no,
-                                        Carbon::parse($disputes->reported_on)->format('d-m-Y') ,
-                                        $disputes->reportedBy->first_name.' '.$disputes->reportedBy->middle_name.' '.$disputes->reportedBy->last_name,
-                                        (is_null($disputes->staff_id)) ? 'Unassigned' : $disputes->assignedTo->first_name.' '.$disputes->assignedTo->middle_name.' '.$disputes->assignedTo->last_name,
-                                        $disputes->typeOfService->type_of_service,
-                                        $disputes->typeOfCase->type_of_case ,
-                                        $disputes->disputeStatus->dispute_status,
-                                    ]
-                                );
+            $paralegalUser = $disputes->paralegalUser;
+            $providerName = (is_null($disputes->staff_id) && is_null($disputes->paralegal_user_id))
+                ? 'Unassigned'
+                : ($paralegalUser
+                    ? 'Paralegal: ' . trim(implode(' ', array_filter([
+                        $paralegalUser->first_name ?? '',
+                        $paralegalUser->middle_name ?? '',
+                        $paralegalUser->last_name ?? '',
+                    ])))
+                    : $disputes->assignedTo->first_name.' '.$disputes->assignedTo->middle_name.' '.$disputes->assignedTo->last_name);
+
+            $collection[] = collect([
+                '#'.$disputes->id,
+                $disputes->dispute_no,
+                Carbon::parse($disputes->reported_on)->format('d-m-Y'),
+                $disputes->reportedBy->first_name.' '.$disputes->reportedBy->middle_name.' '.$disputes->reportedBy->last_name,
+                $providerName,
+                $disputes->typeOfService->type_of_service,
+                $disputes->typeOfCase->type_of_case,
+                $disputes->disputeStatus->dispute_status,
+            ]);
         }
 
         return $collection;

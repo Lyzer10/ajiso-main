@@ -48,9 +48,11 @@ class ReportController extends Controller
 
         // Get all disputes and bind them to the index view
         $disputesQuery = Dispute::with('assignedTo:first_name,middle_name,last_name',
+                                        'paralegalUser:id,first_name,middle_name,last_name',
                                         'reportedBy:first_name,middle_name,last_name',
                                         'disputeStatus', 'typeOfService','typeOfCase')
                                 ->select(['id', 'dispute_no', 'reported_on', 'beneficiary_id', 'staff_id',
+                                            'paralegal_user_id',
                                             'type_of_service_id','type_of_case_id', 'dispute_status_id',
                                 ])
                                 ->latest();
@@ -336,8 +338,8 @@ class ReportController extends Controller
             $this->scopeDisputesByOrganization($baseQuery, $organizationId);
 
             $disputes = (clone $baseQuery)
-                        ->with('assignedTo', 'reportedBy', 'disputeStatus', 'typeOfService', 'typeOfCase')
-                        ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'reported_on',
+                        ->with('assignedTo', 'paralegalUser', 'reportedBy', 'disputeStatus', 'typeOfService', 'typeOfCase')
+                        ->select(['id', 'dispute_no', 'beneficiary_id', 'staff_id', 'paralegal_user_id', 'reported_on',
                                 'type_of_service_id','type_of_case_id', 'dispute_status_id'])
                         ->latest()
                         ->paginate(10);

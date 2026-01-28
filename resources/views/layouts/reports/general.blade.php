@@ -170,9 +170,19 @@
                                             </a>
                                         </td>
                                         <td>
-                                            @if (is_null($dispute->staff_id))
+                                            @php
+                                                $paralegalUser = $dispute->paralegalUser;
+                                            @endphp
+                                            @if (is_null($dispute->staff_id) && is_null($dispute->paralegal_user_id))
                                                 <a href="{{ route('dispute.assign', [app()->getLocale(), $dispute]) }}" class="text-danger" title="{{  __('Click to assigned legal aid provider') }}">
                                                     {{ __('Unassigned') }}
+                                                </a>
+                                            @elseif ($paralegalUser)
+                                                <a href="{{ route('user.show', [app()->getLocale(), $paralegalUser->id]) }}" title="{{ __('Click to view paralegal') }}">
+                                                    {{ __('Paralegal') }}: {{ $paralegalUser->first_name.' '
+                                                        .$paralegalUser->middle_name.' '
+                                                        .$paralegalUser->last_name
+                                                    }}
                                                 </a>
                                             @else
                                                 <a href="{{ route('staff.show', [app()->getLocale(), $dispute->staff_id]) }}" title="{{  __('Click to view assigned legal aid provider') }}">
