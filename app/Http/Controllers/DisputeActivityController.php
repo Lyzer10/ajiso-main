@@ -999,13 +999,13 @@ class DisputeActivityController extends Controller
     private function shouldSendSmsForDispute(Dispute $dispute)
     {
         $user = auth()->user();
-        if ($user && optional($user->role)->role_abbreviation === 'paralegal') {
+        if ($user && in_array(optional($user->role)->role_abbreviation, ['paralegal', 'clerk'], true)) {
             return false;
         }
 
         $dispute->loadMissing('assignedTo.user.role');
         $assignedUser = optional(optional($dispute->assignedTo)->user);
-        if ($assignedUser && optional($assignedUser->role)->role_abbreviation === 'paralegal') {
+        if ($assignedUser && in_array(optional($assignedUser->role)->role_abbreviation, ['paralegal', 'clerk'], true)) {
             return false;
         }
 

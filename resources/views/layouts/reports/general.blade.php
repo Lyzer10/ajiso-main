@@ -44,6 +44,10 @@
                             ? collect($statusCounts)
                             : $summaryCollection->groupBy('dispute_status_id')->map->count();
                         $totalCases = $totalCases ?? $summaryCollection->count();
+                        $isParalegalView = auth()->user() && auth()->user()->can('isClerk');
+                        $excludedStatusSlugs = $isParalegalView
+                            ? ['judged', 'discontinued', 'discontinue', 'pending']
+                            : [];
                         $summaryToneMap = [
                             'judged' => 'summary-card--slate',
                             'resolved' => 'summary-card--red',
@@ -55,6 +59,12 @@
                             'pending' => 'summary-card--orange',
                             'proceeding' => 'summary-card--purple',
                         ];
+                        $filteredDisputeStatuses = $dispute_statuses;
+                        if ($excludedStatusSlugs) {
+                            $filteredDisputeStatuses = $dispute_statuses->reject(function ($status) use ($excludedStatusSlugs) {
+                                return in_array(\Illuminate\Support\Str::slug($status->dispute_status), $excludedStatusSlugs, true);
+                            })->values();
+                        }
                     @endphp
                     <div class="card-header">
                         <div class="d-flex flex-wrap align-items-center justify-content-between">
@@ -115,7 +125,7 @@
                                 <div class="summary-card__label">{{ __('Total Cases') }}</div>
                                 <div class="summary-card__value">{{ $totalCases }}</div>
                             </div>
-                            @foreach ($dispute_statuses as $dispute_status)
+                            @foreach ($filteredDisputeStatuses as $dispute_status)
                                 @php
                                     $statusSlug = \Illuminate\Support\Str::slug($dispute_status->dispute_status);
                                     $paletteClass = $summaryToneMap[$statusSlug] ?? 'summary-card--blue';

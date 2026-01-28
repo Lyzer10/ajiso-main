@@ -124,6 +124,30 @@ h6 {
         transition-delay: 0 !important;
     }
 }
+
+@media (max-width: 991px) {
+    body,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    a,
+    label,
+    button,
+    input,
+    select,
+    textarea,
+    .navbar a,
+    .navbar a:focus,
+    .btn-get-started,
+    .section-title h2,
+    .section-title p {
+        font-family: "Open Sans", sans-serif !important;
+    }
+}
 /*--------------------------------------------------------------
     # Organization
     --------------------------------------------------------------*/

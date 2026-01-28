@@ -617,6 +617,24 @@
         });
     </script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var fileNoInput = document.getElementById('user_no');
+            if (!fileNoInput) {
+                return;
+            }
+            var url = "{{ route('beneficiary.file-no', app()->getLocale()) }}";
+            fetch(url + '?_=' + Date.now())
+                .then(function (response) { return response.ok ? response.json() : null; })
+                .then(function (data) {
+                    if (data && data.fileNo) {
+                        fileNoInput.value = data.fileNo;
+                    }
+                })
+                .catch(function () {});
+        });
+    </script>
+
     {{-- Get Districts based on Region selected --}}
     <script>
         $(function() {

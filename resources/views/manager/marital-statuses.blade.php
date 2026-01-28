@@ -127,7 +127,7 @@
                                                 /
                                                 <form method="POST" action="{{ route('manager.marital.status.trash', [app()->getLocale(), $marital_status->id]) }}">
                                                     @csrf
-                                                    @METHOD('PUT')
+                                                    @method('PUT')
                                                         <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{  __('Delete Marital Status') }}"></i>
                                                 </form>
                                                 @endcan

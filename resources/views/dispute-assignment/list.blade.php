@@ -175,7 +175,7 @@
                                                         <div class="action-inline">
                                                             <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-flex align-items-center mb-0">
                                                                 @csrf
-                                                                @METHOD('PUT')
+                                                                @method('PUT')
                                                                 <input type="hidden" name="res" value="accepted">
                                                                 @php
                                                                     $selectId = 'target_staff_id_'.$assignment_request->id;
@@ -203,7 +203,7 @@
 
                                                             <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}" class="mb-0">
                                                                 @csrf
-                                                                @METHOD('PUT')
+                                                                @method('PUT')
                                                                 <input type="hidden" name="res" value="rejected">
                                                                 <button type="button" class="btn btn-sm btn-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
                                                                     <i class="fas fa-times"></i>
@@ -215,7 +215,7 @@
                                                     <div class="d-flex align-items-center" style="gap: 5px;">
                                                         <form method="POST" action="{{ route('dispute.request.accept', [app()->getLocale(), $assignment_request->id]) }}" class="d-inline">
                                                             @csrf
-                                                            @METHOD('PUT')
+                                                            @method('PUT')
                                                             <input type="hidden" name="res" value="accepted">
                                                             <button type="button" class="btn btn-sm btn-success show_accept" data-toggle="tooltip" title="{{ __('Accept reassignment request') }}">
                                                                 <i class="fas fa-check"></i>
@@ -223,7 +223,7 @@
                                                         </form>
                                                         <form method="POST" action="{{ route('dispute.request.reject', [app()->getLocale(), $assignment_request->id]) }}" class="d-inline">
                                                             @csrf
-                                                            @METHOD('PUT')
+                                                            @method('PUT')
                                                             <input type="hidden" name="res" value="rejected">
                                                             <button type="button" class="btn btn-sm btn-danger show_reject" data-toggle="tooltip" title="{{ __('Reject reassignment request') }}">
                                                                 <i class="fas fa-times"></i>

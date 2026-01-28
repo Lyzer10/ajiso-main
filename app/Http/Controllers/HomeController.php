@@ -66,12 +66,12 @@ class HomeController extends Controller
         $total_staff = $organizationId
             ? User::where('organization_id', $organizationId)
                 ->whereHas('role', function ($query) {
-                    $query->where('role_abbreviation', 'paralegal');
+                    $query->whereIn('role_abbreviation', ['paralegal', 'clerk']);
                 })
                 ->count()
             : Staff::count();
         $total_paralegals = User::whereHas('role', function ($query) {
-            $query->where('role_abbreviation', 'paralegal');
+            $query->whereIn('role_abbreviation', ['paralegal', 'clerk']);
         })->count();
 
         // Grouped counts
@@ -206,17 +206,12 @@ class HomeController extends Controller
 
     private function getOrganizationId()
     {
-        $user = auth()->user();
-        if ($user && $user->role && $user->role->role_abbreviation === 'paralegal') {
-            return $user->organization_id;
-        }
-
-        return null;
+        return $this->isParalegal() ? auth()->user()->organization_id : null;
     }
 
     private function isParalegal()
     {
         $user = auth()->user();
-        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+        return $user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
     }
 }

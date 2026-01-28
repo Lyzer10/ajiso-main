@@ -227,7 +227,7 @@ class DisputeController extends Controller
             $paralegals = User::with('role:id,role_abbreviation')
                 ->where('organization_id', $organizationId)
                 ->whereHas('role', function ($query) {
-                    $query->where('role_abbreviation', 'paralegal');
+                    $query->whereIn('role_abbreviation', ['paralegal', 'clerk']);
                 })
                 ->orderBy('first_name')
                 ->get(['id', 'first_name', 'middle_name', 'last_name', 'user_no']);
@@ -518,10 +518,13 @@ class DisputeController extends Controller
                 'nullable',
                 'integer',
                 Rule::exists('users', 'id')->where(function ($query) use ($organizationId) {
-                    $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+                    $paralegalRoleIds = UserRole::whereIn('role_abbreviation', ['paralegal', 'clerk'])
+                        ->pluck('id')
+                        ->filter()
+                        ->values();
                     $query->where('organization_id', $organizationId);
-                    if ($paralegalRoleId) {
-                        $query->where('user_role_id', $paralegalRoleId);
+                    if ($paralegalRoleIds->isNotEmpty()) {
+                        $query->whereIn('user_role_id', $paralegalRoleIds);
                     }
                 }),
             ],
@@ -1428,12 +1431,12 @@ class DisputeController extends Controller
     private function isParalegal()
     {
         $user = auth()->user();
-        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+        return $user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
     }
 
     private function isParalegalUser($user)
     {
-        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+        return $user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
     }
 
     private function getOrganizationId()

@@ -30,7 +30,13 @@
         </div>
         <!-- beneficiary list area start -->
         <div class="col-md-12 mt-5 mb-3">
-            <div class="card mb-3">
+            <div class="report-mobile-actions d-md-none mb-3">
+                <a href="{{ route('disputes.list', app()->getLocale()) }}" class="btn btn-primary btn-block report-mobile-button">
+                    <i class="fas fa-list mr-2"></i>
+                    {{ __('Disputes List') }}
+                </a>
+            </div>
+            <div class="card mb-3 d-none d-md-block">
                 <div class="card-header">
                     <h4 class="header-title">{{ __('General Report')}}
                         <a href="{{ route('disputes.list', app()->getLocale()) }}"
@@ -40,10 +46,11 @@
                     </h4>
                 </div>
             </div>
-            <div class="card mb-3">
+            <div class="card mb-3 report-filter-card">
                 <div class="card-header">
-                    <form action="{{ route('reports.general.filter.staff', app()->getLocale()) }}" method="GET" role="search">
-                        <div class="row">
+                    <div class="report-filter-title d-md-none">{{ __('General Report') }}</div>
+                    <form action="{{ route('reports.general.filter.staff', app()->getLocale()) }}" method="GET" role="search" class="report-filter-form">
+                        <div class="row report-filter-grid">
                         <div class="col-md-3">
                             <label for="filterBy" class="font-weight-bold">{{ __('Filter By') }}<sup class="text-danger">*</sup></label>
                             <select  id="filterBy" class="select2 form-control border-prepend-primary py-2 @error('reported_on') is-invalid @enderror" name="filterBy"
@@ -180,7 +187,7 @@
                             </div>
                         </div>
                         <div class="col-md-2 mt-4 pt-1">
-                            <button class="btn btn-primary float-right" type="submit">
+                            <button class="btn btn-primary float-right report-filter-button" type="submit">
                                 <i class="fas fa-filter fa-fw"></i>
                                 {{ __('Filter') }}
                             </button>
@@ -189,29 +196,39 @@
                     </form>
                 </div>
             </div>
-            <div class="card">
+            <div class="card report-summary-card">
                 @if ($disputes->count())
                 @php
                     $filter_by = $filter_by ?? 'N/A';
                     $filter_val = $filter_val ?? 'All';
                     $date_raw = $date_raw ?? __('All time');
                     $summaryCollection = method_exists($disputes, 'getCollection') ? $disputes->getCollection() : $disputes;
-                    $statusCounts = isset($statusCounts)
-                        ? collect($statusCounts)
-                        : $summaryCollection->groupBy('dispute_status_id')->map->count();
-                    $totalCases = $totalCases ?? $summaryCollection->count();
-                    $summaryToneMap = [
-                        'judged' => 'summary-card--slate',
-                        'resolved' => 'summary-card--red',
-                        'continue' => 'summary-card--amber',
-                        'continued' => 'summary-card--amber',
+                        $statusCounts = isset($statusCounts)
+                            ? collect($statusCounts)
+                            : $summaryCollection->groupBy('dispute_status_id')->map->count();
+                        $totalCases = $totalCases ?? $summaryCollection->count();
+                        $isParalegalView = auth()->user() && auth()->user()->can('isClerk');
+                        $excludedStatusSlugs = $isParalegalView
+                            ? ['judged', 'discontinued', 'discontinue', 'pending']
+                            : [];
+                        $summaryToneMap = [
+                            'judged' => 'summary-card--slate',
+                            'resolved' => 'summary-card--red',
+                            'continue' => 'summary-card--amber',
+                            'continued' => 'summary-card--amber',
                         'referred' => 'summary-card--green',
-                        'discontinued' => 'summary-card--teal',
-                        'discontinue' => 'summary-card--teal',
-                        'pending' => 'summary-card--orange',
-                        'proceeding' => 'summary-card--purple',
-                    ];
-                @endphp
+                            'discontinued' => 'summary-card--teal',
+                            'discontinue' => 'summary-card--teal',
+                            'pending' => 'summary-card--orange',
+                            'proceeding' => 'summary-card--purple',
+                        ];
+                        $filteredDisputeStatuses = $dispute_statuses;
+                        if ($excludedStatusSlugs) {
+                            $filteredDisputeStatuses = $dispute_statuses->reject(function ($status) use ($excludedStatusSlugs) {
+                                return in_array(\Illuminate\Support\Str::slug($status->dispute_status), $excludedStatusSlugs, true);
+                            })->values();
+                        }
+                    @endphp
                 <div class="card-header">
                     <div class="d-flex flex-wrap align-items-center justify-content-between">
                         <h4 class="header-title mb-0">{{ __('General Summary') }}</h4>
@@ -266,12 +283,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="summary-grid mt-3">
+                    <div class="summary-grid report-summary-grid mt-3">
                         <div class="summary-card summary-card--brand summary-card--tone">
                             <div class="summary-card__label">{{ __('Total Cases') }}</div>
                             <div class="summary-card__value">{{ $totalCases }}</div>
                         </div>
-                        @foreach ($dispute_statuses as $dispute_status)
+                        @foreach ($filteredDisputeStatuses as $dispute_status)
                             @php
                                 $statusSlug = \Illuminate\Support\Str::slug($dispute_status->dispute_status);
                                 $paletteClass = $summaryToneMap[$statusSlug] ?? 'summary-card--blue';
@@ -284,7 +301,45 @@
                     </div>
                 </div>
                 <div class="card-body" style="width: 100%;">
-                    <div class="table-striped">
+                    <div class="report-dispute-cards d-md-none">
+                        @foreach ($disputes as $dispute)
+                            @php
+                                $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                $beneficiaryName = trim(implode(' ', array_filter([
+                                    $dispute->reportedBy->first_name ?? '',
+                                    $dispute->reportedBy->middle_name ?? '',
+                                    $dispute->reportedBy->last_name ?? ''
+                                ])));
+                            @endphp
+                            <div class="report-dispute-card">
+                                <div class="report-dispute-card__top">
+                                    <div class="report-dispute-card__id">{{ '#'.$dispute->id }}</div>
+                                    <span class="badge-status status-{{ $statusSlug }}">{{ __($dispute->disputeStatus->dispute_status) }}</span>
+                                </div>
+                                <div class="report-dispute-card__no">{{ $dispute->dispute_no }}</div>
+                                <div class="report-dispute-card__row">
+                                    <span>{{ __('Service') }}</span>
+                                    <span>{{ $dispute->typeOfService->type_of_service }}</span>
+                                </div>
+                                <div class="report-dispute-card__row">
+                                    <span>{{ __('Case Type') }}</span>
+                                    <span>{{ $dispute->typeOfCase->type_of_case }}</span>
+                                </div>
+                                <div class="report-dispute-card__row">
+                                    <span>{{ __('Beneficiary') }}</span>
+                                    <span>{{ $beneficiaryName }}</span>
+                                </div>
+                                <div class="report-dispute-card__row">
+                                    <span>{{ __('Reported') }}</span>
+                                    <span>{{ Carbon\Carbon::parse($dispute->reported_on)->format('d-m-Y') }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                        <div class="report-pagination">
+                            {{ $disputes->links() }}
+                        </div>
+                    </div>
+                    <div class="table-striped d-none d-md-block">
                         <table class="table progress-table text-center" id="dataTable">
                             <thead class="text-capitalize text-white light-custom-color">
                                 <tr>
@@ -330,7 +385,9 @@
                             </tbody>
                         </table>
                     </div>
-                    {{ $disputes->count() ? $disputes->links() : '' }}
+                    <div class="d-none d-md-block">
+                        {{ $disputes->count() ? $disputes->links() : '' }}
+                    </div>
                 </div>
                 @endif
             </div>

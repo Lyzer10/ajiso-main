@@ -11,6 +11,7 @@ class BeneficiaryListQuery
     {
         $query = Beneficiary::whereHas('user')
             ->with('user')
+            ->withCount('disputes')
             ->latest();
 
         if ($organizationId) {

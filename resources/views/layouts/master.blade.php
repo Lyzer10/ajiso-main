@@ -151,7 +151,7 @@
                         {{ __('New Dispute') }}
                     </a>
                 </li>
-                <li class="{{ request()->routeIs('dispute.select.archive') ? 'active' : '' }}">
+                <li class="nav-archived-dispute {{ request()->routeIs('dispute.select.archive') ? 'active' : '' }}">
                     <a href="{{ route('dispute.select.archive', app()->getLocale()) }}">
                         <i class="fas fa-caret-right"></i>
                         {{ __('Archived Dispute') }}
@@ -268,12 +268,14 @@
                                 {{ __('Survey Summary') }}
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('reports.client.cases') ? 'active' : '' }}">
-                            <a href="{{ route('reports.client.cases', app()->getLocale()) }}">
-                                <i class="fas fa-caret-right"></i>
-                                {{ __('Client Cases') }}
-                            </a>
-                        </li>
+                        @cannot('isClerk')
+                            <li class="{{ request()->routeIs('reports.client.cases') ? 'active' : '' }}">
+                                <a href="{{ route('reports.client.cases', app()->getLocale()) }}">
+                                    <i class="fas fa-caret-right"></i>
+                                    {{ __('Client Cases') }}
+                                </a>
+                            </li>
+                        @endcannot
                     </ul>
                 </li>
             </ul>
@@ -504,7 +506,7 @@
                                                 src="@if(File::exists('storage/uploads/images/profiles/'.auth()->user()->image)){{ asset('storage/uploads/images/profiles/thumbnails/'.auth()->user()->image) }}@else {{ asset('assets/images/avatar/avatar.png') }} @endif"
                                                 alt="user image">
                                             <h4 class="user-name dropdown-toggle" data-toggle="dropdown">
-                                                {{ auth()->user()->name }}
+                                                <span class="user-name__text">{{ auth()->user()->name }}</span>
                                                 <i class="fa fa-angle-down"></i>
                                             </h4>
                                             <div class="dropdown-menu">
@@ -541,7 +543,7 @@
                                     src="@if(File::exists('storage/uploads/images/profiles/'.auth()->user()->image)){{ asset('storage/uploads/images/profiles/thumbnails/'.auth()->user()->image) }}@else {{ asset('assets/images/avatar/avatar.png') }} @endif"
                                     alt="user image">
                                 <h4 class="user-name dropdown-toggle" data-toggle="dropdown">
-                                    {{ auth()->user()->name }}
+                                    <span class="user-name__text">{{ auth()->user()->name }}</span>
                                     <i class="fa fa-angle-down"></i>
                                 </h4>
                                 <div class="dropdown-menu">

@@ -29,7 +29,7 @@ class Clerk
         elseif (Auth::user()->role->role_abbreviation  == 'staff') {
             return redirect(app()->getLocale().'/staff/home');
         }
-        elseif (Auth::user()->role->role_abbreviation  == 'paralegal') {
+        elseif (in_array(Auth::user()->role->role_abbreviation, ['paralegal', 'clerk'], true)) {
             return $next($request);
         }
         elseif (Auth::user()->role->role_abbreviation  == 'beneficiary') {

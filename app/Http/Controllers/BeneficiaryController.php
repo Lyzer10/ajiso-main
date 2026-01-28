@@ -81,6 +81,23 @@ class BeneficiaryController extends Controller
         return view('beneficiaries.create', $data);
     }
 
+    /**
+     * Return the next available beneficiary file number.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function nextFileNo()
+    {
+        $organizationId = $this->getOrganizationId();
+        if ($this->isParalegal() && !$organizationId) {
+            return response()->json(['message' => 'Organization not assigned.'], 422);
+        }
+
+        $fileNo = (new BeneficiaryCreateService())->generateFileNo($organizationId, $this->isParalegal());
+
+        return response()->json(['fileNo' => $fileNo]);
+    }
+
 
     /**
      * Store a newly created beneficiary in storage.
@@ -94,6 +111,12 @@ class BeneficiaryController extends Controller
         if ($this->isParalegal() && !$organizationId) {
             return redirect()->back()
                 ->withErrors('errors', 'Organization not assigned.');
+        }
+
+        $userNo = $request->input('user_no');
+        if (empty($userNo) || User::where('user_no', $userNo)->exists()) {
+            $userNo = (new BeneficiaryCreateService())->generateFileNo($organizationId, $this->isParalegal());
+            $request->merge(['user_no' => $userNo]);
         }
 
         $marriedStatusId = MaritalStatus::where('marital_status', 'Married')->value('id');
@@ -114,7 +137,7 @@ class BeneficiaryController extends Controller
 
         $this->validate($request, [
             'user_no' => ['required', 'string', 'max:255', 'unique:users'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users'],
+            'email' => ['nullable', 'email', 'max:255'],
             'first_name' => ['required', 'min:3', 'string', 'max:50'],
             'middle_name' => ['nullable', 'string', 'max:50'],
             'last_name' => ['required', 'min:3', 'string', 'max:50'],
@@ -142,6 +165,26 @@ class BeneficiaryController extends Controller
             'employment_status' => ['required'],
             'occupation_business' => ['required', 'max:255'],
         ]);
+
+        $firstName = trim((string) $request->first_name);
+        $middleName = trim((string) $request->middle_name);
+        $lastName = trim((string) $request->last_name);
+        $email = trim((string) $request->email);
+
+        $duplicateQuery = User::where('user_role_id', 4)
+            ->whereRaw('LOWER(first_name) = ?', [mb_strtolower($firstName)])
+            ->whereRaw('LOWER(last_name) = ?', [mb_strtolower($lastName)])
+            ->whereRaw("COALESCE(LOWER(middle_name), '') = ?", [mb_strtolower($middleName)]);
+
+        if ($email !== '') {
+            $duplicateQuery->whereRaw('LOWER(email) = ?', [mb_strtolower($email)]);
+        }
+
+        if ($duplicateQuery->exists()) {
+            return redirect()->back()
+                ->withErrors(['first_name' => __('This beneficiary is already registered.')])
+                ->withInput();
+        }
 
         /**
          * Create a new user instance for a valid registration.
@@ -746,7 +789,7 @@ class BeneficiaryController extends Controller
     private function isParalegal()
     {
         $user = auth()->user();
-        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+        return $user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
     }
 
     private function getOrganizationId()

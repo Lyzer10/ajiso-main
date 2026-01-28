@@ -53,41 +53,63 @@
                                 </select> 
                             </form>
                         @elsecanany(['isSuperAdmin', 'isAdmin', 'isClerk'])
-                            {{ __('Disputes list') }}
+                            <div class="disputes-toolbar">
+                                <div class="disputes-toolbar__title">{{ __('Disputes list') }}</div>
 
                             @php
                                 $exportQuery = request()->only(['search', 'status', 'case_type', 'period', 'dateRange']);
                             @endphp
-                            <div class="btn-group pull-right ml-3">
-                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-download fa-fw"></i>
-                                    {{ __('Export') }}
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="{{ route('disputes.export.pdf', array_merge([app()->getLocale()], $exportQuery)) }}">
-                                        <i class="fas fa-file-pdf text-danger"></i>
-                                        {{ __('as pdf') }}
-                                    </a>
-                                    <a class="dropdown-item" href="{{ route('disputes.export.excel', array_merge([app()->getLocale()], $exportQuery)) }}">
-                                        <i class="fas fa-file-excel text-success"></i>
-                                        {{ __('as excel') }}
-                                    </a>
-                                    <a class="dropdown-item" href="{{ route('disputes.export.csv', array_merge([app()->getLocale()], $exportQuery)) }}">
-                                        <i class="fas fa-file-csv text-warning"></i>
-                                        {{ __('as csv') }}
-                                    </a>
+                                <div class="disputes-toolbar__actions">
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-download fa-fw"></i>
+                                            {{ __('Export') }}
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item" href="{{ route('disputes.export.pdf', array_merge([app()->getLocale()], $exportQuery)) }}">
+                                                <i class="fas fa-file-pdf text-danger"></i>
+                                                {{ __('as pdf') }}
+                                            </a>
+                                            <a class="dropdown-item" href="{{ route('disputes.export.excel', array_merge([app()->getLocale()], $exportQuery)) }}">
+                                                <i class="fas fa-file-excel text-success"></i>
+                                                {{ __('as excel') }}
+                                            </a>
+                                            <a class="dropdown-item" href="{{ route('disputes.export.csv', array_merge([app()->getLocale()], $exportQuery)) }}">
+                                                <i class="fas fa-file-csv text-warning"></i>
+                                                {{ __('as csv') }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm text-white light-custom-color dropdown-toggle" id="bd-versions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            {{ __('Add Dispute') }}
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-md-right" aria-labelledby="bd-versions">
+                                            <a class="dropdown-item btn-link" href="{{ route('dispute.create.new', app()->getLocale()) }}">{{ __('New') }}</a>
+                                            <a class="dropdown-item btn-link" href="{{ route('dispute.select.archive', app()->getLocale()) }}">{{ __('Archived') }}</a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <a class="btn btn-sm text-white light-custom-color dropdown-toggle pull-right ml-2" href="#" id="bd-versions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {{ __('Add Dispute') }}
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-md-right" aria-labelledby="bd-versions">
-                                <a class="dropdown-item btn-link" href="{{ route('dispute.create.new', app()->getLocale()) }}">{{ __('New') }}</a>
-                                <a class="dropdown-item btn-link" href="{{ route('dispute.select.archive', app()->getLocale()) }}">{{ __('Archived') }}</a>
-                            </div>
 
-                            <form method="GET" action="{{ route('disputes.list', [app()->getLocale()]) }}" class="mt-3 dispute-filter">
-                                <div class="form-row align-items-end">
+                            @php
+                                $hasFilters = request()->filled('search')
+                                    || request()->filled('case_type')
+                                    || request()->filled('status')
+                                    || request()->filled('period')
+                                    || request()->filled('dateRange');
+                            @endphp
+                            <div class="dispute-filter-toggle d-md-none">
+                                <button class="btn btn-light btn-block d-flex justify-content-between align-items-center" type="button"
+                                    data-toggle="collapse" data-target="#disputeFiltersCollapse" aria-expanded="{{ $hasFilters ? 'true' : 'false' }}"
+                                    aria-controls="disputeFiltersCollapse">
+                                    <span>{{ __('Search Filters') }}</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div id="disputeFiltersCollapse" class="collapse d-md-block {{ $hasFilters ? 'show' : '' }}">
+                                <form method="GET" action="{{ route('disputes.list', [app()->getLocale()]) }}" class="mt-3 dispute-filter">
+                                    <div class="form-row align-items-end">
                                     <div class="col-lg-3 col-md-6 mb-3">
                                         <label class="font-weight-bold">{{ __('Search by beneficiary') }}</label>
                                         <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control border-input-primary dispute-filter__control">
@@ -141,20 +163,110 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="text-right">
-                                    <button type="submit" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-filter fa-fw"></i>
-                                        {{ __('Filter') }}
-                                    </button>
-                                    <a href="{{ route('disputes.list', app()->getLocale()) }}" class="btn btn-light btn-sm">{{ __('Reset') }}</a>
-                                </div>
-                            </form>
+                                    </div>
+                                    <div class="text-right">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-filter fa-fw"></i>
+                                            {{ __('Filter') }}
+                                        </button>
+                                        <a href="{{ route('disputes.list', app()->getLocale()) }}" class="btn btn-light btn-sm">{{ __('Reset') }}</a>
+                                    </div>
+                                </form>
+                            </div>
                         @endcanany
                     </div>
                 </div>
-                <div class="card-body"style="width: 100%;">
-                    <div class="table-responsive">
+                <div class="card-body" style="width: 100%;">
+                    <div class="disputes-mobile-list d-md-none">
+                        <div class="disputes-mobile-header">
+                            <div class="disputes-mobile-title">{{ __('Disputes List') }}</div>
+                            <div class="disputes-mobile-actions">
+                                @canany(['isSuperAdmin', 'isAdmin', 'isClerk'])
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{ __('Export') }}">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item" href="{{ route('disputes.export.pdf', array_merge([app()->getLocale()], $exportQuery ?? [])) }}">
+                                                <i class="fas fa-file-pdf text-danger"></i>
+                                                {{ __('as pdf') }}
+                                            </a>
+                                            <a class="dropdown-item" href="{{ route('disputes.export.excel', array_merge([app()->getLocale()], $exportQuery ?? [])) }}">
+                                                <i class="fas fa-file-excel text-success"></i>
+                                                {{ __('as excel') }}
+                                            </a>
+                                            <a class="dropdown-item" href="{{ route('disputes.export.csv', array_merge([app()->getLocale()], $exportQuery ?? [])) }}">
+                                                <i class="fas fa-file-csv text-warning"></i>
+                                                {{ __('as csv') }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{ __('Add Dispute') }}">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item" href="{{ route('dispute.create.new', app()->getLocale()) }}">{{ __('New') }}</a>
+                                            <a class="dropdown-item" href="{{ route('dispute.select.archive', app()->getLocale()) }}">{{ __('Archived') }}</a>
+                                        </div>
+                                    </div>
+                                @endcanany
+                            </div>
+                        </div>
+                        <div class="disputes-mobile-cards">
+                            @if ($disputes->count())
+                                @foreach ($disputes as $dispute)
+                                    @php
+                                        $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                        $beneficiaryName = trim(implode(' ', array_filter([
+                                            $dispute->reportedBy->first_name ?? '',
+                                            $dispute->reportedBy->middle_name ?? '',
+                                            $dispute->reportedBy->last_name ?? ''
+                                        ])));
+                                    @endphp
+                                    <div class="dispute-mobile-card">
+                                        <div class="dispute-mobile-card__top">
+                                            <div class="dispute-mobile-card__title">{{ $dispute->dispute_no }}</div>
+                                            <div class="dropdown dispute-mobile-menu">
+                                                <button class="btn btn-light btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right">
+                                                    <a class="dropdown-item" href="{{ route('dispute.show', [app()->getLocale(), $dispute->id]) }}">
+                                                        <i class="fas fa-eye text-primary"></i>
+                                                        {{ __('View') }}
+                                                    </a>
+                                                    <a class="dropdown-item" href="{{ route('dispute.edit', [app()->getLocale(), $dispute->id]) }}">
+                                                        <i class="fas fa-pencil-square-o text-warning"></i>
+                                                        {{ __('Edit') }}
+                                                    </a>
+                                                    @can('isSuperAdmin')
+                                                        <form method="POST" action="{{ route('dispute.trash', [app()->getLocale(), $dispute->id]) }}">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <button type="submit" class="dropdown-item text-danger show_delete">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                                {{ __('Delete') }}
+                                                            </button>
+                                                        </form>
+                                                    @endcan
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="dispute-mobile-card__name">{{ $beneficiaryName }}</div>
+                                        <div class="dispute-mobile-card__meta">
+                                            <span class="dispute-mobile-card__case">{{ optional($dispute->typeOfCase)->type_of_case }}</span>
+                                            <span class="badge-status status-{{ $statusSlug }}">{{ __($dispute->disputeStatus->dispute_status) }}</span>
+                                            <span class="dispute-mobile-card__date">{{ $dispute->reported_on ? Carbon\Carbon::parse($dispute->reported_on)->format('Y-m-d') : '' }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="alert alert-info mb-0">{{ __('No disputes found') }}</div>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="disputes-table table-responsive">
                         <table class="table table-striped progress-table text-center">
                             @canany(['isSuperAdmin', 'isAdmin', 'isClerk', 'isStaff'])
                             <thead class="text-capitalize text-white light-custom-color">
@@ -255,7 +367,7 @@
                                             /
                                             <form method="POST" action="{{ route('dispute.trash', [app()->getLocale(), $dispute->id]) }}">
                                                 @csrf
-                                                @METHOD('PUT')
+                                                @method('PUT')
                                                     <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{  __('Delete Dispute"') }}"></i>
                                             </form>
                                         @endcan

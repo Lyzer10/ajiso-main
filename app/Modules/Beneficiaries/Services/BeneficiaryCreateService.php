@@ -39,6 +39,26 @@ class BeneficiaryCreateService
             }
         }
 
+        $fileNo = $this->generateFileNo($organizationId, $isParalegal);
+
+        return compact(
+            'marital_statuses',
+            'regions',
+            'districts',
+            'education_levels',
+            'survey_choices',
+            'tribes',
+            'religions',
+            'marriage_forms',
+            'employment_statuses',
+            'fileNo',
+            'defaultRegionId',
+            'defaultDistrictId'
+        );
+    }
+
+    public function generateFileNo(?int $organizationId, bool $isParalegal): string
+    {
         $currentYear = date('Y');
         $prefix = $this->resolvePrefix($organizationId, $isParalegal);
 
@@ -57,22 +77,13 @@ class BeneficiaryCreateService
             $nextNumber = $lastNumber + 1;
         }
 
-        $fileNo = $prefix . '/' . $currentYear . '/' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        do {
+            $candidate = $prefix . '/' . $currentYear . '/' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            $exists = User::where('user_no', $candidate)->exists();
+            $nextNumber++;
+        } while ($exists);
 
-        return compact(
-            'marital_statuses',
-            'regions',
-            'districts',
-            'education_levels',
-            'survey_choices',
-            'tribes',
-            'religions',
-            'marriage_forms',
-            'employment_statuses',
-            'fileNo',
-            'defaultRegionId',
-            'defaultDistrictId'
-        );
+        return $candidate;
     }
 
     private function resolvePrefix(?int $organizationId, bool $isParalegal): string

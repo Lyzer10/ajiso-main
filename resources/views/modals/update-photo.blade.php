@@ -14,7 +14,7 @@
             <div class="modal-body mb-0">
                 <form action="{{ route('user.update.photo', [app()->getLocale(), auth()->user()->id]) }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    @METHOD ('PUT')
+                    @method ('PUT')
                     <input type="hidden" name="size" value="2000000">
                     <div class="">
                         <div class="input-group mb-3">

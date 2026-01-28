@@ -1036,7 +1036,7 @@ class ReportController extends Controller
     private function isParalegal()
     {
         $user = auth()->user();
-        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+        return $user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
     }
 
     private function getOrganizationId()

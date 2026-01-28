@@ -26,7 +26,7 @@ class SetLocale
             session(['locale_user_set' => true]);
         }
 
-        if ($roleAbbreviation === 'paralegal') {
+        if (in_array($roleAbbreviation, ['paralegal', 'clerk'], true)) {
             $userChosenLocale = session('locale_user_set', false);
             if (!$userChosenLocale && $locale !== 'sw') {
                 if (!$request->isMethod('get') && !$request->isMethod('head')) {
@@ -55,7 +55,7 @@ class SetLocale
         } elseif (session()->has('locale')) {
             app()->setLocale(session()->get('locale'));
         } else {
-            $defaultLocale = $roleAbbreviation === 'paralegal' ? 'sw' : 'en';
+            $defaultLocale = in_array($roleAbbreviation, ['paralegal', 'clerk'], true) ? 'sw' : 'en';
             session(['locale' => $defaultLocale]);
             app()->setLocale($defaultLocale);
         }

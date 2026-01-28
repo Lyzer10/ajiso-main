@@ -146,7 +146,7 @@
                                                 /
                                                 <form method="POST" action="{{ route('manager.survey.choice.trash', [app()->getLocale(), $survey_choice->id]) }}">
                                                     @csrf
-                                                    @METHOD('PUT')
+                                                    @method('PUT')
                                                         <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{  __('Delete Choice') }}"></i>
                                                 </form>
                                                 @endcan

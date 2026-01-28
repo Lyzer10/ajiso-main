@@ -61,7 +61,7 @@
                 </div>
                 <form action="{{ route('user.update', [app()->getLocale(), $user]) }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    @METHOD ('PUT')
+                    @method ('PUT')
                     <div class="card-body">
                         @if ($user->count())
                             <div class="row">

@@ -59,18 +59,35 @@
                 @endphp
                 <div class="card-header">
                     <div class="dispute-profile-header">
-                        <h4 class="header-title mb-0">{{ __('Dispute Profile') }}</h4>
+                        <div class="dispute-profile-title">
+                            <a href="{{ route('disputes.list', app()->getLocale()) }}" class="dispute-back-link" aria-label="{{ __('Back to disputes list') }}">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                            <div>
+                                <h4 class="header-title mb-0">{{ __('Dispute Profile') }}</h4>
+                                <div class="dispute-profile-meta">
+                                    <i class="fas fa-home"></i>
+                                    <span>{{ __('Home') }}</span>
+                                    <span class="dispute-profile-meta__sep">/</span>
+                                    <span>{{ __('Disputes') }}</span>
+                                    <span class="dispute-profile-meta__sep">/</span>
+                                    <span>{{ $dispute->dispute_no }}</span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="dispute-profile-actions">
                             @if (strtolower($currentStatus) === 'resolved' && (!empty($continueStatusId) || !empty($referredStatusId)))
                                 <button type="button" class="btn btn-sm btn-info text-white mr-2" id="reopenCase"
                                     data-status-id="{{ $continueStatusId }}"
                                     data-referred-status-id="{{ $referredStatusId }}">
+                                    <i class="fas fa-undo-alt mr-1"></i>
                                     {{ __('Reopen Case') }}
                                 </button>
                             @endif
                             @if (!empty($canRequestReassignment))
                                 <button type="button" class="btn btn-sm btn-secondary text-white mr-2" data-toggle="modal"
                                     data-target="#reassignmentRequestModal">
+                                    <i class="fas fa-user-edit mr-1"></i>
                                     @if ($isAdminUser)
                                         {{ __('Reassign Case') }}
                                     @elseif ($isParalegalUser)
@@ -81,16 +98,32 @@
                                 </button>
                             @endif
                             <a href="{{ route('disputes.list', app()->getLocale()) }}"
-                                class="btn btn-sm btn-primary text-white">{{ __('Disputes list') }}
+                                class="btn btn-sm btn-primary text-white">
+                                <i class="fas fa-list mr-1"></i>
+                                {{ __('Disputes list') }}
                             </a>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
                     @if ($dispute->count())
+                                <div class="dispute-mobile-tabs d-lg-none">
+                                    <button type="button" class="dispute-mobile-tab is-active" data-dispute-tab="info">
+                                        {{ __('Dispute Info') }}
+                                    </button>
+                                    <button type="button" class="dispute-mobile-tab" data-dispute-tab="history">
+                                        {{ __('History') }}
+                                    </button>
+                                    <button type="button" class="dispute-mobile-tab" data-dispute-tab="progress">
+                                        {{ __('Progress') }}
+                                    </button>
+                                    <button type="button" class="dispute-mobile-tab" data-dispute-tab="actions">
+                                        {{ __('Actions') }}
+                                    </button>
+                                </div>
                                 <div class="row">
                                     <div class="col-lg-6 mb-4">
-                                        <div class="card dispute-card dispute-info-card mb-3">
+                                        <div class="card dispute-card dispute-info-card mb-3 dispute-section is-active" data-dispute-section="info">
                                             <div class="dispute-card-header">
                                                 <div class="dispute-card-title">{{ __('Dispute Info') }}</div>
                                             </div>
@@ -240,7 +273,7 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-6">
-                                        <div class="card dispute-card mb-3">
+                                        <div class="card dispute-card mb-3 dispute-section" data-dispute-section="history">
                                             <div class="dispute-card-header">
                                                 <div>
                                                     <div class="dispute-card-title">{{ __('Dispute History') }}</div>
@@ -324,7 +357,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="card dispute-card mb-3">
+                                        <div class="card dispute-card mb-3 dispute-section" data-dispute-section="history">
                                             <div class="dispute-card-header">
                                                 <div class="dispute-card-title">{{ __('LAAC Clinic Visits') }}</div>
                                                 <span class="badge badge-success">
@@ -364,7 +397,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="card dispute-card mb-3">
+                                        <div class="card dispute-card mb-3 dispute-section" data-dispute-section="progress">
                                             <div class="dispute-card-header">
                                                 <div class="dispute-card-title">{{ __('Dispute Progress') }}</div>
                                             </div>
@@ -422,7 +455,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="card dispute-card">
+                                        <div class="card dispute-card dispute-section" data-dispute-section="actions">
                                             <div class="dispute-card-header">
                                                 <div class="dispute-card-title">{{ __('Dispute Progress Center') }}</div>
                                             </div>
@@ -473,6 +506,36 @@
     <script src="{{ asset('plugins/moment/locale/sw.js') }}"></script>
 
     <script src="{{ asset('assets/js/letter-print.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tabs = document.querySelectorAll('.dispute-mobile-tab');
+            if (!tabs.length) {
+                return;
+            }
+
+            function activate(section) {
+                document.querySelectorAll('.dispute-section').forEach(function (card) {
+                    if (card.dataset.disputeSection === section) {
+                        card.classList.add('is-active');
+                    } else {
+                        card.classList.remove('is-active');
+                    }
+                });
+                tabs.forEach(function (tab) {
+                    tab.classList.toggle('is-active', tab.dataset.disputeTab === section);
+                });
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    activate(tab.dataset.disputeTab);
+                });
+            });
+
+            activate('info');
+        });
+    </script>
 
     {{-- Select2 --}}
     <script type="text/javascript">

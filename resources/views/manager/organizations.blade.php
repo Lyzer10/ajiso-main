@@ -155,7 +155,7 @@
                                                     /
                                                     <form method="POST" action="{{ route('manager.organization.trash', [app()->getLocale(), $organization->id]) }}">
                                                         @csrf
-                                                        @METHOD('PUT')
+                                                        @method('PUT')
                                                         <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{ __('Delete Organization') }}"></i>
                                                     </form>
                                                     @endcan

@@ -3117,6 +3117,540 @@ table.dataTable thead td {
     display: none !important;
 }
 
+/*-------------------- Disputes List Toolbar -------------------*/
+.disputes-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.disputes-toolbar__title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.disputes-toolbar__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.dispute-filter-toggle {
+    margin-top: 12px;
+}
+
+.dispute-filter-toggle .btn {
+    border-radius: 12px;
+    font-weight: 600;
+    color: #0f172a;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.dispute-filter-toggle .btn i {
+    transition: transform 0.2s ease;
+}
+
+.dispute-filter-toggle .btn[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+
+.disputes-mobile-list {
+    display: none;
+}
+
+.disputes-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 14px;
+}
+
+.disputes-mobile-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.disputes-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.disputes-mobile-actions .btn {
+    height: 34px;
+    width: 34px;
+    border-radius: 10px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+}
+
+.disputes-mobile-cards {
+    display: grid;
+    gap: 12px;
+}
+
+.dispute-mobile-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: #fff;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+}
+
+.dispute-mobile-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dispute-mobile-card__title {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.dispute-mobile-card__name {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 2px;
+}
+
+.dispute-mobile-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.dispute-mobile-card__case {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.dispute-mobile-card__date {
+    margin-left: auto;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.dispute-mobile-menu .dropdown-toggle::after {
+    display: none;
+}
+
+.dispute-mobile-menu .btn {
+    height: 30px;
+    width: 30px;
+    border-radius: 8px;
+    padding: 0;
+}
+
+/*-------------------- Mobile Lists (Beneficiaries/Members) -------------------*/
+.beneficiaries-mobile-panel,
+.paralegals-mobile-panel {
+    display: grid;
+    gap: 16px;
+}
+
+.beneficiaries-mobile-search,
+.paralegals-mobile-search {
+    background: #ffffff;
+    border: 1px solid #e7eef4;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+    display: grid;
+    gap: 12px;
+}
+
+.beneficiaries-mobile-search .input-group-text,
+.paralegals-mobile-search .input-group-text {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+.beneficiaries-mobile-search .form-control,
+.paralegals-mobile-search .form-control {
+    border-color: #e2e8f0;
+    font-size: 14px;
+}
+
+.paralegals-mobile-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #5b6b79;
+    margin-bottom: -4px;
+}
+
+.beneficiaries-mobile-header,
+.paralegals-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.beneficiaries-mobile-title,
+.paralegals-mobile-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.beneficiaries-mobile-actions,
+.paralegals-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.beneficiaries-mobile-actions .btn,
+.paralegals-mobile-actions .btn {
+    border-radius: 10px;
+    padding: 6px 10px;
+}
+
+.beneficiary-mobile-card,
+.paralegal-mobile-card {
+    background: #ffffff;
+    border: 1px solid #e7eef4;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+    display: grid;
+    gap: 8px;
+}
+
+.beneficiary-mobile-card__top,
+.paralegal-mobile-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.beneficiary-mobile-card__name,
+.paralegal-mobile-card__name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #0f172a;
+}
+
+.paralegal-mobile-card__username {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.beneficiary-mobile-card__file {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.beneficiary-mobile-card__meta,
+.paralegal-mobile-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-size: 12px;
+    color: #475569;
+    align-items: center;
+}
+
+.beneficiary-mobile-card__meta span i,
+.paralegal-mobile-card__meta span i {
+    margin-right: 6px;
+    color: #94a3b8;
+}
+
+.beneficiary-mobile-card__status,
+.paralegal-mobile-card__meta .badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+}
+
+.beneficiary-mobile-menu .dropdown-toggle::after,
+.paralegal-mobile-menu .dropdown-toggle::after {
+    display: none;
+}
+
+.beneficiary-mobile-menu .btn,
+.paralegal-mobile-menu .btn {
+    height: 30px;
+    width: 30px;
+    border-radius: 8px;
+    padding: 0;
+}
+
+.beneficiaries-mobile-pagination,
+.paralegals-mobile-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.beneficiaries-mobile-pagination .pagination,
+.paralegals-mobile-pagination .pagination {
+    margin-bottom: 0;
+    justify-content: center;
+}
+
+/*-------------------- General Report Mobile Cards -------------------*/
+.report-dispute-cards {
+    display: grid;
+    gap: 12px;
+}
+
+.report-dispute-card {
+    background: #ffffff;
+    border: 1px solid #e7eef4;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+    display: grid;
+    gap: 6px;
+}
+
+.report-dispute-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.report-dispute-card__id {
+    font-weight: 600;
+    font-size: 12px;
+    color: #0f172a;
+}
+
+.report-dispute-card__no {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.report-dispute-card__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.report-dispute-card__row span:last-child {
+    flex: 1;
+    font-weight: 600;
+    color: #0f172a;
+    text-align: right;
+    white-space: normal;
+}
+
+.report-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.report-pagination .pagination {
+    margin-bottom: 0;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .mainheader-area .notification-area {
+        transform: none;
+    }
+
+    .notification-area {
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .notification-area li {
+        margin-left: 8px;
+    }
+
+    .notification-area li > i {
+        font-size: 20px;
+    }
+
+    .user-profile {
+        margin-right: 0;
+        padding: 0;
+    }
+
+    .user-profile img.avatar {
+        margin-right: 6px;
+    }
+
+    .user-name {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        margin-bottom: 0;
+    }
+
+    .user-name__text {
+        display: none;
+    }
+
+    .user-profile .dropdown-menu {
+        right: 0 !important;
+    }
+
+    .disputes-toolbar {
+        align-items: stretch;
+    }
+
+    .disputes-toolbar__actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .disputes-toolbar__actions .btn-group {
+        width: 100%;
+    }
+
+    .disputes-toolbar__actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .dispute-filter {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .dispute-filter .form-row {
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    .dispute-filter .form-row > [class*="col-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .dispute-filter .text-right {
+        text-align: left !important;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .dispute-filter .text-right .btn {
+        width: 100%;
+    }
+
+    .dispute-filter .select2-container {
+        width: 100% !important;
+    }
+
+    .dispute-filter__control {
+        height: 46px;
+        font-size: 14px;
+    }
+
+    .dispute-filter .input-group .btn {
+        height: 46px;
+    }
+
+    .seo-fact {
+        border-radius: 16px;
+    }
+
+    .seo-fact .seofct-icon {
+        font-size: 16px;
+        gap: 8px;
+    }
+
+    .seo-fact h2 {
+        font-size: 22px;
+    }
+
+    .seo-fact .card-footer {
+        padding: 10px;
+    }
+
+    .disputes-toolbar {
+        display: none;
+    }
+
+    .disputes-mobile-list {
+        display: block;
+    }
+
+    .disputes-table {
+        display: none;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .dispute-profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dispute-profile-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .dispute-profile-actions .btn {
+        flex: 1 1 48%;
+        min-width: 140px;
+    }
+
+    .dispute-profile-actions .btn.btn-primary {
+        flex-basis: 100%;
+    }
+
+    .dispute-section {
+        display: none;
+    }
+
+    .dispute-section.is-active {
+        display: block;
+    }
+
+    .dispute-info-card .card-footer .btn {
+        width: 100%;
+    }
+
+    .dispute-card-header {
+        padding: 12px 14px;
+    }
+
+    .recent-activity {
+        padding-left: 32px;
+    }
+
+    .timeline-task:before {
+        left: -22px;
+    }
+
+    .timeline-task .icon {
+        left: -40px;
+    }
+}
+
 /*-------------------- Dispute Status Badges -------------------*/
 
 .badge-status {
@@ -3181,6 +3715,52 @@ table.dataTable thead td {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.dispute-profile-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.dispute-back-link {
+    height: 36px;
+    width: 36px;
+    border-radius: 10px;
+    background: #edf2f7;
+    color: #1f2937;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dispute-back-link:hover {
+    background: #e2e8f0;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.dispute-profile-meta {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.dispute-profile-meta__sep {
+    color: #cbd5f5;
+}
+
+@media (min-width: 992px) {
+    .dispute-back-link,
+    .dispute-profile-meta {
+        display: none;
+    }
 }
 
 .dispute-status-pill {
@@ -3283,6 +3863,43 @@ table.dataTable thead td {
     width: 20px;
     text-align: center;
     font-size: 14px;
+}
+
+/*-------------------- Dispute Mobile Tabs -------------------*/
+.dispute-mobile-tabs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+}
+
+.dispute-mobile-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.dispute-mobile-tab {
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.dispute-mobile-tab.is-active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+.dispute-section {
+    position: relative;
 }
 
 .letter-modal .modal-content {
@@ -3903,4 +4520,190 @@ table.dataTable thead td {
 
 .badge-primary {
     background-color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .header-area,
+    .mainheader-area {
+        padding: 8px 16px !important;
+    }
+
+    .page-title-area {
+        padding: 6px 16px !important;
+    }
+
+    .page-title {
+        font-size: 14px;
+    }
+
+    #casesChart,
+    #servicesChart,
+    #disputeStatusChart,
+    #performanceChart,
+    #surveyChart {
+        height: 220px !important;
+    }
+
+    .viz-chart {
+        height: 220px !important;
+    }
+
+    .amcharts-chart-div {
+        overflow: hidden;
+    }
+
+    .amcharts-chart-div svg text {
+        font-size: 10px !important;
+    }
+
+    .report-mobile-actions {
+        display: grid;
+        gap: 10px;
+    }
+
+    .report-mobile-button {
+        border-radius: 12px;
+        font-weight: 600;
+        padding: 10px 12px;
+    }
+
+    .report-filter-card .card-header {
+        padding: 16px;
+    }
+
+    .report-filter-title {
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 12px;
+        color: #0f172a;
+    }
+
+    .report-filter-form .row {
+        margin: 0;
+    }
+
+    .report-filter-grid > [class*="col-"] {
+        padding: 0;
+        max-width: 100%;
+        flex: 0 0 100%;
+        margin-bottom: 12px;
+    }
+
+    .report-filter-grid > [class*="col-"]:last-child {
+        margin-bottom: 0;
+    }
+
+    .report-filter-grid .mt-4 {
+        margin-top: 0 !important;
+    }
+
+    .report-filter-form label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #5b6b79;
+    }
+
+    .report-filter-form .form-control,
+    .report-filter-form .select2-container--default .select2-selection--single {
+        height: 38px;
+        font-size: 13px;
+    }
+
+    .report-filter-form .select2-container {
+        width: 100% !important;
+    }
+
+    .report-filter-form .input-group .btn {
+        height: 38px;
+    }
+
+    .report-filter-button {
+        width: 100%;
+        float: none !important;
+    }
+
+    .report-summary-card .card-header {
+        padding: 16px;
+    }
+
+    .report-summary-card .dropdown .btn {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .report-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .report-summary-grid .summary-card {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .report-summary-grid .summary-card__label {
+        font-size: 10px;
+        letter-spacing: 0.05em;
+    }
+
+    .report-summary-grid .summary-card__value {
+        font-size: 18px;
+    }
+
+    .report-dispute-card {
+        padding: 12px;
+    }
+
+    .report-dispute-card__row {
+        font-size: 11px;
+    }
+
+    .dispute-mobile-card {
+        padding: 12px;
+    }
+
+    .dispute-mobile-card__title {
+        font-size: 13px;
+    }
+
+    .dispute-mobile-card__name {
+        font-size: 12px;
+    }
+
+    .dispute-mobile-card__meta {
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .dispute-mobile-card__case,
+    .dispute-mobile-card__date {
+        font-size: 11px;
+    }
+
+    .badge-status {
+        height: 24px;
+        padding: 3px 10px;
+        font-size: 11px;
+        min-width: auto;
+    }
+
+    .beneficiary-mobile-card,
+    .paralegal-mobile-card {
+        padding: 12px;
+    }
+
+    .beneficiary-mobile-card__name,
+    .paralegal-mobile-card__name {
+        font-size: 14px;
+    }
+
+    .beneficiary-mobile-card__meta,
+    .paralegal-mobile-card__meta {
+        font-size: 11px;
+    }
+
+    .nav-archived-dispute {
+        display: none !important;
+    }
 }

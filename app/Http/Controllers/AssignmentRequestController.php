@@ -223,7 +223,7 @@ class AssignmentRequestController extends Controller
     {
         // Block paralegals from accessing this feature
         $user = auth()->user();
-        if ($user && $user->role && $user->role->role_abbreviation === 'paralegal') {
+        if ($user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true)) {
             abort(403, 'Paralegals do not have access to disputes assignment.');
         }
         
@@ -838,13 +838,13 @@ class AssignmentRequestController extends Controller
 
     private function isParalegalUser($user)
     {
-        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+        return $user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
     }
 
     private function isParalegal()
     {
         $user = auth()->user();
-        return $user && $user->role && $user->role->role_abbreviation === 'paralegal';
+        return $user && $user->role && in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
     }
 
     private function isParalegalStaff($staff)

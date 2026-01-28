@@ -139,7 +139,7 @@ class NotificationController extends Controller
 
                 $recipients = User::where('is_active', 1)
                     ->whereHas('role', function ($query) {
-                        $query->where('role_abbreviation', 'paralegal');
+                        $query->whereIn('role_abbreviation', ['paralegal', 'clerk']);
                     })
                     ->latest()
                     ->get(
@@ -165,7 +165,7 @@ class NotificationController extends Controller
 
                 $paralegals = User::where('is_active', 1)
                     ->whereHas('role', function ($query) {
-                        $query->where('role_abbreviation', 'paralegal');
+                        $query->whereIn('role_abbreviation', ['paralegal', 'clerk']);
                     })
                     ->latest()
                     ->get(

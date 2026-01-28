@@ -242,8 +242,19 @@
             $serviceTypeData[] = ['category' => __($type_of_service->type_of_service), 'value' => $count];
         }
 
+        $isParalegalView = auth()->user() && auth()->user()->can('isClerk');
+        $excludedStatusSlugs = $isParalegalView
+            ? ['judged', 'discontinued', 'discontinue', 'pending']
+            : [];
+        $filteredDisputeStatuses = $dispute_statuses;
+        if ($excludedStatusSlugs) {
+            $filteredDisputeStatuses = $dispute_statuses->reject(function ($status) use ($excludedStatusSlugs) {
+                return in_array(\Illuminate\Support\Str::slug($status->dispute_status), $excludedStatusSlugs, true);
+            })->values();
+        }
+
         $statusData = [];
-        foreach ($dispute_statuses as $dispute_status) {
+        foreach ($filteredDisputeStatuses as $dispute_status) {
             $count = 0;
             foreach ($group_by_status as $status) {
                 if ($dispute_status->id === $status->dispute_status_id) {

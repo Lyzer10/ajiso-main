@@ -74,12 +74,12 @@
                                     <td class="d-flex">
                                         <form method="POST" action="{{ route('dispute.restore', [app()->getLocale(), $dispute->id]) }}">
                                             @csrf
-                                            @METHOD('PUT')
+                                            @method('PUT')
                                                 <i class="fas fa-trash-restore-alt fa-fw text-success show_restore" data-toggle="tooltip" title="{{  __('Restore User') }}"></i>
                                         </form>
                                         <form method="POST" action="{{ route('dispute.delete', [app()->getLocale(), $dispute->id]) }}">
                                             @csrf
-                                            @METHOD('DELETE')
+                                            @method('DELETE')
                                                 <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{  __('Delete User') }}"></i>
                                         </form>
                                     </td>

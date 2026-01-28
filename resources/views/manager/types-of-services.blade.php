@@ -126,7 +126,7 @@
                                                 /
                                                 <form method="POST" action="{{ route('manager.services.type.trash', [app()->getLocale(), $types_of_service->id]) }}">
                                                     @csrf
-                                                    @METHOD('PUT')
+                                                    @method('PUT')
                                                         <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{  __('Delete Service') }}"></i>
                                                 </form>
                                                 @endcan

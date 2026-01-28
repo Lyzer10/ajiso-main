@@ -885,6 +885,38 @@
     .table-responsive {
         overflow-x: auto;
     }
+
+    body {
+        font-family: "Lato", sans-serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    a,
+    label,
+    button,
+    input,
+    select,
+    textarea,
+    .btn,
+    .form-control,
+    .input-group-text,
+    .dropdown-menu,
+    .page-title,
+    .header-title,
+    .breadcrumbs,
+    .metismenu li a,
+    .notification-area li i > span,
+    .letter-preview-body,
+    .letter-pre,
+    .letter-form {
+        font-family: "Lato", sans-serif !important;
+    }
 }
 
 @media (max-width: 767px) {

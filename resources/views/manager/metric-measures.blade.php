@@ -127,7 +127,7 @@
                                                 /
                                                 <form method="POST" action="{{ route('manager.metric.measure.trash', [app()->getLocale(), $metric_measure->id]) }}">
                                                     @csrf
-                                                    @METHOD('PUT')
+                                                    @method('PUT')
                                                         <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{  __('Delete Metric Measure') }}"></i>
                                                 </form>
                                                 @endcan

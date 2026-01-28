@@ -43,7 +43,7 @@
                 <div class="card-body">
                     <form method="POST" action="{{ route('dispute.assign.bind', app()->getLocale()) }}">
                         @csrf
-                        @METHOD('PATCH')
+                        @method('PATCH')
                         <div class="form-row align-items-end assign-form">
                             <div class="col-lg-5 col-md-12 mb-3">
                                 <label for="dispute" class="font-weight-bold">{{ __('Dispute') }}<sup class="text-danger">*</sup></label>

@@ -38,7 +38,7 @@
                 <div class="card-body ">
                     <form action="{{ route('staff.update', [app()->getLocale(), $staff]) }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        @METHOD ('PUT')
+                        @method ('PUT')
                         @if ($staff->count())
                         <div class="form-row">
                             <div class="col-md-4 mb-3">

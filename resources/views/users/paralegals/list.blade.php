@@ -4,6 +4,14 @@
     $membersMode = $membersMode ?? false;
     $listRoute = $listRoute ?? 'paralegals.list';
     $title = $membersMode ? __('Members') : __('Paralegals');
+    $exportQuery = '';
+    if (! $membersMode) {
+        $exportParams = array_filter([
+            'search' => request('search'),
+            'organization_id' => request('organization_id'),
+        ]);
+        $exportQuery = $exportParams ? ('?' . http_build_query($exportParams)) : '';
+    }
 @endphp
 @section('title', 'AJISO | '.$title)
 
@@ -49,7 +57,7 @@
 
     <div class="col-md-12 mt-5 mb-3">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header paralegals-desktop-header d-none d-md-block">
                 <div class="header-title clearfix">
                     {{ $membersMode ? __('Members list') : __('Paralegals list') }}
                     @if (!auth()->user()->can('isClerk') || auth()->user()->can_register_staff)
@@ -58,13 +66,6 @@
                         </a>
                     @endif
                     @unless ($membersMode)
-                        @php
-                            $exportParams = array_filter([
-                                'search' => request('search'),
-                                'organization_id' => request('organization_id'),
-                            ]);
-                            $exportQuery = $exportParams ? ('?' . http_build_query($exportParams)) : '';
-                        @endphp
                         <div class="dropdown pull-right mr-2">
                             <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-toggle="dropdown">
                                 <i class="fas fa-download fa-fw"></i>
@@ -105,7 +106,117 @@
                 </div>
             </div>
             <div class="card-body" style="width: 100%;">
-                <div class="table-responsive">
+                <div class="paralegals-mobile-panel d-md-none">
+                    <form method="GET" action="{{ route($listRoute, [app()->getLocale()]) }}" class="paralegals-mobile-search">
+                        @unless ($membersMode)
+                            <label class="paralegals-mobile-label">{{ __('Organization') }}</label>
+                            <select name="organization_id" class="form-control">
+                                <option value="">{{ __('All Organizations') }}</option>
+                                @foreach ($organizations as $organization)
+                                    <option value="{{ $organization->id }}" {{ (string) $organizationId === (string) $organization->id ? 'selected' : '' }}>
+                                        {{ $organization->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endunless
+                        <label class="paralegals-mobile-label">{{ __('Search by name') }}</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            </div>
+                            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="{{ __('Search by name...') }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-search mr-1"></i>
+                            {{ __('Search') }}
+                        </button>
+                    </form>
+                    <div class="paralegals-mobile-header">
+                        <div class="paralegals-mobile-title">{{ $membersMode ? __('Members List') : __('Paralegals List') }}</div>
+                        <div class="paralegals-mobile-actions">
+                            @if (!auth()->user()->can('isClerk') || auth()->user()->can_register_staff)
+                                <a class="btn btn-light btn-sm" href="{{ route('paralegal.create', app()->getLocale()) }}" aria-label="{{ $membersMode ? __('Add Member') : __('Add Paralegal') }}">
+                                    <i class="fas fa-plus"></i>
+                                </a>
+                            @endif
+                            @unless ($membersMode)
+                                <div class="dropdown">
+                                    <button class="btn btn-light btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{ __('Export') }}">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right">
+                                        <a class="dropdown-item" href="{{ route('paralegals.export.pdf', app()->getLocale()) }}{{ $exportQuery }}">
+                                            <i class="fas fa-file-pdf text-danger"></i>
+                                            {{ __('as pdf') }}
+                                        </a>
+                                        <a class="dropdown-item" href="{{ route('paralegals.export.excel', app()->getLocale()) }}{{ $exportQuery }}">
+                                            <i class="fas fa-file-excel text-success"></i>
+                                            {{ __('as excel') }}
+                                        </a>
+                                        <a class="dropdown-item" href="{{ route('paralegals.export.csv', app()->getLocale()) }}{{ $exportQuery }}">
+                                            <i class="fas fa-file-csv text-warning"></i>
+                                            {{ __('as csv') }}
+                                        </a>
+                                    </div>
+                                </div>
+                            @endunless
+                        </div>
+                    </div>
+                    <div class="paralegals-mobile-cards">
+                        @forelse ($users as $user)
+                            @php
+                                $fullName = trim(implode(' ', array_filter([
+                                    $user->first_name ?? '',
+                                    $user->middle_name ? Str::substr($user->middle_name, 0, 1) . '.' : '',
+                                    $user->last_name ?? ''
+                                ])));
+                            @endphp
+                            <div class="paralegal-mobile-card">
+                                <div class="paralegal-mobile-card__top">
+                                    <div>
+                                        <div class="paralegal-mobile-card__name">{{ $fullName }}</div>
+                                        <div class="paralegal-mobile-card__username">{{ '@'.$user->name }}</div>
+                                    </div>
+                                    <div class="dropdown paralegal-mobile-menu">
+                                        <button class="btn btn-light btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item" href="{{ route('user.show', [app()->getLocale(), $user->name]) }}">
+                                                <i class="fas fa-eye text-primary"></i>
+                                                {{ __('View') }}
+                                            </a>
+                                            <a class="dropdown-item" href="{{ route('user.edit', [app()->getLocale(), $user->name]) }}">
+                                                <i class="fas fa-pencil-square-o text-warning"></i>
+                                                {{ __('Edit') }}
+                                            </a>
+                                            <form method="POST" action="{{ route('user.trash', [app()->getLocale(), $user->id]) }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="submit" class="dropdown-item text-danger show_delete">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                    {{ __('Delete') }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="paralegal-mobile-card__meta">
+                                    <span><i class="fas fa-envelope"></i> {{ $user->email ?? 'N/A' }}</span>
+                                    @unless ($membersMode)
+                                        <span><i class="fas fa-building"></i> {{ $user->organization->name ?? 'N/A' }}</span>
+                                    @endunless
+                                    <span class="badge {{ (bool) $user->is_active ? 'badge-success' : 'badge-secondary' }}">
+                                        {{ (bool) $user->is_active ? __('Active') : __('Inactive') }}
+                                    </span>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="alert alert-info mb-0">{{ $membersMode ? __('No members found') : __('No paralegals found') }}</div>
+                        @endforelse
+                    </div>
+                </div>
+                <div class="paralegals-table table-responsive d-none d-md-block">
                     <table class="table progress-table text-center table-striped">
                         <thead class="text-capitalize text-white light-custom-color">
                             <tr>
@@ -158,7 +269,7 @@
                                     </a> /
                                     <form method="POST" action="{{ route('user.trash', [app()->getLocale(), $user->id]) }}">
                                         @csrf
-                                        @METHOD('PUT')
+                                        @method('PUT')
                                             <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{ __('Delete User') }}"></i>
                                     </form>
                                 </td>
@@ -185,20 +296,22 @@
 @push('scripts')
     @include('modals.confirm-trash')
     <script>
-        const searchInput = document.querySelector('input[name="search"]');
-        const organizationSelect = document.querySelector('select[name="organization_id"]');
+        const searchInputs = document.querySelectorAll('input[name="search"]');
+        const organizationSelects = document.querySelectorAll('select[name="organization_id"]');
 
-        searchInput.addEventListener('input', function () {
-            if (this.value === "") {
-                this.form.submit();
-            }
+        searchInputs.forEach((input) => {
+            input.addEventListener('input', function () {
+                if (this.value === "") {
+                    this.form.submit();
+                }
+            });
         });
 
-        if (organizationSelect) {
-            organizationSelect.addEventListener('change', function () {
+        organizationSelects.forEach((select) => {
+            select.addEventListener('change', function () {
                 this.form.submit();
             });
-        }
+        });
     </script>
     <script src="{{ asset('plugins/select2/js/select2.min.js') }}"></script>
     <script>

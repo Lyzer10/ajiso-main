@@ -14,6 +14,7 @@ class DisputeListQuery
                 'assignedTo:first_name,middle_name,last_name,user_no',
                 'paralegalUser:id,first_name,middle_name,last_name,user_no',
                 'reportedBy:first_name,middle_name,last_name,user_no',
+                'typeOfCase:id,type_of_case',
                 'disputeStatus:id,dispute_status'
             )
             ->select(

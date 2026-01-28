@@ -47,7 +47,7 @@
                 <div class="card-body">
                     <form method="POST" action="{{ route('dispute.request.store', app()->getLocale()) }}">
                         @csrf
-                        @METHOD('POST')
+                        @method('POST')
                         <div class="row">
                             <div class="col-md-6 mb-2">
                                 <label for="dispute" class="font-weight-bold">{{ __('Dispute') }}<sup class="text-danger">*</sup></label>

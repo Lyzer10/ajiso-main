@@ -62,7 +62,10 @@ class ParalegalExportController extends Controller
 
     private function buildListQuery(Request $request)
     {
-        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+        $paralegalRoleIds = UserRole::whereIn('role_abbreviation', ['paralegal', 'clerk'])
+            ->pluck('id')
+            ->filter()
+            ->values();
 
         $query = User::with(['role:id,role_abbreviation,role_name', 'organization:id,name'])
             ->select([
@@ -78,8 +81,8 @@ class ParalegalExportController extends Controller
             ])
             ->latest();
 
-        if ($paralegalRoleId) {
-            $query->where('user_role_id', $paralegalRoleId);
+        if ($paralegalRoleIds->isNotEmpty()) {
+            $query->whereIn('user_role_id', $paralegalRoleIds);
         }
 
         if ($search = $request->get('search')) {

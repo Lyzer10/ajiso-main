@@ -191,7 +191,7 @@
                                     <div class="col-12">
                                         <form action="{{ route('user.update.profile', [app()->getLocale(), auth()->user()->id]) }}" method="POST">
                                             @csrf
-                                            @METHOD('PUT')
+                                            @method('PUT')
                                             <div class="form-row">
                                                 <div class="col-md-6 mb-3">
                                                     <label for="username" class="font-weight-bold">{{ __('Username') }}<sup class="text-danger">*</sup></label>
@@ -286,7 +286,7 @@
                             <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
                                 <form action="{{ route('user.update.password', [app()->getLocale(), auth()->user()->id]) }}" method="POST">
                                     @csrf
-                                    @METHOD('PUT')
+                                    @method('PUT')
                                     <div class="row mt-4 mb-3">
                                         <div class="col-md-6">
                                             <div class="form-group">

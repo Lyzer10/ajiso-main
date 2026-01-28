@@ -90,7 +90,8 @@ class LoginController extends Controller
             return back()->with('status', 'The provided credentials do not match our records.');
         }
 
-        if (Auth::user()->role->role_abbreviation === 'paralegal' && !Auth::user()->has_system_access) {
+        if (in_array(Auth::user()->role->role_abbreviation, ['paralegal', 'clerk'], true)
+            && !Auth::user()->has_system_access) {
             Auth::logout();
             return back()->with('status', 'Your account does not have access to the system.');
         }
@@ -122,6 +123,7 @@ class LoginController extends Controller
                 break;
 
             case 'paralegal':
+            case 'clerk':
                 session(['locale' => 'sw']);
                 session()->forget('locale_user_set');
                 app()->setLocale('sw');

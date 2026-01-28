@@ -44,7 +44,9 @@ class UserController extends Controller
     public function index()
     {
         $currentUser = auth()->user();
-        $isParalegalUser = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        $isParalegalUser = $currentUser
+            && $currentUser->role
+            && in_array($currentUser->role->role_abbreviation, ['paralegal', 'clerk'], true);
         if ($isParalegalUser) {
             return redirect()->route('members.list', app()->getLocale());
         }
@@ -82,7 +84,9 @@ class UserController extends Controller
     public function paralegals()
     {
         $currentUser = auth()->user();
-        $isParalegalUser = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        $isParalegalUser = $currentUser
+            && $currentUser->role
+            && in_array($currentUser->role->role_abbreviation, ['paralegal', 'clerk'], true);
         $paralegalRoleIds = UserRole::whereIn('role_abbreviation', ['paralegal', 'clerk'])
             ->pluck('id')
             ->filter()
@@ -106,7 +110,9 @@ class UserController extends Controller
     public function members()
     {
         $currentUser = auth()->user();
-        $isParalegal = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        $isParalegal = $currentUser
+            && $currentUser->role
+            && in_array($currentUser->role->role_abbreviation, ['paralegal', 'clerk'], true);
         if (!$isParalegal || !$currentUser->can_register_staff) {
             abort(403, 'You are not authorized to view members.');
         }
@@ -136,7 +142,7 @@ class UserController extends Controller
     public function create()
     {
         $currentUser = auth()->user();
-        if ($currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal') {
+        if ($currentUser && $currentUser->role && in_array($currentUser->role->role_abbreviation, ['paralegal', 'clerk'], true)) {
             if (!$currentUser->can_register_staff) {
                 abort(403, 'You are not authorized to register users.');
             }
@@ -163,7 +169,9 @@ class UserController extends Controller
     public function createParalegal()
     {
         $currentUser = auth()->user();
-        $isParalegalCreator = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        $isParalegalCreator = $currentUser
+            && $currentUser->role
+            && in_array($currentUser->role->role_abbreviation, ['paralegal', 'clerk'], true);
         $roleAbbreviation = $currentUser ? optional($currentUser->role)->role_abbreviation : null;
         if (!$roleAbbreviation && $currentUser && $currentUser->user_role_id) {
             $roleAbbreviation = UserRole::where('id', $currentUser->user_role_id)->value('role_abbreviation');
@@ -210,7 +218,8 @@ class UserController extends Controller
                 }
             }
         }
-        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id');
+        $paralegalRoleId = UserRole::where('role_abbreviation', 'paralegal')->value('id')
+            ?? UserRole::where('role_abbreviation', 'clerk')->value('id');
 
         return view('users.create-paralegal', compact(
             'designations',
@@ -233,7 +242,9 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $currentUser = auth()->user();
-        $isParalegalCreator = $currentUser && optional($currentUser->role)->role_abbreviation === 'paralegal';
+        $isParalegalCreator = $currentUser
+            && $currentUser->role
+            && in_array($currentUser->role->role_abbreviation, ['paralegal', 'clerk'], true);
         $roleAbbreviation = $currentUser ? optional($currentUser->role)->role_abbreviation : null;
         if (!$roleAbbreviation && $currentUser && $currentUser->user_role_id) {
             $roleAbbreviation = UserRole::where('id', $currentUser->user_role_id)->value('role_abbreviation');
@@ -270,7 +281,7 @@ class UserController extends Controller
         ];
 
         $role = UserRole::find($request->user_role);
-        $isTargetParalegal = $role && $role->role_abbreviation === 'paralegal';
+        $isTargetParalegal = $role && in_array($role->role_abbreviation, ['paralegal', 'clerk'], true);
 
         if ($isParalegalCreator && !$isTargetParalegal) {
             return redirect()->back()
@@ -436,7 +447,7 @@ class UserController extends Controller
                 throw $th;
             }
 
-            if ($role && $role->role_abbreviation === 'paralegal') {
+            if ($role && in_array($role->role_abbreviation, ['paralegal', 'clerk'], true)) {
                 $route = $isParalegalCreator ? 'members.list' : 'paralegals.list';
                 $routeParams = ['locale' => app()->getLocale()];
                 if (!$isParalegalCreator && $isAdminUser && $redirectOrganizationId) {
@@ -752,7 +763,7 @@ class UserController extends Controller
         ];
 
         $role = UserRole::find($request->user_role);
-        $rules['organization_id'] = ($role && $role->role_abbreviation === 'paralegal')
+        $rules['organization_id'] = ($role && in_array($role->role_abbreviation, ['paralegal', 'clerk'], true))
             ? ['required', 'integer', 'exists:organizations,id']
             : ['nullable', 'integer', 'exists:organizations,id'];
 
@@ -782,7 +793,7 @@ class UserController extends Controller
         }
         $user->user_role_id = $request->user_role;
         $user->is_active = $request->status;
-        $user->organization_id = ($role && $role->role_abbreviation === 'paralegal')
+        $user->organization_id = ($role && in_array($role->role_abbreviation, ['paralegal', 'clerk'], true))
             ? $request->organization_id
             : null;
 

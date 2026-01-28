@@ -64,7 +64,7 @@ class AuthServiceProvider extends ServiceProvider
 
         Gate::define('isClerk', function(User $user) {
 
-            return $user->role->role_abbreviation == 'paralegal';
+            return in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
 
         });
 
@@ -72,7 +72,7 @@ class AuthServiceProvider extends ServiceProvider
 
         Gate::define('isParalegal', function(User $user) {
 
-            return $user->role->role_abbreviation == 'paralegal';
+            return in_array($user->role->role_abbreviation, ['paralegal', 'clerk'], true);
 
         });
     }

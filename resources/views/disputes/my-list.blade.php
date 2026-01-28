@@ -27,7 +27,7 @@
         <!-- beneficiary list area start -->
         <div class="col-md-12 mt-5 mb-3">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-none d-md-block">
                     <div class="header-title clearfix">
                         @canany(['isStaff'])
                             {{ __('My Disputes List') }}
@@ -77,8 +77,104 @@
                         @endcanany
                     </div>
                 </div>
-                <div class="card-body"style="width: 100%;">
-                    <div class="table-responsive">
+                <div class="card-body" style="width: 100%;">
+                    @php
+                        $hasFilters = request()->filled('search') || request()->filled('status');
+                    @endphp
+                    <div class="dispute-filter-toggle d-md-none">
+                        <button class="btn btn-light btn-block d-flex justify-content-between align-items-center" type="button"
+                            data-toggle="collapse" data-target="#myDisputeFilters" aria-expanded="{{ $hasFilters ? 'true' : 'false' }}"
+                            aria-controls="myDisputeFilters">
+                            <span>{{ __('Search Filters') }}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div id="myDisputeFilters" class="collapse d-md-none {{ $hasFilters ? 'show' : '' }}">
+                        <form method="GET" action="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}" class="mt-3 dispute-filter">
+                            <div class="form-row align-items-end">
+                                <div class="col-lg-6 mb-3">
+                                    <label class="font-weight-bold">{{ __('Search by beneficiary') }}</label>
+                                    <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Search by beneficiary') }}" class="form-control border-input-primary dispute-filter__control">
+                                </div>
+                                <div class="col-lg-6 mb-3">
+                                    <label class="font-weight-bold">{{ __('Status') }}</label>
+                                    <select name="status" class="form-control border-input-primary dispute-filter__control" onchange="this.form.submit()">
+                                        <option value="">{{ __('All Cases') }}</option>
+                                        <option value="proceeding" {{ request('status') == 'proceeding' ? 'selected' : '' }}>
+                                            {{ __('Proceeding') }}
+                                        </option>
+                                        <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>
+                                            {{ __('Resolved') }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-filter fa-fw"></i>
+                                    {{ __('Filter') }}
+                                </button>
+                                <a href="{{ route('disputes.my.list', [app()->getLocale(), auth()->user()->staff->id]) }}" class="btn btn-light btn-sm">{{ __('Reset') }}</a>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="disputes-mobile-list d-md-none mt-3">
+                        <div class="disputes-mobile-header">
+                            <div class="disputes-mobile-title">{{ __('My Disputes List') }}</div>
+                        </div>
+                        <div class="disputes-mobile-cards">
+                            @if ($disputes->count())
+                                @foreach ($disputes as $dispute)
+                                    @php
+                                        $statusSlug = \Illuminate\Support\Str::slug($dispute->disputeStatus->dispute_status);
+                                        $beneficiaryName = trim(implode(' ', array_filter([
+                                            $dispute->reportedBy->first_name ?? '',
+                                            $dispute->reportedBy->middle_name ?? '',
+                                            $dispute->reportedBy->last_name ?? ''
+                                        ])));
+                                    @endphp
+                                    <div class="dispute-mobile-card">
+                                        <div class="dispute-mobile-card__top">
+                                            <div class="dispute-mobile-card__title">{{ $dispute->dispute_no }}</div>
+                                            <div class="dropdown dispute-mobile-menu">
+                                                <button class="btn btn-light btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right">
+                                                    <a class="dropdown-item" href="{{ route('dispute.show', [app()->getLocale(), $dispute->id]) }}">
+                                                        <i class="fas fa-eye text-primary"></i>
+                                                        {{ __('View') }}
+                                                    </a>
+                                                    <a class="dropdown-item" href="{{ route('dispute.edit', [app()->getLocale(), $dispute->id]) }}">
+                                                        <i class="fas fa-pencil-square-o text-warning"></i>
+                                                        {{ __('Edit') }}
+                                                    </a>
+                                                    @can('isSuperAdmin')
+                                                        <a class="dropdown-item text-danger" data-toggle="modal" data-target="#confirmtrash">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                            {{ __('Delete') }}
+                                                        </a>
+                                                    @endcan
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="dispute-mobile-card__name">{{ $beneficiaryName }}</div>
+                                        <div class="dispute-mobile-card__meta">
+                                            <span class="dispute-mobile-card__case">{{ __($dispute->typeOfCase->type_of_case) }}</span>
+                                            <span class="badge-status status-{{ $statusSlug }}">{{ __($dispute->disputeStatus->dispute_status) }}</span>
+                                            <span class="dispute-mobile-card__date">{{ $dispute->reported_on ? Carbon\Carbon::parse($dispute->reported_on)->format('Y-m-d') : '' }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="alert alert-info mb-0">{{ __('No disputes found') }}</div>
+                            @endif
+                        </div>
+                        <div class="report-pagination">
+                            {{ $disputes->count() ? $disputes->links() : '' }}
+                        </div>
+                    </div>
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-striped progress-table text-center">
                             <thead class="text-capitalize text-white light-custom-color">
                                 <tr>
@@ -149,7 +245,9 @@
                             </tbody>
                         </table>
                     </div>
-                    {{ $disputes->count() ? $disputes->links() : '' }}
+                    <div class="d-none d-md-block">
+                        {{ $disputes->count() ? $disputes->links() : '' }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -161,12 +259,14 @@
 
 @push("scripts")
     <script>
-        const searchInput = document.querySelector('input[name="search"]');
+        const searchInputs = document.querySelectorAll('input[name="search"]');
 
-        searchInput.addEventListener('input', function () {
-            if (this.value === "") {
-                this.form.submit(); // auto reload full list
-            }
+        searchInputs.forEach((input) => {
+            input.addEventListener('input', function () {
+                if (this.value === "") {
+                    this.form.submit(); // auto reload full list
+                }
+            });
         });
     </script>
 @endpush

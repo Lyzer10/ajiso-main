@@ -30,7 +30,7 @@ class Beneficiary
         elseif (Auth::user()->role->role_abbreviation  == 'staff') {
             return redirect(app()->getLocale().'/staff/home');
         }
-        elseif (Auth::user()->role->role_abbreviation  == 'paralegal') {
+        elseif (in_array(Auth::user()->role->role_abbreviation, ['paralegal', 'clerk'], true)) {
             return redirect(app()->getLocale().'/clerk/home');
         }
         elseif (Auth::user()->role->role_abbreviation  == 'admin') {

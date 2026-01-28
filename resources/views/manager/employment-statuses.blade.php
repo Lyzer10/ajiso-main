@@ -128,7 +128,7 @@
                                                 /
                                                 <form method="POST" action="{{ route('manager.employment.status.trash', [app()->getLocale(), $employment_status->id]) }}">
                                                     @csrf
-                                                    @METHOD('PUT')
+                                                    @method('PUT')
                                                         <i class="fas fa-trash-alt fa-fw text-danger show_delete" data-toggle="tooltip" title="{{  __('Delete Employment Status') }}"></i>
                                                 </form>
                                                 @endcan

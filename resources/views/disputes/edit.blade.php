@@ -42,7 +42,7 @@
                 <div class="card-body">
                     <form method="POST" action="{{ route('dispute.update', [app()->getLocale(), $dispute->id]) }}">
                         @csrf
-                        @METHOD('PUT')
+                        @method('PUT')
                         <div class="form-row">
                             <div class="col-md-3 mb-3">
                                 <label for="disputeNo" class="font-weight-bold">{{ __('Dispute No') }}</label>

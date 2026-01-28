@@ -14,7 +14,7 @@
             <div class="modal-body">
                 <form action="{{ route('dispute.activity.status', app()->getLocale()) }}" method="POST">
                     @csrf
-                    @METHOD('PUT')
+                    @method('PUT')
                     <div class="card-body">
                         <div class="form-row">
                             <input type="hidden" name="dispute" value="{{ $dispute->id }}">

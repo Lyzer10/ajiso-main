@@ -102,6 +102,7 @@ Route::group([
     // Beneficiary Module
     Route::get('/beneficiaries', [App\Http\Controllers\BeneficiaryController::class, 'index'])->name('beneficiaries.list');
     Route::get('/beneficiaries/create', [App\Http\Controllers\BeneficiaryController::class, 'create'])->name('beneficiary.create');
+    Route::get('/beneficiaries/file-no', [App\Http\Controllers\BeneficiaryController::class, 'nextFileNo'])->name('beneficiary.file-no');
     Route::post('/beneficiaries', [App\Http\Controllers\BeneficiaryController::class, 'store'])->name('beneficiary.store');
     Route::get('/beneficiaries/export/pdf', [App\Http\Controllers\BeneficiaryExportController::class, 'exportListPdf'])->name('beneficiaries.export.pdf');
     Route::get('/beneficiaries/export/excel', [App\Http\Controllers\BeneficiaryExportController::class, 'exportListExcel'])->name('beneficiaries.export.excel');
